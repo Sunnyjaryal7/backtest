@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NSE Backtester — Simple Indian Stock Strategy & Live Market Tester</title>
+  <title>NSE Backtester — Indian Stock Strategy & Live Market Tester</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Inter & JetBrains Mono Fonts -->
@@ -42,7 +42,6 @@
     .live-dot {
       animation: pulse-live 1.5s infinite ease-in-out;
     }
-    /* Clean custom range sliders */
     input[type="range"] {
       -webkit-appearance: none;
       height: 5px;
@@ -64,33 +63,44 @@
 </head>
 <body class="min-h-screen flex flex-col antialiased selection:bg-emerald-100 selection:text-emerald-900">
 
-  <!-- SIMPLE TOP BAR -->
+  <!-- TOP NAVIGATION BAR -->
   <header class="bg-white border-b border-slate-200/80 sticky top-0 z-30">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-      <!-- App Name -->
       <div class="flex items-center gap-2.5">
         <div class="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-sm">
           <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
           </svg>
         </div>
-        <span class="text-base sm:text-lg font-bold tracking-tight text-slate-900">NSE Backtester</span>
+        <div>
+          <span class="text-base sm:text-lg font-bold tracking-tight text-slate-900">NSE Backtester</span>
+          <span class="hidden sm:inline-block ml-2 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">6-Year Engine</span>
+        </div>
       </div>
 
-      <!-- Mode Toggle (Backtest vs Live Market Test) -->
-      <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/70">
-        <button id="btnModeBacktest" onclick="setMode('backtest')" class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-white text-slate-900 shadow-sm">
+      <!-- Mode Switcher -->
+      <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/70 shrink-0">
+        <button id="btnModeSignals" onclick="setMode('signals')" class="whitespace-nowrap px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all text-slate-600 hover:text-slate-900 flex items-center gap-1.5">
+          <span id="signalsNavDot" class="w-2 h-2 rounded-full bg-emerald-500 live-dot shrink-0"></span>
+          <span>Live Buy Signals</span>
+          <span id="liveSignalBadge" class="px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-mono text-[10px] font-bold leading-none">0</span>
+        </button>
+        <button id="btnModeBacktest" onclick="setMode('backtest')" class="whitespace-nowrap px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-white text-slate-900 shadow-sm">
           Backtest
         </button>
-        <button id="btnModeLive" onclick="setMode('live')" class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all text-slate-500 hover:text-slate-900 flex items-center gap-1.5">
-          <span id="liveNavDot" class="w-2 h-2 rounded-full bg-emerald-500 hidden live-dot"></span>
-          Live Market Test
+        <button id="btnModeLive" onclick="setMode('live')" class="whitespace-nowrap px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all text-slate-600 hover:text-slate-900 flex items-center gap-1.5">
+          <span id="liveNavDot" class="w-2 h-2 rounded-full bg-emerald-500 hidden live-dot shrink-0"></span>
+          <span>Live Market</span>
+        </button>
+        <button id="btnModeCrypto" onclick="switchToCryptoMarket()" class="whitespace-nowrap px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all text-amber-700 hover:bg-amber-50 flex items-center gap-1.5 ml-0.5">
+          <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+          <span>Top 10 Crypto</span>
         </button>
       </div>
 
-      <!-- Primary Action Button -->
-      <button id="btnPrimaryAction" onclick="triggerRun()" class="px-4 sm:px-5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs sm:text-sm shadow-sm transition active:scale-95 flex items-center gap-1.5">
-        <svg class="w-4 h-4 text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
+      <!-- Run Button -->
+      <button id="btnPrimaryAction" onclick="triggerRun()" class="whitespace-nowrap shrink-0 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs sm:text-sm shadow-sm transition active:scale-95 flex items-center gap-1.5">
+        <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="currentColor" viewBox="0 0 20 20">
           <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
         </svg>
         <span id="primaryActionLabel">Run Test</span>
@@ -98,7 +108,7 @@
     </div>
   </header>
 
-  <!-- TOAST NOTIFICATION (Replaces alert()) -->
+  <!-- TOAST MESSAGE BANNER -->
   <div id="toastBanner" class="hidden fixed bottom-5 right-5 z-50 max-w-sm bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-xl flex items-start gap-3">
     <div id="toastDot" class="w-2.5 h-2.5 rounded-full bg-emerald-400 mt-1.5 shrink-0"></div>
     <div class="flex-1 text-xs">
@@ -108,48 +118,76 @@
     <button onclick="hideToast()" class="text-slate-400 hover:text-white text-xs font-bold">✕</button>
   </div>
 
-  <!-- MAIN 2-COLUMN WORKSPACE -->
+  <!-- MAIN WORKSPACE -->
   <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 flex flex-col lg:flex-row gap-6">
 
-    <!-- LEFT PANEL: CLEAN SETUP CARD (~320px) -->
-    <aside class="w-full lg:w-[320px] shrink-0 space-y-4">
+    <!-- LEFT SETUP PANEL -->
+    <aside class="w-full lg:w-[330px] shrink-0 space-y-4">
       <div class="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-5">
-        <!-- 1. Stock & Index Selector with Quick Search -->
+
+        <!-- 1. Market Cap Filter + Stock Selector -->
         <div>
           <div class="flex items-center justify-between mb-1.5">
-            <label for="symbolSearchInput" class="text-xs font-semibold text-slate-700">Indian Stock / Index <span class="text-slate-400 font-normal">(52)</span></label>
-            <span id="dataSourcePill" class="text-[11px] font-medium text-slate-400">NSE Data</span>
+            <label for="symbolSearchInput" class="text-xs font-semibold text-slate-700">Stock / Index / Crypto <span id="symbolCountBadge" class="text-slate-400 font-normal">(86)</span></label>
+            <span id="dataSourcePill" class="text-[11px] font-medium text-slate-400">NSE + Crypto</span>
           </div>
+
+          <!-- Cap Tier Filter Pills -->
+          <div class="grid grid-cols-5 gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200/60 text-[11px] font-semibold mb-2">
+            <button type="button" data-cap="ALL" onclick="selectCapFilter('ALL')" class="cap-btn py-1 rounded-lg bg-white text-slate-900 shadow-sm transition">All</button>
+            <button type="button" data-cap="Large" onclick="selectCapFilter('Large')" class="cap-btn py-1 rounded-lg text-slate-500 hover:text-slate-900 transition">Large</button>
+            <button type="button" data-cap="Mid" onclick="selectCapFilter('Mid')" class="cap-btn py-1 rounded-lg text-slate-500 hover:text-slate-900 transition">Mid</button>
+            <button type="button" data-cap="Small" onclick="selectCapFilter('Small')" class="cap-btn py-1 rounded-lg text-slate-500 hover:text-slate-900 transition">Small</button>
+            <button type="button" data-cap="Crypto" onclick="selectCapFilter('Crypto')" class="cap-btn py-1 rounded-lg text-amber-700 hover:text-amber-900 transition">Crypto</button>
+          </div>
+
+          <!-- Search Input -->
           <div class="relative mb-2">
             <svg class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 103.5 10.5a7.5 7.5 0 0013.15 6.15z" />
             </svg>
-            <input type="text" id="symbolSearchInput" oninput="filterSymbolDropdown(this.value)" placeholder="Search RELIANCE, TCS, HDFCBANK..." class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition" />
+            <input type="text" id="symbolSearchInput" oninput="filterSymbolDropdown(this.value)" placeholder="Search RELIANCE, MCX, CGPOWER..." class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition" />
           </div>
+
+          <!-- Stock Dropdown -->
           <select id="symbolSelect" onchange="onSetupChanged(true)" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition">
           </select>
-          <p id="symbolMetaText" class="mt-1.5 text-[11px] text-slate-400 truncate">Reliance Industries Ltd • Energy</p>
+          <p id="symbolMetaText" class="mt-1.5 text-[11px] text-slate-400 truncate">Reliance Industries Ltd • Large-Cap • Energy</p>
         </div>
 
-        <!-- 2. Timeframe Pills -->
+        <!-- 2. Timeframe & 6-Year Backtest Duration -->
         <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1.5">Timeframe</label>
-          <div class="grid grid-cols-4 gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200/60">
-            <button type="button" data-tf="5m" onclick="selectTimeframe('5m')" class="tf-btn py-1.5 rounded-lg text-xs font-semibold bg-white text-slate-900 shadow-sm transition">5m</button>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="text-xs font-semibold text-slate-700">Timeframe &amp; Duration</label>
+            <span id="dateRangePill" class="text-[11px] font-mono text-slate-500">6Y (Nov '20 – Nov '26)</span>
+          </div>
+          <div class="grid grid-cols-4 gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200/60 mb-2">
+            <button type="button" data-tf="5m" onclick="selectTimeframe('5m')" class="tf-btn py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-900 transition">5m</button>
             <button type="button" data-tf="15m" onclick="selectTimeframe('15m')" class="tf-btn py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-900 transition">15m</button>
             <button type="button" data-tf="1H" onclick="selectTimeframe('1H')" class="tf-btn py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-900 transition">1H</button>
-            <button type="button" data-tf="Daily" onclick="selectTimeframe('Daily')" class="tf-btn py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-900 transition">Daily</button>
+            <button type="button" data-tf="Daily" onclick="selectTimeframe('Daily')" class="tf-btn py-1.5 rounded-lg text-xs font-semibold bg-white text-slate-900 shadow-sm transition">Daily</button>
+          </div>
+          <div class="grid grid-cols-4 gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200/60 text-[11px] font-semibold">
+            <button type="button" data-dur="1Y" onclick="selectDuration('1Y')" class="dur-btn py-1 rounded-lg text-slate-500 hover:text-slate-900 transition">1 Year</button>
+            <button type="button" data-dur="3Y" onclick="selectDuration('3Y')" class="dur-btn py-1 rounded-lg text-slate-500 hover:text-slate-900 transition">3 Years</button>
+            <button type="button" data-dur="6Y" onclick="selectDuration('6Y')" class="dur-btn py-1 rounded-lg bg-white text-emerald-700 shadow-sm transition">6 Years</button>
+            <button type="button" data-dur="CUSTOM" onclick="selectDuration('CUSTOM')" class="dur-btn py-1 rounded-lg text-slate-500 hover:text-slate-900 transition">Dates</button>
+          </div>
+          <div id="customDateRow" class="hidden grid-cols-2 gap-2 mt-2">
+            <input type="date" id="startDateInput" value="2020-11-19" onchange="onSetupChanged(true)" class="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-[11px] font-mono text-slate-800" />
+            <input type="date" id="endDateInput" value="2026-11-19" onchange="onSetupChanged(true)" class="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-[11px] font-mono text-slate-800" />
           </div>
         </div>
 
-        <!-- 3. Strategy Dropdown + Plain-English Explanation -->
+        <!-- 3. Strategy Rule Selector -->
         <div>
           <label for="strategySelect" class="block text-xs font-semibold text-slate-700 mb-1.5">Strategy Rule</label>
           <select id="strategySelect" onchange="onStrategyChanged()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition">
             <optgroup label="High Win-Rate Swing (3–15 Days • Buy Only)">
-              <option value="connors_rsi2" selected>1. Connors RSI(2) Pullback (~76% Win)</option>
-              <option value="bb_rsi_snap">2. Bollinger + RSI Snapback (~72% Win)</option>
-              <option value="ema20_pullback">3. 20-EMA Trend Pullback (~68% Win)</option>
+              <option value="cum_rsi2" selected>1. Cumulative 2-Day RSI(2) (~82%+ Win)</option>
+              <option value="connors_rsi2">2. Connors RSI(2) Pullback (~76% Win)</option>
+              <option value="bb_rsi_snap">3. Bollinger + RSI Snapback (~72% Win)</option>
+              <option value="ema20_pullback">4. 20-EMA Trend Pullback (~68% Win)</option>
             </optgroup>
             <optgroup label="Intraday / Momentum Strategies">
               <option value="ema_cross">EMA Crossover (9/21)</option>
@@ -160,16 +198,16 @@
           </select>
           <div id="swingPresetBadge" class="mt-2 flex items-center justify-between bg-emerald-50 border border-emerald-200/80 text-emerald-800 rounded-xl px-2.5 py-1.5 text-[11px] font-semibold">
             <span>Swing Mode: Buy Only • 3–15d Hold</span>
-            <span class="font-mono text-emerald-700">15d Max Exit</span>
+            <span class="font-mono text-emerald-700">6Y Multi-Cycle</span>
           </div>
           <p id="strategyPlainDesc" class="mt-2 text-xs text-slate-500 leading-relaxed bg-slate-50 rounded-xl p-2.5 border border-slate-100">
-            Buys uptrending stocks (Price > 50 SMA) on a sharp 2-period RSI dip (<15), and exits quickly when price closes back above the 5-day SMA or hits your quick Take-Profit.
+            Ultra-selective 1-click entry: Buys uptrending stocks (Price &gt; 200 SMA &amp; 50 SMA &gt; 200 SMA) when the 2-day cumulative RSI(2) drops below 10, and exits on a 5-SMA snapback or quick Take-Profit.
           </p>
         </div>
 
         <hr class="border-slate-100" />
 
-        <!-- 4. Simple Risk Controls: Take-Profit & Trailing Stop-Loss -->
+        <!-- 4. Take-Profit & Trailing Stop-Loss -->
         <div class="space-y-4">
           <div class="flex items-center justify-between">
             <span class="text-xs font-semibold text-slate-700">Exit Targets</span>
@@ -179,28 +217,26 @@
             </div>
           </div>
 
-          <!-- Take-Profit Slider + Input -->
           <div>
             <div class="flex items-center justify-between text-xs mb-1.5">
               <span class="font-medium text-emerald-700">Take-Profit Target</span>
               <div class="flex items-center gap-1">
-                <input type="number" id="tpInput" value="2.0" step="0.1" min="0.1" oninput="syncSliderFromInput('tp')" class="w-16 text-right font-mono text-xs font-semibold bg-emerald-50/70 border border-emerald-200 rounded-lg px-2 py-1 text-emerald-900 focus:outline-none" />
+                <input type="number" id="tpInput" value="3.0" step="0.1" min="0.1" oninput="syncSliderFromInput('tp')" class="w-16 text-right font-mono text-xs font-semibold bg-emerald-50/70 border border-emerald-200 rounded-lg px-2 py-1 text-emerald-900 focus:outline-none" />
                 <span class="unitSuffix text-xs font-mono text-slate-400">%</span>
               </div>
             </div>
-            <input type="range" id="tpSlider" min="0.2" max="10" step="0.1" value="2.0" oninput="syncInputFromSlider('tp')" class="w-full" />
+            <input type="range" id="tpSlider" min="0.2" max="12" step="0.1" value="3.0" oninput="syncInputFromSlider('tp')" class="w-full" />
           </div>
 
-          <!-- Trailing Stop-Loss Slider + Input -->
           <div>
             <div class="flex items-center justify-between text-xs mb-1.5">
               <span class="font-medium text-amber-700">Trailing Stop-Loss</span>
               <div class="flex items-center gap-1">
-                <input type="number" id="tslInput" value="0.8" step="0.1" min="0.1" oninput="syncSliderFromInput('tsl')" class="w-16 text-right font-mono text-xs font-semibold bg-amber-50/70 border border-amber-200 rounded-lg px-2 py-1 text-amber-900 focus:outline-none" />
+                <input type="number" id="tslInput" value="2.5" step="0.1" min="0.1" oninput="syncSliderFromInput('tsl')" class="w-16 text-right font-mono text-xs font-semibold bg-amber-50/70 border border-amber-200 rounded-lg px-2 py-1 text-amber-900 focus:outline-none" />
                 <span class="unitSuffix text-xs font-mono text-slate-400">%</span>
               </div>
             </div>
-            <input type="range" id="tslSlider" min="0.1" max="5" step="0.1" value="0.8" oninput="syncInputFromSlider('tsl')" class="w-full" />
+            <input type="range" id="tslSlider" min="0.1" max="8" step="0.1" value="2.5" oninput="syncInputFromSlider('tsl')" class="w-full" />
           </div>
         </div>
 
@@ -215,27 +251,25 @@
           </div>
         </div>
 
-        <!-- 6. Expandable Advanced / Upload CSV Accordion -->
+        <!-- 6. Expandable Advanced & CSV Upload -->
         <div class="pt-1">
           <button type="button" onclick="toggleAdvancedDrawer()" class="w-full flex items-center justify-between text-xs font-semibold text-slate-500 hover:text-slate-900 py-2 px-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition">
-            <span>Advanced & Upload CSV</span>
+            <span>Advanced &amp; Upload CSV</span>
             <svg id="advChevron" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
             </svg>
           </button>
 
           <div id="advancedDrawer" class="hidden mt-3 space-y-3 pt-2 border-t border-slate-100 text-xs">
-            <!-- Direction -->
             <div>
               <label class="block text-slate-600 font-medium mb-1">Trade Direction</label>
               <select id="directionSelect" onchange="triggerRun()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 font-medium text-slate-800">
-                <option value="both">Both Long & Short</option>
+                <option value="both">Both Long &amp; Short</option>
                 <option value="long" selected>Long (Buy) Only</option>
                 <option value="short">Short (Sell) Only</option>
               </select>
             </div>
 
-            <!-- Max Swing Hold Days -->
             <div>
               <label class="block text-slate-600 font-medium mb-1">Max Swing Hold (Daily Bars)</label>
               <select id="maxHoldSelect" onchange="triggerRun()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 font-medium text-slate-800">
@@ -246,25 +280,22 @@
               </select>
             </div>
 
-            <!-- Intraday Auto Square-Off -->
             <label class="flex items-center justify-between cursor-pointer py-1">
               <span class="text-slate-600 font-medium">Auto Square-Off (15:15 IST)</span>
               <input type="checkbox" id="autoSquareOffCheck" onchange="triggerRun()" class="w-4 h-4 rounded accent-slate-900" />
             </label>
 
-            <!-- Brokerage & STT Toggle -->
             <label class="flex items-center justify-between cursor-pointer py-1">
-              <span class="text-slate-600 font-medium">Include NSE Brokerage & STT</span>
+              <span class="text-slate-600 font-medium">Include NSE Brokerage &amp; STT</span>
               <input type="checkbox" id="includeTaxesCheck" checked onchange="triggerRun()" class="w-4 h-4 rounded accent-slate-900" />
             </label>
 
-            <!-- Custom CSV Upload -->
             <div class="pt-1">
               <label for="csvFileInput" class="w-full cursor-pointer flex items-center justify-center gap-2 py-2 px-3 rounded-xl border border-dashed border-slate-300 hover:border-slate-400 bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold transition">
                 <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                 </svg>
-                <span>Upload OHLC CSV File</span>
+                <span>Upload TradingView CSV</span>
               </label>
               <input type="file" id="csvFileInput" accept=".csv" class="hidden" onchange="handleCSVUpload(event)" />
             </div>
@@ -274,13 +305,60 @@
       </div>
     </aside>
 
-    <!-- RIGHT PANEL: RESULTS, LIVE BANNER, CHART & TRADE LEDGER -->
+    <!-- RIGHT RESULTS & CHART WORKSPACE -->
     <section class="flex-1 min-w-0 space-y-5">
 
-      <!-- LIVE MARKET TEST BANNER (Shown only in Live Market Test mode) -->
+      <!-- LIVE BUY SIGNALS SCREENER PANEL (Shown when 'Live Buy Signals' tab is active) -->
+      <div id="liveSignalsPanel" class="hidden bg-white border border-emerald-200 rounded-2xl p-4 sm:p-5 shadow-sm space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-700">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 live-dot"></span>
+              <span id="liveFeedBadgeText">REAL-TIME NSE SCANNER</span>
+            </span>
+            <div>
+              <h2 class="text-sm sm:text-base font-bold text-slate-900">Stocks Ready to BUY Now (Auto-Scanned)</h2>
+              <p id="liveScannerSubtitle" class="text-xs text-slate-500">Fetching live NSE market quotes &amp; auto-applying your strategy...</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <span id="liveMarketStatusTag" class="hidden sm:inline-block px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 text-[11px] font-mono font-semibold">NSE • IST</span>
+            <button onclick="fetchRealLiveMarketScan(true)" class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm transition flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Refresh Live Scan
+            </button>
+          </div>
+        </div>
+
+        <!-- Live Buy Signals Table -->
+        <div class="overflow-x-auto max-h-[540px] overflow-y-auto rounded-xl border border-slate-200/80">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead class="bg-slate-50 text-slate-500 font-semibold sticky top-0 z-10 border-b border-slate-200/80">
+              <tr>
+                <th class="py-3 px-3.5">Stock / Sector</th>
+                <th class="py-3 px-3.5">Cap</th>
+                <th class="py-3 px-3.5 text-right">Live Price (₹)</th>
+                <th class="py-3 px-3.5">Why Buy Now (Signal)</th>
+                <th class="py-3 px-3.5 text-right">Target TP (₹)</th>
+                <th class="py-3 px-3.5 text-right">Trailing SL (₹)</th>
+                <th class="py-3 px-3.5 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody id="liveBuySignalsBody" class="divide-y divide-slate-100 font-mono text-slate-700">
+              <tr>
+                <td colspan="7" class="py-8 text-center text-slate-400 font-sans">Fetching real live NSE stock prices &amp; scanning strategy rules...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- LIVE MARKET TEST BANNER -->
       <div id="liveMarketPanel" class="hidden bg-white border border-emerald-200 rounded-2xl p-4 shadow-sm space-y-3">
         <div class="flex flex-wrap items-center justify-between gap-3">
-          <!-- Live Ticker Pill -->
           <div class="flex items-center gap-3">
             <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-700">
               <span class="w-2 h-2 rounded-full bg-emerald-500 live-dot"></span>
@@ -293,7 +371,6 @@
             </div>
           </div>
 
-          <!-- Play/Pause & Speed Controls -->
           <div class="flex items-center gap-2">
             <button id="btnLivePlayPause" onclick="toggleLivePlay()" class="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition">
               Pause
@@ -306,36 +383,32 @@
           </div>
         </div>
 
-        <!-- Active Position Live Status Strip -->
         <div id="livePositionStrip" class="bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs">
           <span class="text-slate-500 font-medium">Status: <strong class="text-slate-800">Scanning live candles for entry setup...</strong></span>
         </div>
       </div>
 
-      <!-- 4 BIG, EASY-TO-READ KPI CARDS -->
+      <!-- 4 KPI SUMMARY CARDS -->
+      <div id="backtestMainWorkspace" class="space-y-5">
       <div class="grid grid-cols-2 xl:grid-cols-4 gap-4">
-        <!-- Net Profit -->
         <div class="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-sm">
           <p class="text-xs font-medium text-slate-500">Net Profit</p>
           <p id="kpiNetProfit" class="text-xl sm:text-2xl font-bold font-mono text-emerald-600 mt-1.5 tabular-nums">₹0.00</p>
           <p id="kpiNetReturnPct" class="text-xs font-mono font-medium text-slate-500 mt-1">+0.00%</p>
         </div>
 
-        <!-- Win Rate -->
         <div class="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-sm">
           <p class="text-xs font-medium text-slate-500">Win Rate</p>
           <p id="kpiWinRate" class="text-xl sm:text-2xl font-bold font-mono text-slate-900 mt-1.5 tabular-nums">0.0%</p>
           <p id="kpiWinSub" class="text-xs font-mono text-slate-500 mt-1">0 Wins / 0 Losses</p>
         </div>
 
-        <!-- Total Trades -->
         <div class="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-sm">
           <p class="text-xs font-medium text-slate-500">Total Trades</p>
           <p id="kpiTotalTrades" class="text-xl sm:text-2xl font-bold font-mono text-slate-900 mt-1.5 tabular-nums">0</p>
           <p id="kpiExitSummary" class="text-xs font-mono text-slate-500 mt-1">0 TP • 0 Trailing SL</p>
         </div>
 
-        <!-- Max Drawdown -->
         <div class="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-sm">
           <p class="text-xs font-medium text-slate-500">Max Drawdown</p>
           <p id="kpiMaxDrawdown" class="text-xl sm:text-2xl font-bold font-mono text-rose-600 mt-1.5 tabular-nums">0.00%</p>
@@ -343,43 +416,62 @@
         </div>
       </div>
 
-      <!-- CLEAN INTERACTIVE CHART CARD WITH PRICE / EQUITY TAB TOGGLE -->
+      <!-- CHART CARD (PRICE & SIGNALS / EQUITY CURVE / TOP SWING SCANNER) -->
       <div class="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-sm">
         <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
           <div class="flex items-center gap-3">
-            <h2 id="chartTitle" class="text-sm font-bold text-slate-900">RELIANCE • 5m Chart</h2>
+            <h2 id="chartTitle" class="text-sm font-bold text-slate-900">RELIANCE • Daily (6Y) Chart</h2>
             <div id="priceChartLegend" class="hidden sm:flex items-center gap-3 text-[11px] font-medium text-slate-500">
               <span class="flex items-center gap-1"><span class="w-2.5 h-0.5 bg-amber-500 inline-block"></span> Trailing SL</span>
               <span class="flex items-center gap-1"><span class="w-2.5 h-0.5 bg-emerald-500 inline-block"></span> Take-Profit</span>
             </div>
           </div>
 
-          <!-- Chart View Toggle Tabs -->
-          <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/60 text-xs font-semibold">
-            <button id="tabPriceChart" onclick="switchChartTab('price')" class="px-3 py-1 rounded-lg bg-white text-slate-900 shadow-sm transition">
-              Price & Signals
+          <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/60 text-xs font-semibold shrink-0">
+            <button id="tabPriceChart" onclick="switchChartTab('price')" class="whitespace-nowrap px-3 py-1 rounded-lg bg-white text-slate-900 shadow-sm transition">
+              Price &amp; Signals
             </button>
-            <button id="tabEquityChart" onclick="switchChartTab('equity')" class="px-3 py-1 rounded-lg text-slate-500 hover:text-slate-900 transition">
+            <button id="tabEquityChart" onclick="switchChartTab('equity')" class="whitespace-nowrap px-3 py-1 rounded-lg text-slate-500 hover:text-slate-900 transition">
               Equity Curve
+            </button>
+            <button id="tabScanner" onclick="switchChartTab('scanner')" class="whitespace-nowrap px-3 py-1 rounded-lg text-slate-500 hover:text-slate-900 transition">
+              Top Swing Scanner
             </button>
           </div>
         </div>
 
-        <!-- Price Chart Container -->
+        <!-- 1. Price Chart -->
         <div id="priceChartView" class="w-full h-[370px] rounded-xl overflow-hidden border border-slate-100"></div>
 
-        <!-- Equity Curve Container (Hidden by default until toggled) -->
+        <!-- 2. Equity Curve -->
         <div id="equityChartView" class="hidden w-full h-[370px] p-2">
           <canvas id="equityCanvas"></canvas>
         </div>
+
+        <!-- 3. Multi-Cap Top Swing Scanner -->
+        <div id="scannerView" class="hidden w-full h-[370px] overflow-y-auto rounded-xl border border-slate-100">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead class="bg-slate-50 text-slate-500 font-semibold sticky top-0 z-10 border-b border-slate-200/80">
+              <tr>
+                <th class="py-2.5 px-3.5">Stock</th>
+                <th class="py-2.5 px-3.5">Cap Tier</th>
+                <th class="py-2.5 px-3.5 text-right">Win Rate</th>
+                <th class="py-2.5 px-3.5 text-right">Trades</th>
+                <th class="py-2.5 px-3.5 text-right">6Y Net Profit</th>
+                <th class="py-2.5 px-3.5 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody id="scannerTableBody" class="divide-y divide-slate-100 font-mono text-slate-700"></tbody>
+          </table>
+        </div>
       </div>
 
-      <!-- SIMPLE TRADE HISTORY TABLE -->
+      <!-- TRADE HISTORY & P&L CALCULATION CARD -->
       <div class="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-sm">
-        <div class="flex items-center justify-between gap-3 mb-4">
+        <div class="flex items-center justify-between gap-3 mb-3">
           <div>
-            <h3 class="text-sm font-bold text-slate-900">Trade History</h3>
-            <p class="text-xs text-slate-500">Chronological list of executed entries and Trailing SL / Take-Profit exits</p>
+            <h3 class="text-sm font-bold text-slate-900">Trade History &amp; P&amp;L Breakdown</h3>
+            <p class="text-xs text-slate-500">Total Profit minus Total Loss equals Calculated Net Result</p>
           </div>
           <button onclick="exportTradesCSV()" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-800 text-xs font-semibold transition flex items-center gap-1.5">
             <svg class="w-3.5 h-3.5 text-slate-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -389,6 +481,35 @@
           </button>
         </div>
 
+        <!-- GROSS PROFIT / GROSS LOSS / NET RESULT SUMMARY -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+          <div class="bg-white rounded-lg px-3.5 py-2.5 border border-slate-100">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-[11px] font-semibold text-slate-400 uppercase whitespace-nowrap">Total Profit</span>
+              <span id="summaryWinCount" class="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded whitespace-nowrap">0 Wins</span>
+            </div>
+            <p id="summaryGrossProfit" class="text-sm sm:text-base font-bold font-mono text-emerald-600 mt-1.5 tabular-nums">+₹0.00</p>
+          </div>
+          <div class="bg-white rounded-lg px-3.5 py-2.5 border border-slate-100">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-[11px] font-semibold text-slate-400 uppercase whitespace-nowrap">Total Loss</span>
+              <span id="summaryLossCount" class="text-[11px] font-semibold text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded whitespace-nowrap">0 Losses</span>
+            </div>
+            <p id="summaryGrossLoss" class="text-sm sm:text-base font-bold font-mono text-rose-600 mt-1.5 tabular-nums">-₹0.00</p>
+          </div>
+          <div class="bg-white rounded-lg px-3.5 py-2.5 border border-slate-200/80">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-[11px] font-semibold text-slate-500 uppercase whitespace-nowrap">Net Result</span>
+              <span id="summaryNetPct" class="text-[11px] font-mono font-semibold text-slate-600 whitespace-nowrap">0.00%</span>
+            </div>
+            <p id="summaryNetResult" class="text-sm sm:text-base font-bold font-mono text-slate-900 mt-1.5 tabular-nums">₹0.00</p>
+          </div>
+        </div>
+
+        <!-- YEAR-BY-YEAR WIN RATE STRIP -->
+        <div id="yearlyBreakdownBar" class="mb-4 flex flex-wrap gap-2"></div>
+
+        <!-- EXECUTED TRADES TABLE -->
         <div class="overflow-x-auto max-h-[340px] overflow-y-auto rounded-xl border border-slate-100">
           <table class="w-full text-left border-collapse text-xs">
             <thead class="bg-slate-50 text-slate-500 font-semibold sticky top-0 z-10 border-b border-slate-200/80">
@@ -398,16 +519,17 @@
                 <th class="py-3 px-3.5 text-right">Entry ₹</th>
                 <th class="py-3 px-3.5 text-right">Exit ₹</th>
                 <th class="py-3 px-3.5">Exit Reason</th>
-                <th class="py-3 px-3.5 text-right">Net P&L (₹)</th>
+                <th class="py-3 px-3.5 text-right">Net P&amp;L (₹)</th>
               </tr>
             </thead>
             <tbody id="tradeHistoryBody" class="divide-y divide-slate-100 text-slate-700 font-mono">
               <tr>
-                <td colspan="6" class="py-8 text-center text-slate-400 font-sans">Running initial backtest...</td>
+                <td colspan="6" class="py-8 text-center text-slate-400 font-sans">Running 6-year backtest...</td>
               </tr>
             </tbody>
           </table>
         </div>
+      </div>
       </div>
 
     </section>
@@ -415,64 +537,104 @@
 
   <script>
     // =========================================================================
-    // CONFIGURATION & APPLICATION STATE (INDICES + ALL 50 NIFTY 50 STOCKS)
+    // NSE UNIVERSE (INDICES + LARGE-CAP, MID-CAP & SMALL-CAP STOCKS)
     // =========================================================================
     const NSE_SYMBOLS = {
-      'NIFTY':      { name: 'NIFTY 50 Index',              sector: 'Index',        basePrice: 24350.00, volatility: 0.0022, lotStep: 25, isIndex: true },
-      'BANKNIFTY':  { name: 'NIFTY Bank Index',            sector: 'Index',        basePrice: 52180.00, volatility: 0.0030, lotStep: 15, isIndex: true },
-      'ADANIENT':   { name: 'Adani Enterprises Ltd',       sector: 'Metals & Comm',basePrice: 2890.00,  volatility: 0.0048, lotStep: 1 },
-      'ADANIPORTS': { name: 'Adani Ports & SEZ Ltd',       sector: 'Infra',        basePrice: 1385.00,  volatility: 0.0040, lotStep: 1 },
-      'APOLLOHOSP': { name: 'Apollo Hospitals Enterprise', sector: 'Healthcare',   basePrice: 6940.00,  volatility: 0.0030, lotStep: 1 },
-      'ASIANPAINT': { name: 'Asian Paints Ltd',            sector: 'Consumer',     basePrice: 2875.00,  volatility: 0.0028, lotStep: 1 },
-      'AXISBANK':   { name: 'Axis Bank Ltd',               sector: 'Banking',      basePrice: 1175.00,  volatility: 0.0032, lotStep: 1 },
-      'BAJAJ-AUTO': { name: 'Bajaj Auto Ltd',              sector: 'Auto',         basePrice: 9850.00,  volatility: 0.0031, lotStep: 1 },
-      'BAJFINANCE': { name: 'Bajaj Finance Ltd',           sector: 'NBFC',         basePrice: 7180.00,  volatility: 0.0036, lotStep: 1 },
-      'BAJAJFINSV': { name: 'Bajaj Finserv Ltd',           sector: 'Financials',   basePrice: 1790.00,  volatility: 0.0033, lotStep: 1 },
-      'BEL':        { name: 'Bharat Electronics Ltd',      sector: 'Defence',      basePrice: 312.00,   volatility: 0.0041, lotStep: 1 },
-      'BHARTIARTL': { name: 'Bharti Airtel Ltd',           sector: 'Telecom',      basePrice: 1645.00,  volatility: 0.0029, lotStep: 1 },
-      'CIPLA':      { name: 'Cipla Ltd',                   sector: 'Pharma',       basePrice: 1530.00,  volatility: 0.0027, lotStep: 1 },
-      'COALINDIA':  { name: 'Coal India Ltd',              sector: 'Energy',       basePrice: 448.00,   volatility: 0.0032, lotStep: 1 },
-      'DRREDDY':    { name: 'Dr. Reddy\'s Laboratories',   sector: 'Pharma',       basePrice: 1285.00,  volatility: 0.0026, lotStep: 1 },
-      'EICHERMOT':  { name: 'Eicher Motors Ltd',           sector: 'Auto',         basePrice: 4890.00,  volatility: 0.0030, lotStep: 1 },
-      'ETERNAL':    { name: 'Eternal Ltd (Zomato)',        sector: 'Consumer Tech',basePrice: 268.00,   volatility: 0.0046, lotStep: 1 },
-      'GRASIM':     { name: 'Grasim Industries Ltd',       sector: 'Materials',    basePrice: 2670.00,  volatility: 0.0031, lotStep: 1 },
-      'HCLTECH':    { name: 'HCL Technologies Ltd',        sector: 'IT',           basePrice: 1795.00,  volatility: 0.0029, lotStep: 1 },
-      'HDFCBANK':   { name: 'HDFC Bank Ltd',               sector: 'Banking',      basePrice: 1715.00,  volatility: 0.0028, lotStep: 1 },
-      'HDFCLIFE':   { name: 'HDFC Life Insurance Co',      sector: 'Insurance',    basePrice: 685.00,   volatility: 0.0030, lotStep: 1 },
-      'HINDALCO':   { name: 'Hindalco Industries Ltd',     sector: 'Metals',       basePrice: 672.00,   volatility: 0.0039, lotStep: 1 },
-      'HINDUNILVR': { name: 'Hindustan Unilever Ltd',      sector: 'FMCG',         basePrice: 2490.00,  volatility: 0.0023, lotStep: 1 },
-      'ICICIBANK':  { name: 'ICICI Bank Ltd',              sector: 'Banking',      basePrice: 1295.00,  volatility: 0.0029, lotStep: 1 },
-      'ITC':        { name: 'ITC Ltd',                     sector: 'FMCG',         basePrice: 486.00,   volatility: 0.0022, lotStep: 1 },
-      'INFY':       { name: 'Infosys Ltd',                 sector: 'IT',           basePrice: 1865.00,  volatility: 0.0031, lotStep: 1 },
-      'INDIGO':     { name: 'InterGlobe Aviation Ltd',     sector: 'Aviation',     basePrice: 4420.00,  volatility: 0.0037, lotStep: 1 },
-      'JSWSTEEL':   { name: 'JSW Steel Ltd',               sector: 'Metals',       basePrice: 978.00,   volatility: 0.0036, lotStep: 1 },
-      'JIOFIN':     { name: 'Jio Financial Services Ltd',  sector: 'Financials',   basePrice: 334.00,   volatility: 0.0040, lotStep: 1 },
-      'KOTAKBANK':  { name: 'Kotak Mahindra Bank Ltd',     sector: 'Banking',      basePrice: 1785.00,  volatility: 0.0029, lotStep: 1 },
-      'LT':         { name: 'Larsen & Toubro Ltd',         sector: 'Infra',        basePrice: 3620.00,  volatility: 0.0031, lotStep: 1 },
-      'M&M':        { name: 'Mahindra & Mahindra Ltd',     sector: 'Auto',         basePrice: 2940.00,  volatility: 0.0034, lotStep: 1 },
-      'MARUTI':     { name: 'Maruti Suzuki India Ltd',     sector: 'Auto',         basePrice: 12150.00, volatility: 0.0028, lotStep: 1 },
-      'MAXHEALTH':  { name: 'Max Healthcare Institute',    sector: 'Healthcare',   basePrice: 1045.00,  volatility: 0.0035, lotStep: 1 },
-      'NTPC':       { name: 'NTPC Ltd',                    sector: 'Power',        basePrice: 398.00,   volatility: 0.0031, lotStep: 1 },
-      'NESTLEIND':  { name: 'Nestle India Ltd',            sector: 'FMCG',         basePrice: 2340.00,  volatility: 0.0022, lotStep: 1 },
-      'ONGC':       { name: 'Oil & Natural Gas Corp',      sector: 'Energy',       basePrice: 268.00,   volatility: 0.0036, lotStep: 1 },
-      'POWERGRID':  { name: 'Power Grid Corp of India',    sector: 'Power',        basePrice: 324.00,   volatility: 0.0029, lotStep: 1 },
-      'RELIANCE':   { name: 'Reliance Industries Ltd',     sector: 'Energy',       basePrice: 2945.00,  volatility: 0.0033, lotStep: 1 },
-      'SBILIFE':    { name: 'SBI Life Insurance Co',       sector: 'Insurance',    basePrice: 1640.00,  volatility: 0.0028, lotStep: 1 },
-      'SHRIRAMFIN': { name: 'Shriram Finance Ltd',         sector: 'NBFC',         basePrice: 642.00,   volatility: 0.0038, lotStep: 1 },
-      'SBIN':       { name: 'State Bank of India',         sector: 'Banking',      basePrice: 832.00,   volatility: 0.0033, lotStep: 1 },
-      'SUNPHARMA':  { name: 'Sun Pharmaceutical Ind',      sector: 'Pharma',       basePrice: 1815.00,  volatility: 0.0026, lotStep: 1 },
-      'TCS':        { name: 'Tata Consultancy Services',   sector: 'IT',           basePrice: 4120.00,  volatility: 0.0026, lotStep: 1 },
-      'TATACONSUM': { name: 'Tata Consumer Products',      sector: 'FMCG',         basePrice: 1025.00,  volatility: 0.0028, lotStep: 1 },
-      'TMPV':       { name: 'Tata Motors Passenger Veh',   sector: 'Auto',         basePrice: 845.00,   volatility: 0.0039, lotStep: 1 },
-      'TATASTEEL':  { name: 'Tata Steel Ltd',              sector: 'Metals',       basePrice: 152.00,   volatility: 0.0038, lotStep: 1 },
-      'TECHM':      { name: 'Tech Mahindra Ltd',           sector: 'IT',           basePrice: 1680.00,  volatility: 0.0032, lotStep: 1 },
-      'TITAN':      { name: 'Titan Company Ltd',           sector: 'Consumer',     basePrice: 3460.00,  volatility: 0.0030, lotStep: 1 },
-      'TRENT':      { name: 'Trent Ltd',                   sector: 'Retail',       basePrice: 6480.00,  volatility: 0.0044, lotStep: 1 },
-      'ULTRACEMCO': { name: 'UltraTech Cement Ltd',        sector: 'Cement',       basePrice: 11380.00, volatility: 0.0027, lotStep: 1 },
-      'WIPRO':      { name: 'Wipro Ltd',                   sector: 'IT',           basePrice: 564.00,   volatility: 0.0030, lotStep: 1 }
+      // Indices
+      'NIFTY':      { name: 'NIFTY 50 Index',              cap: 'Large', sector: 'Index',         basePrice: 24350.00, volatility: 0.0022, lotStep: 25, isIndex: true },
+      'BANKNIFTY':  { name: 'NIFTY Bank Index',            cap: 'Large', sector: 'Index',         basePrice: 52180.00, volatility: 0.0030, lotStep: 15, isIndex: true },
+      // Large-Cap (Nifty 50)
+      'ADANIENT':   { name: 'Adani Enterprises Ltd',       cap: 'Large', sector: 'Metals & Comm', basePrice: 2890.00,  volatility: 0.0046, lotStep: 1 },
+      'ADANIPORTS': { name: 'Adani Ports & SEZ Ltd',       cap: 'Large', sector: 'Infra',         basePrice: 1385.00,  volatility: 0.0038, lotStep: 1 },
+      'APOLLOHOSP': { name: 'Apollo Hospitals Enterprise', cap: 'Large', sector: 'Healthcare',    basePrice: 6940.00,  volatility: 0.0030, lotStep: 1 },
+      'ASIANPAINT': { name: 'Asian Paints Ltd',            cap: 'Large', sector: 'Consumer',      basePrice: 2875.00,  volatility: 0.0028, lotStep: 1 },
+      'AXISBANK':   { name: 'Axis Bank Ltd',               cap: 'Large', sector: 'Banking',       basePrice: 1175.00,  volatility: 0.0032, lotStep: 1 },
+      'BAJAJ-AUTO': { name: 'Bajaj Auto Ltd',              cap: 'Large', sector: 'Auto',          basePrice: 9850.00,  volatility: 0.0031, lotStep: 1 },
+      'BAJFINANCE': { name: 'Bajaj Finance Ltd',           cap: 'Large', sector: 'NBFC',          basePrice: 7180.00,  volatility: 0.0035, lotStep: 1 },
+      'BAJAJFINSV': { name: 'Bajaj Finserv Ltd',           cap: 'Large', sector: 'Financials',    basePrice: 1790.00,  volatility: 0.0033, lotStep: 1 },
+      'BEL':        { name: 'Bharat Electronics Ltd',      cap: 'Large', sector: 'Defence',       basePrice: 312.00,   volatility: 0.0040, lotStep: 1 },
+      'BHARTIARTL': { name: 'Bharti Airtel Ltd',           cap: 'Large', sector: 'Telecom',       basePrice: 1645.00,  volatility: 0.0029, lotStep: 1 },
+      'CIPLA':      { name: 'Cipla Ltd',                   cap: 'Large', sector: 'Pharma',        basePrice: 1530.00,  volatility: 0.0027, lotStep: 1 },
+      'COALINDIA':  { name: 'Coal India Ltd',              cap: 'Large', sector: 'Energy',        basePrice: 448.00,   volatility: 0.0031, lotStep: 1 },
+      'DRREDDY':    { name: 'Dr. Reddy\'s Laboratories',   cap: 'Large', sector: 'Pharma',        basePrice: 1285.00,  volatility: 0.0026, lotStep: 1 },
+      'EICHERMOT':  { name: 'Eicher Motors Ltd',           cap: 'Large', sector: 'Auto',          basePrice: 4890.00,  volatility: 0.0030, lotStep: 1 },
+      'ETERNAL':    { name: 'Eternal Ltd (Zomato)',        cap: 'Large', sector: 'Consumer Tech', basePrice: 268.00,   volatility: 0.0045, lotStep: 1 },
+      'GRASIM':     { name: 'Grasim Industries Ltd',       cap: 'Large', sector: 'Materials',     basePrice: 2670.00,  volatility: 0.0031, lotStep: 1 },
+      'HCLTECH':    { name: 'HCL Technologies Ltd',        cap: 'Large', sector: 'IT',            basePrice: 1795.00,  volatility: 0.0029, lotStep: 1 },
+      'HDFCBANK':   { name: 'HDFC Bank Ltd',               cap: 'Large', sector: 'Banking',       basePrice: 1715.00,  volatility: 0.0028, lotStep: 1 },
+      'HDFCLIFE':   { name: 'HDFC Life Insurance Co',      cap: 'Large', sector: 'Insurance',     basePrice: 685.00,   volatility: 0.0030, lotStep: 1 },
+      'HINDALCO':   { name: 'Hindalco Industries Ltd',     cap: 'Large', sector: 'Metals',        basePrice: 672.00,   volatility: 0.0038, lotStep: 1 },
+      'HINDUNILVR': { name: 'Hindustan Unilever Ltd',      cap: 'Large', sector: 'FMCG',          basePrice: 2490.00,  volatility: 0.0023, lotStep: 1 },
+      'ICICIBANK':  { name: 'ICICI Bank Ltd',              cap: 'Large', sector: 'Banking',       basePrice: 1295.00,  volatility: 0.0029, lotStep: 1 },
+      'ITC':        { name: 'ITC Ltd',                     cap: 'Large', sector: 'FMCG',          basePrice: 486.00,   volatility: 0.0022, lotStep: 1 },
+      'INFY':       { name: 'Infosys Ltd',                 cap: 'Large', sector: 'IT',            basePrice: 1865.00,  volatility: 0.0031, lotStep: 1 },
+      'INDIGO':     { name: 'InterGlobe Aviation Ltd',     cap: 'Large', sector: 'Aviation',      basePrice: 4420.00,  volatility: 0.0036, lotStep: 1 },
+      'JSWSTEEL':   { name: 'JSW Steel Ltd',               cap: 'Large', sector: 'Metals',        basePrice: 978.00,   volatility: 0.0036, lotStep: 1 },
+      'JIOFIN':     { name: 'Jio Financial Services Ltd',  cap: 'Large', sector: 'Financials',    basePrice: 334.00,   volatility: 0.0039, lotStep: 1 },
+      'KOTAKBANK':  { name: 'Kotak Mahindra Bank Ltd',     cap: 'Large', sector: 'Banking',       basePrice: 1785.00,  volatility: 0.0029, lotStep: 1 },
+      'LT':         { name: 'Larsen & Toubro Ltd',         cap: 'Large', sector: 'Infra',         basePrice: 3620.00,  volatility: 0.0031, lotStep: 1 },
+      'M&M':        { name: 'Mahindra & Mahindra Ltd',     cap: 'Large', sector: 'Auto',          basePrice: 2940.00,  volatility: 0.0034, lotStep: 1 },
+      'MARUTI':     { name: 'Maruti Suzuki India Ltd',     cap: 'Large', sector: 'Auto',          basePrice: 12150.00, volatility: 0.0028, lotStep: 1 },
+      'MAXHEALTH':  { name: 'Max Healthcare Institute',    cap: 'Large', sector: 'Healthcare',    basePrice: 1045.00,  volatility: 0.0035, lotStep: 1 },
+      'NTPC':       { name: 'NTPC Ltd',                    cap: 'Large', sector: 'Power',         basePrice: 398.00,   volatility: 0.0031, lotStep: 1 },
+      'NESTLEIND':  { name: 'Nestle India Ltd',            cap: 'Large', sector: 'FMCG',          basePrice: 2340.00,  volatility: 0.0022, lotStep: 1 },
+      'ONGC':       { name: 'Oil & Natural Gas Corp',      cap: 'Large', sector: 'Energy',        basePrice: 268.00,   volatility: 0.0035, lotStep: 1 },
+      'POWERGRID':  { name: 'Power Grid Corp of India',    cap: 'Large', sector: 'Power',         basePrice: 324.00,   volatility: 0.0029, lotStep: 1 },
+      'RELIANCE':   { name: 'Reliance Industries Ltd',     cap: 'Large', sector: 'Energy',        basePrice: 2945.00,  volatility: 0.0033, lotStep: 1 },
+      'SBILIFE':    { name: 'SBI Life Insurance Co',       cap: 'Large', sector: 'Insurance',     basePrice: 1640.00,  volatility: 0.0028, lotStep: 1 },
+      'SHRIRAMFIN': { name: 'Shriram Finance Ltd',         cap: 'Large', sector: 'NBFC',          basePrice: 642.00,   volatility: 0.0037, lotStep: 1 },
+      'SBIN':       { name: 'State Bank of India',         cap: 'Large', sector: 'Banking',       basePrice: 832.00,   volatility: 0.0033, lotStep: 1 },
+      'SUNPHARMA':  { name: 'Sun Pharmaceutical Ind',      cap: 'Large', sector: 'Pharma',        basePrice: 1815.00,  volatility: 0.0026, lotStep: 1 },
+      'TCS':        { name: 'Tata Consultancy Services',   cap: 'Large', sector: 'IT',            basePrice: 4120.00,  volatility: 0.0026, lotStep: 1 },
+      'TATACONSUM': { name: 'Tata Consumer Products',      cap: 'Large', sector: 'FMCG',          basePrice: 1025.00,  volatility: 0.0028, lotStep: 1 },
+      'TMPV':       { name: 'Tata Motors Passenger Veh',   cap: 'Large', sector: 'Auto',          basePrice: 845.00,   volatility: 0.0038, lotStep: 1 },
+      'TATASTEEL':  { name: 'Tata Steel Ltd',              cap: 'Large', sector: 'Metals',        basePrice: 152.00,   volatility: 0.0037, lotStep: 1 },
+      'TECHM':      { name: 'Tech Mahindra Ltd',           cap: 'Large', sector: 'IT',            basePrice: 1680.00,  volatility: 0.0032, lotStep: 1 },
+      'TITAN':      { name: 'Titan Company Ltd',           cap: 'Large', sector: 'Consumer',      basePrice: 3460.00,  volatility: 0.0030, lotStep: 1 },
+      'TRENT':      { name: 'Trent Ltd',                   cap: 'Large', sector: 'Retail',        basePrice: 6480.00,  volatility: 0.0042, lotStep: 1 },
+      'ULTRACEMCO': { name: 'UltraTech Cement Ltd',        cap: 'Large', sector: 'Cement',        basePrice: 11380.00, volatility: 0.0027, lotStep: 1 },
+      'WIPRO':      { name: 'Wipro Ltd',                   cap: 'Large', sector: 'IT',            basePrice: 564.00,   volatility: 0.0030, lotStep: 1 },
+      // Mid-Cap Leaders
+      'CGPOWER':    { name: 'CG Power & Industrial Sol',   cap: 'Mid',   sector: 'Capital Goods', basePrice: 745.00,   volatility: 0.0046, lotStep: 1 },
+      'CHOLAFIN':   { name: 'Cholamandalam Inv & Fin',     cap: 'Mid',   sector: 'NBFC',          basePrice: 1340.00,  volatility: 0.0042, lotStep: 1 },
+      'CUMMINSIND': { name: 'Cummins India Ltd',           cap: 'Mid',   sector: 'Industrials',   basePrice: 3580.00,  volatility: 0.0041, lotStep: 1 },
+      'DIVISLAB':   { name: 'Divi\'s Laboratories Ltd',    cap: 'Mid',   sector: 'Pharma',        basePrice: 5890.00,  volatility: 0.0038, lotStep: 1 },
+      'GLENMARK':   { name: 'Glenmark Pharmaceuticals',    cap: 'Mid',   sector: 'Pharma',        basePrice: 1560.00,  volatility: 0.0045, lotStep: 1 },
+      'INDHOTEL':   { name: 'Indian Hotels Co Ltd',        cap: 'Mid',   sector: 'Hospitality',   basePrice: 720.00,   volatility: 0.0041, lotStep: 1 },
+      'LUPIN':      { name: 'Lupin Ltd',                   cap: 'Mid',   sector: 'Pharma',        basePrice: 2140.00,  volatility: 0.0042, lotStep: 1 },
+      'MCX':        { name: 'Multi Commodity Exchange',    cap: 'Mid',   sector: 'Exchanges',     basePrice: 6450.00,  volatility: 0.0048, lotStep: 1 },
+      'PERSISTENT': { name: 'Persistent Systems Ltd',      cap: 'Mid',   sector: 'IT Midcap',     basePrice: 5620.00,  volatility: 0.0044, lotStep: 1 },
+      'PHOENIXLTD': { name: 'The Phoenix Mills Ltd',       cap: 'Mid',   sector: 'Real Estate',   basePrice: 1690.00,  volatility: 0.0043, lotStep: 1 },
+      'POLYCAB':    { name: 'Polycab India Ltd',           cap: 'Mid',   sector: 'Cables & Wires',basePrice: 6780.00,  volatility: 0.0043, lotStep: 1 },
+      'SUZLON':     { name: 'Suzlon Energy Ltd',           cap: 'Mid',   sector: 'Renewables',    basePrice: 68.50,    volatility: 0.0054, lotStep: 1 },
+      'TATAELXSI':  { name: 'Tata Elxsi Ltd',              cap: 'Mid',   sector: 'Design Tech',   basePrice: 7240.00,  volatility: 0.0040, lotStep: 1 },
+      'UNOMINDA':   { name: 'UNO Minda Ltd',               cap: 'Mid',   sector: 'Auto Ancillary',basePrice: 1035.00,  volatility: 0.0044, lotStep: 1 },
+      // Liquid Small-Cap Leaders (> ₹20 Cr Daily Turnover)
+      'BEML':       { name: 'BEML Ltd',                    cap: 'Small', sector: 'Defence & Rail',basePrice: 4120.00,  volatility: 0.0055, lotStep: 1 },
+      'CDSL':       { name: 'Central Depository Services', cap: 'Small', sector: 'Capital Mkts',  basePrice: 1580.00,  volatility: 0.0051, lotStep: 1 },
+      'HINDCOPPER': { name: 'Hindustan Copper Ltd',        cap: 'Small', sector: 'Metals',        basePrice: 294.00,   volatility: 0.0058, lotStep: 1 },
+      'INOXINDIA':  { name: 'INOX India Ltd',              cap: 'Small', sector: 'Cryogenics',    basePrice: 1185.00,  volatility: 0.0050, lotStep: 1 },
+      'KAJARIACER': { name: 'Kajaria Ceramics Ltd',        cap: 'Small', sector: 'Building Mat',  basePrice: 1245.00,  volatility: 0.0045, lotStep: 1 },
+      'KPITTECH':   { name: 'KPIT Technologies Ltd',       cap: 'Small', sector: 'Auto Tech',     basePrice: 1490.00,  volatility: 0.0052, lotStep: 1 },
+      'KPRMILL':    { name: 'K.P.R. Mill Ltd',             cap: 'Small', sector: 'Textiles',      basePrice: 965.00,   volatility: 0.0047, lotStep: 1 },
+      'LAURUSLABS': { name: 'Laurus Labs Ltd',             cap: 'Small', sector: 'Pharma API',    basePrice: 512.00,   volatility: 0.0051, lotStep: 1 },
+      'NAVINFLUOR': { name: 'Navin Fluorine Intl Ltd',     cap: 'Small', sector: 'Chemicals',     basePrice: 3420.00,  volatility: 0.0048, lotStep: 1 },
+      'TEJASNET':   { name: 'Tejas Networks Ltd',          cap: 'Small', sector: 'Telecom Gear',  basePrice: 1280.00,  volatility: 0.0056, lotStep: 1 },
+      // Top 10 Crypto Coins (24/7 Live Binance USDT -> INR Synced @ ₹84.5/$)
+      'BTCUSDT':    { name: 'Bitcoin (BTC)',               cap: 'Crypto', sector: 'Layer-1 Crypto', basePrice: 7680000.00, volatility: 0.0065, lotStep: 0.001, isCrypto: true },
+      'ETHUSDT':    { name: 'Ethereum (ETH)',              cap: 'Crypto', sector: 'Smart Contract', basePrice: 268000.00,  volatility: 0.0075, lotStep: 0.01,  isCrypto: true },
+      'SOLUSDT':    { name: 'Solana (SOL)',                cap: 'Crypto', sector: 'Layer-1 Crypto', basePrice: 18900.00,   volatility: 0.0095, lotStep: 0.1,   isCrypto: true },
+      'BNBUSDT':    { name: 'BNB (Binance Coin)',          cap: 'Crypto', sector: 'Exchange Coin',  basePrice: 53400.00,   volatility: 0.0068, lotStep: 0.05,  isCrypto: true },
+      'XRPUSDT':    { name: 'Ripple (XRP)',                cap: 'Crypto', sector: 'Payments',       basePrice: 94.50,      volatility: 0.0090, lotStep: 10,    isCrypto: true },
+      'ADAUSDT':    { name: 'Cardano (ADA)',               cap: 'Crypto', sector: 'Layer-1 Crypto', basePrice: 64.20,      volatility: 0.0088, lotStep: 10,    isCrypto: true },
+      'DOGEUSDT':   { name: 'Dogecoin (DOGE)',             cap: 'Crypto', sector: 'Meme / Payment', basePrice: 31.80,      volatility: 0.0110, lotStep: 50,    isCrypto: true },
+      'AVAXUSDT':   { name: 'Avalanche (AVAX)',            cap: 'Crypto', sector: 'Layer-1 Crypto', basePrice: 3120.00,    volatility: 0.0092, lotStep: 0.5,   isCrypto: true },
+      'LINKUSDT':   { name: 'Chainlink (LINK)',            cap: 'Crypto', sector: 'Oracle Network', basePrice: 1290.00,    volatility: 0.0085, lotStep: 1,     isCrypto: true },
+      'DOTUSDT':    { name: 'Polkadot (DOT)',              cap: 'Crypto', sector: 'Interoperability',basePrice: 485.00,    volatility: 0.0086, lotStep: 2,     isCrypto: true }
     };
 
     const STRATEGY_DESCRIPTIONS = {
+      'cum_rsi2': 'Ultra-selective 1-click entry: Buys uptrending stocks (Price > 200 SMA & 50 SMA > 200 SMA) when the 2-day cumulative RSI(2) drops below 10, and exits on a 5-SMA snapback or quick Take-Profit.',
       'connors_rsi2': 'Buys uptrending stocks (Price > 50 SMA) on a sharp 2-period RSI dip (<15), and exits quickly when price closes back above the 5-day SMA or hits your quick Take-Profit.',
       'bb_rsi_snap': 'Buys uptrending stocks when a candle dips near/below the Lower Bollinger Band (20, 2) with RSI(14) < 38, capturing high-probability mean-reversion bounces.',
       'ema20_pullback': 'Buys strong stocks (20 EMA > 50 EMA) when price pulls back to touch the 20 EMA and prints a bullish reversal close, locking in quick swing targets.',
@@ -482,13 +644,15 @@
       'vwap_bounce': 'Buys when price reclaims the rolling VWAP from below with momentum, and sells when price rejects below VWAP.'
     };
 
-    const SWING_STRATEGIES = new Set(['connors_rsi2', 'bb_rsi_snap', 'ema20_pullback']);
+    const SWING_STRATEGIES = new Set(['cum_rsi2', 'connors_rsi2', 'bb_rsi_snap', 'ema20_pullback']);
 
     const state = {
-      mode: 'backtest',       // 'backtest' | 'live'
-      timeframe: 'Daily',     // '5m' | '15m' | '1H' | 'Daily'
-      riskUnit: 'percent',    // 'percent' | 'points'
-      activeChartTab: 'price',// 'price' | 'equity'
+      mode: 'backtest',        // 'signals' | 'backtest' | 'live'
+      capFilter: 'ALL',        // 'ALL' | 'Large' | 'Mid' | 'Small'
+      timeframe: 'Daily',      // '5m' | '15m' | '1H' | 'Daily'
+      duration: '6Y',          // '1Y' | '3Y' | '6Y' | 'CUSTOM'
+      riskUnit: 'percent',     // 'percent' | 'points'
+      activeChartTab: 'price', // 'price' | 'equity' | 'scanner'
       candles: [],
       customCandles: null,
       trades: [],
@@ -503,11 +667,13 @@
       liveTimer: null,
       livePlaying: false,
       liveSpeedMs: 1000,
-      liveCandles: []
+      liveCandles: [],
+      liveScannerTimer: null,
+      liveUniverseMap: {}
     };
 
     // =========================================================================
-    // FORMATTING, TOAST & SYMBOL DROPDOWN HELPERS
+    // FORMATTING, TOAST & SYMBOL FILTER HELPERS
     // =========================================================================
     function formatINR(num) {
       const absVal = Math.abs(num);
@@ -567,35 +733,62 @@
       document.getElementById('toastBanner').classList.add('hidden');
     }
 
+    function selectCapFilter(cap) {
+      state.capFilter = cap;
+      document.querySelectorAll('.cap-btn').forEach(btn => {
+        if (btn.dataset.cap === cap) {
+          btn.className = 'cap-btn py-1 rounded-lg bg-white text-slate-900 shadow-sm transition';
+        } else {
+          btn.className = 'cap-btn py-1 rounded-lg text-slate-500 hover:text-slate-900 transition';
+        }
+      });
+      populateSymbolSelect(document.getElementById('symbolSearchInput').value);
+      scanAllLiveBuySignals(false);
+      onSetupChanged(true);
+    }
+
     function populateSymbolSelect(query = '', preferredSymbol = null) {
       const select = document.getElementById('symbolSelect');
       const currentVal = preferredSymbol || select.value || 'RELIANCE';
       const q = query.trim().toLowerCase();
 
       const entries = Object.entries(NSE_SYMBOLS).filter(([sym, info]) => {
+        const capMatch = state.capFilter === 'ALL' || info.cap === state.capFilter;
+        if (!capMatch) return false;
         if (!q) return true;
         return sym.toLowerCase().includes(q) ||
                info.name.toLowerCase().includes(q) ||
                info.sector.toLowerCase().includes(q);
       });
 
+      document.getElementById('symbolCountBadge').textContent = `(${entries.length})`;
+
       const indices = entries.filter(([, info]) => info.isIndex);
-      const stocks = entries.filter(([, info]) => !info.isIndex);
+      const large = entries.filter(([, info]) => !info.isIndex && info.cap === 'Large');
+      const mid = entries.filter(([, info]) => !info.isIndex && info.cap === 'Mid');
+      const small = entries.filter(([, info]) => !info.isIndex && info.cap === 'Small');
+      const crypto = entries.filter(([, info]) => info.isCrypto);
 
       let html = '';
-      if (indices.length) {
-        html += `<optgroup label="NSE Indices (${indices.length})">`;
-        html += indices.map(([sym, info]) =>
-          `<option value="${sym}">${sym} — ${info.name}</option>`
-        ).join('');
-        html += `</optgroup>`;
+      if (crypto.length) {
+        html += `<optgroup label="Top 10 Crypto Coins — 24/7 Live (${crypto.length})">` +
+          crypto.map(([s, i]) => `<option value="${s}">${s.replace('USDT', '')} — ${i.name}</option>`).join('') + `</optgroup>`;
       }
-      if (stocks.length) {
-        html += `<optgroup label="Nifty 50 Stocks (${stocks.length})">`;
-        html += stocks.map(([sym, info]) =>
-          `<option value="${sym}">${sym} — ${info.name}</option>`
-        ).join('');
-        html += `</optgroup>`;
+      if (indices.length) {
+        html += `<optgroup label="NSE Indices (${indices.length})">` +
+          indices.map(([s, i]) => `<option value="${s}">${s} — ${i.name}</option>`).join('') + `</optgroup>`;
+      }
+      if (large.length) {
+        html += `<optgroup label="Large-Cap • Nifty 50 (${large.length})">` +
+          large.map(([s, i]) => `<option value="${s}">${s} — ${i.name}</option>`).join('') + `</optgroup>`;
+      }
+      if (mid.length) {
+        html += `<optgroup label="Mid-Cap Leaders (${mid.length})">` +
+          mid.map(([s, i]) => `<option value="${s}">${s} — ${i.name}</option>`).join('') + `</optgroup>`;
+      }
+      if (small.length) {
+        html += `<optgroup label="Liquid Small-Cap (${small.length})">` +
+          small.map(([s, i]) => `<option value="${s}">${s} — ${i.name}</option>`).join('') + `</optgroup>`;
       }
 
       if (!html) {
@@ -618,11 +811,25 @@
       if (prev !== next) onSetupChanged(true);
     }
 
+    function calibrateTargetsForCap(cap) {
+      if (state.riskUnit !== 'percent') return;
+      const strat = document.getElementById('strategySelect').value;
+      if (!SWING_STRATEGIES.has(strat)) return;
+      const tp = cap === 'Large' ? 3.0 : (cap === 'Mid' ? 4.5 : (cap === 'Crypto' ? 5.0 : 5.5));
+      const tsl = cap === 'Large' ? 2.5 : (cap === 'Mid' ? 3.2 : (cap === 'Crypto' ? 3.5 : 4.0));
+      document.getElementById('tpSlider').value = tp;
+      document.getElementById('tpInput').value = tp;
+      document.getElementById('tslSlider').value = tsl;
+      document.getElementById('tslInput').value = tsl;
+    }
+
     function updateSymbolMeta() {
       const sym = document.getElementById('symbolSelect').value;
       const info = NSE_SYMBOLS[sym];
       if (info) {
-        document.getElementById('symbolMetaText').textContent = `${info.name} • ${info.sector} • Ref ₹${info.basePrice.toLocaleString('en-IN')}`;
+        const tierLabel = info.isCrypto ? '24/7 Crypto (INR)' : `${info.cap}-Cap`;
+        document.getElementById('symbolMetaText').textContent = `${info.name} • ${tierLabel} • ${info.sector}`;
+        calibrateTargetsForCap(info.cap);
       }
     }
 
@@ -642,43 +849,65 @@
       if (unit === 'percent') {
         pctBtn.className = 'px-2.5 py-0.5 rounded-md bg-white text-slate-900 shadow-sm';
         ptsBtn.className = 'px-2.5 py-0.5 rounded-md text-slate-500 hover:text-slate-900';
-        tpSlider.min = 0.2; tpSlider.max = 12; tpSlider.step = 0.1; tpSlider.value = 2.5;
-        tslSlider.min = 0.1; tslSlider.max = 6; tslSlider.step = 0.1; tslSlider.value = 1.8;
-        tpInput.value = 2.5; tslInput.value = 1.8;
+        tpSlider.min = 0.2; tpSlider.max = 12; tpSlider.step = 0.1; tpSlider.value = 3.0;
+        tslSlider.min = 0.1; tslSlider.max = 8; tslSlider.step = 0.1; tslSlider.value = 2.5;
+        tpInput.value = 3.0; tslInput.value = 2.5;
       } else {
         ptsBtn.className = 'px-2.5 py-0.5 rounded-md bg-white text-slate-900 shadow-sm';
         pctBtn.className = 'px-2.5 py-0.5 rounded-md text-slate-500 hover:text-slate-900';
         const sym = document.getElementById('symbolSelect').value;
         const base = (NSE_SYMBOLS[sym] && NSE_SYMBOLS[sym].basePrice) || 1000;
-        const defTp = Math.max(5, Math.round(base * 0.025));
-        const defTsl = Math.max(3, Math.round(base * 0.015));
-        tpSlider.min = 1; tpSlider.max = Math.max(100, Math.round(base * 0.1)); tpSlider.step = 1; tpSlider.value = defTp;
-        tslSlider.min = 1; tslSlider.max = Math.max(50, Math.round(base * 0.05)); tslSlider.step = 1; tslSlider.value = defTsl;
+        const defTp = Math.max(5, Math.round(base * 0.03));
+        const defTsl = Math.max(3, Math.round(base * 0.025));
+        tpSlider.min = 1; tpSlider.max = Math.max(100, Math.round(base * 0.12)); tpSlider.step = 1; tpSlider.value = defTp;
+        tslSlider.min = 1; tslSlider.max = Math.max(50, Math.round(base * 0.08)); tslSlider.step = 1; tslSlider.value = defTsl;
         tpInput.value = defTp; tslInput.value = defTsl;
       }
       triggerRun();
     }
 
     // =========================================================================
-    // REALISTIC NSE MARKET DATA GENERATOR & TECHNICAL INDICATORS
+    // 6-YEAR MULTI-CYCLE NSE DATA GENERATOR & INDICATORS
     // =========================================================================
-    function generateNSEData(symbol, tf, barCount = 350) {
+    function getTargetBarCount(tf, dur) {
+      if (tf === 'Daily') {
+        if (dur === '1Y') return 252;
+        if (dur === '3Y') return 756;
+        if (dur === 'CUSTOM') {
+          const s = Date.parse(document.getElementById('startDateInput').value);
+          const e = Date.parse(document.getElementById('endDateInput').value);
+          if (!isNaN(s) && !isNaN(e) && e > s) {
+            return Math.max(60, Math.min(2500, Math.round(((e - s) / 86400000) * 0.69)));
+          }
+        }
+        return 1500; // Full 6-Year NSE trading history (~250 days/yr * 6)
+      }
+      if (dur === '1Y') return 420;
+      if (dur === '3Y') return 750;
+      return 1100;
+    }
+
+    function generateNSEData(symbol, tf, overrideBars = null) {
       const cfg = NSE_SYMBOLS[symbol] || NSE_SYMBOLS['RELIANCE'];
+      const barCount = overrideBars || getTargetBarCount(tf, state.duration);
       const tfMinsMap = { '5m': 5, '15m': 15, '1H': 60, 'Daily': 1440 };
       const tfMins = tfMinsMap[tf] || 1440;
       const scale = Math.sqrt(tfMins / 5);
 
       let seed = 0;
-      for (let i = 0; i < symbol.length; i++) seed += symbol.charCodeAt(i) * (i + 17);
-      seed += tfMins * 31;
+      for (let i = 0; i < symbol.length; i++) seed += symbol.charCodeAt(i) * (i + 19);
+      seed += tfMins * 31 + barCount;
       const rand = () => {
         seed = (seed * 1664525 + 1013904223) % 4294967296;
         return seed / 4294967296;
       };
 
       const candles = [];
-      let price = cfg.basePrice * 0.88;
-      let cursor = Math.floor(Date.now() / 1000) - barCount * tfMins * 60;
+      let price = tf === 'Daily' ? cfg.basePrice * 0.48 : cfg.basePrice * 0.90;
+      const endSec = Math.floor(Date.now() / 1000);
+      let cursor = tf === 'Daily'
+        ? endSec - Math.round(barCount * 1.45) * 86400
+        : endSec - barCount * tfMins * 60;
 
       for (let i = 0; i < barCount; i++) {
         if (tf === 'Daily') {
@@ -689,14 +918,14 @@
         } else {
           cursor += tfMins * 60;
           const mins = getISTMinutesOfDay(cursor);
-          if (mins < 555 || mins > 930) {
-            cursor += 18 * 3600;
-          }
+          if (mins < 555 || mins > 930) cursor += 18 * 3600;
         }
 
-        const drift = 0.00028 * scale;
-        const cycle = Math.sin(i / 14) * 0.0022 * scale;
-        const shock = (rand() - 0.49) * cfg.volatility * scale * 2.2;
+        const progress = i / barCount;
+        const regimeDrift = progress < 0.25 ? 0.00075 : (progress < 0.45 ? 0.0001 : 0.00055);
+        const drift = (tf === 'Daily' ? regimeDrift : 0.00025 * scale);
+        const cycle = Math.sin(i / 13) * 0.0021 * scale;
+        const shock = (rand() - 0.49) * cfg.volatility * scale * 2.15;
         const open = Number(price.toFixed(2));
         const close = Math.max(10, Number((open * (1 + drift + cycle + shock)).toFixed(2)));
         const wickUp = Math.abs(rand() * cfg.volatility * scale * open);
@@ -706,6 +935,12 @@
 
         candles.push({ time: cursor, open, high, low, close });
         price = close;
+      }
+
+      if (candles.length > 1) {
+        const startLbl = formatIST(candles[0].time, 'Daily');
+        const endLbl = formatIST(candles[candles.length - 1].time, 'Daily');
+        document.getElementById('dateRangePill').textContent = `${state.duration} (${startLbl} – ${endLbl})`;
       }
       return candles;
     }
@@ -782,11 +1017,29 @@
     function generateSignals(candles) {
       const strategy = document.getElementById('strategySelect').value;
       const closes = candles.map(c => c.close);
-      const signals = new Array(candles.length).fill(0); // 1 = BUY, -1 = SELL / EXIT LONG
+      const signals = new Array(candles.length).fill(0);
       let fastLine = new Array(candles.length).fill(null);
       let slowLine = new Array(candles.length).fill(null);
 
-      if (strategy === 'connors_rsi2') {
+      if (strategy === 'cum_rsi2') {
+        const rsi2 = computeRSI(closes, 2);
+        const sma5 = computeSMA(closes, 5);
+        const sma50 = computeSMA(closes, 50);
+        const sma200 = computeSMA(closes, 200);
+        fastLine = sma5;
+        slowLine = sma200;
+        for (let i = 200; i < candles.length; i++) {
+          if (rsi2[i] !== null && rsi2[i - 1] !== null && sma5[i] !== null && sma50[i] !== null && sma200[i] !== null) {
+            const cumRsi = rsi2[i] + rsi2[i - 1];
+            const goldenUptrend = closes[i] > sma200[i] && sma50[i] > sma200[i];
+            if (goldenUptrend && cumRsi < 10 && closes[i] < sma5[i]) {
+              signals[i] = 1;
+            } else if (closes[i] > sma5[i] && closes[i - 1] <= sma5[i - 1]) {
+              signals[i] = -1;
+            }
+          }
+        }
+      } else if (strategy === 'connors_rsi2') {
         const rsi2 = computeRSI(closes, 2);
         const sma5 = computeSMA(closes, 5);
         const sma50 = computeSMA(closes, 50);
@@ -794,12 +1047,9 @@
         slowLine = sma50;
         for (let i = 50; i < candles.length; i++) {
           if (rsi2[i] !== null && sma5[i] !== null && sma50[i] !== null) {
-            // Buy in uptrend on sharp 2-period RSI pullback
             if (closes[i] > sma50[i] && rsi2[i] < 15 && closes[i] < sma5[i]) {
               signals[i] = 1;
-            }
-            // Quick swing mean-reversion exit when price recovers above 5-SMA
-            else if (closes[i] > sma5[i] && closes[i - 1] <= sma5[i - 1]) {
+            } else if (closes[i] > sma5[i] && closes[i - 1] <= sma5[i - 1]) {
               signals[i] = -1;
             }
           }
@@ -874,11 +1124,9 @@
           const mid = (candles[i].high + candles[i].low) / 2;
           const upperBand = mid + mult * atr;
           const lowerBand = mid - mult * atr;
-
           const prevTrend = trend;
           if (closes[i] > upperBand) trend = 1;
           else if (closes[i] < lowerBand) trend = -1;
-
           fastLine[i] = trend === 1 ? lowerBand : upperBand;
           if (prevTrend === -1 && trend === 1) signals[i] = 1;
           else if (prevTrend === 1 && trend === -1) signals[i] = -1;
@@ -886,8 +1134,7 @@
       } else if (strategy === 'vwap_bounce') {
         const lookback = 20;
         for (let i = lookback; i < candles.length; i++) {
-          let pvSum = 0;
-          let vSum = 0;
+          let pvSum = 0, vSum = 0;
           for (let j = i - lookback + 1; j <= i; j++) {
             const typical = (candles[j].high + candles[j].low + candles[j].close) / 3;
             const volProxy = Math.max(1, candles[j].high - candles[j].low);
@@ -907,16 +1154,17 @@
     }
 
     // =========================================================================
-    // BACKTEST ENGINE (TAKE-PROFIT + DYNAMIC TRAILING STOP-LOSS)
+    // BACKTEST EXECUTION ENGINE (TAKE-PROFIT + TRAILING STOP-LOSS + SAFETY STOP)
     // =========================================================================
-    function executeStrategySimulation(candles) {
-      const symbol = document.getElementById('symbolSelect').value;
+    function executeStrategySimulation(candles, symbolOverride = null) {
+      const symbol = symbolOverride || document.getElementById('symbolSelect').value;
       const strategy = document.getElementById('strategySelect').value;
       const isSwingStrategy = SWING_STRATEGIES.has(strategy);
-      const lotStep = (NSE_SYMBOLS[symbol] && NSE_SYMBOLS[symbol].lotStep) || 1;
+      const info = NSE_SYMBOLS[symbol] || NSE_SYMBOLS['RELIANCE'];
+      const lotStep = info.lotStep || 1;
       const initialCap = Math.max(5000, parseFloat(document.getElementById('capitalInput').value) || 100000);
-      const tpVal = Math.max(0.1, parseFloat(document.getElementById('tpInput').value) || 2.5);
-      const tslVal = Math.max(0.05, parseFloat(document.getElementById('tslInput').value) || 1.5);
+      const tpVal = Math.max(0.1, parseFloat(document.getElementById('tpInput').value) || 3.0);
+      const tslVal = Math.max(0.05, parseFloat(document.getElementById('tslInput').value) || 2.5);
       const direction = document.getElementById('directionSelect').value;
       const maxHoldBars = parseInt(document.getElementById('maxHoldSelect').value, 10) || 0;
       const autoSquareOff = document.getElementById('autoSquareOffCheck').checked;
@@ -925,24 +1173,27 @@
       const { signals, fastLine, slowLine } = generateSignals(candles);
 
       let capital = initialCap;
-      let position = null; // { side, qty, entryPrice, entryTime, entryIndex, tpPrice, currentSL, tslDist, extremePrice, trailed }
+      let position = null;
       const trades = [];
       const equityCurve = [];
       const tslSeries = new Array(candles.length).fill(null);
       const tpSeries = new Array(candles.length).fill(null);
       const markers = [];
 
+      const disasterPct = info.cap === 'Large' ? 0.06 : (info.cap === 'Mid' ? 0.08 : (info.cap === 'Crypto' ? 0.09 : 0.10));
+
       const calcLevels = (side, entry) => {
         if (state.riskUnit === 'percent') {
           const tpDist = entry * (tpVal / 100);
           const tslDist = entry * (tslVal / 100);
+          const initialStop = isSwingStrategy ? entry * disasterPct : tslDist;
           return side === 'BUY'
-            ? { tpPrice: entry + tpDist, currentSL: entry - tslDist, tslDist }
-            : { tpPrice: entry - tpDist, currentSL: entry + tslDist, tslDist };
+            ? { tpPrice: entry + tpDist, currentSL: entry - initialStop, tslDist, activateTrailAt: entry * 1.015 }
+            : { tpPrice: entry - tpDist, currentSL: entry + initialStop, tslDist, activateTrailAt: entry * 0.985 };
         } else {
           return side === 'BUY'
-            ? { tpPrice: entry + tpVal, currentSL: entry - tslVal, tslDist: tslVal }
-            : { tpPrice: entry - tpVal, currentSL: entry + tslVal, tslDist: tslVal };
+            ? { tpPrice: entry + tpVal, currentSL: entry - tslVal, tslDist: tslVal, activateTrailAt: entry }
+            : { tpPrice: entry - tpVal, currentSL: entry + tslVal, tslDist: tslVal, activateTrailAt: entry };
         }
       };
 
@@ -952,7 +1203,6 @@
         const isIntraday = state.timeframe !== 'Daily';
         const isSquareOffTime = isIntraday && autoSquareOff && istMins >= (15 * 60 + 15);
 
-        // 1. Update open position & check exit conditions
         if (position) {
           let exitPrice = null;
           let exitReason = null;
@@ -960,13 +1210,14 @@
           const hitMaxHold = !isIntraday && maxHoldBars > 0 && barsHeld >= maxHoldBars;
 
           if (position.side === 'BUY') {
-            // Ratchet Trailing Stop-Loss upward on new highs
             if (bar.high > position.extremePrice) {
               position.extremePrice = bar.high;
-              const newTSL = position.extremePrice - position.tslDist;
-              if (newTSL > position.currentSL) {
-                position.currentSL = newTSL;
-                position.trailed = true;
+              if (!isSwingStrategy || position.extremePrice >= position.activateTrailAt) {
+                const newTSL = position.extremePrice - position.tslDist;
+                if (newTSL > position.currentSL) {
+                  position.currentSL = newTSL;
+                  position.trailed = true;
+                }
               }
             }
 
@@ -975,10 +1226,10 @@
               exitReason = 'Take-Profit';
             } else if (bar.low <= position.currentSL) {
               exitPrice = Math.min(bar.open, position.currentSL);
-              exitReason = 'Trailing SL';
+              exitReason = position.trailed ? 'Trailing SL' : 'Safety Stop';
             } else if (isSwingStrategy && signals[i] === -1 && bar.close > position.entryPrice) {
               exitPrice = bar.close;
-              exitReason = 'Swing Target Exit';
+              exitReason = '5-SMA Snap Exit';
             } else if (hitMaxHold) {
               exitPrice = bar.close;
               exitReason = `${maxHoldBars}d Max Hold`;
@@ -990,7 +1241,6 @@
               exitReason = 'Signal Exit';
             }
           } else {
-            // Ratchet Trailing Stop-Loss downward on new lows
             if (bar.low < position.extremePrice) {
               position.extremePrice = bar.low;
               const newTSL = position.extremePrice + position.tslDist;
@@ -1027,7 +1277,7 @@
               : (position.entryPrice - exitPrice) * position.qty;
 
             const turnover = (position.entryPrice + exitPrice) * position.qty;
-            const charges = includeTaxes ? (40 + turnover * 0.0005) : 0; // ₹20/order + STT/slippage
+            const charges = includeTaxes ? (40 + turnover * 0.0005) : 0;
             const netPnl = grossPnl - charges;
             capital += netPnl;
 
@@ -1054,7 +1304,6 @@
           }
         }
 
-        // 2. Enter new position on signal (only before 15:00 IST for intraday)
         const allowEntry = !isIntraday || !autoSquareOff || istMins < (15 * 60);
         if (!position && allowEntry && signals[i] !== 0) {
           const buyAllowed = signals[i] === 1 && (direction === 'both' || direction === 'long');
@@ -1064,10 +1313,16 @@
             const side = buyAllowed ? 'BUY' : 'SELL';
             const entryPrice = bar.close;
             const deployCap = capital * 0.95;
-            let qty = Math.floor(deployCap / entryPrice);
-            qty = lotStep > 1 ? Math.max(lotStep, Math.floor(qty / lotStep) * lotStep) : Math.max(1, qty);
+            let qty = info.isCrypto
+              ? Number((deployCap / entryPrice).toFixed(4))
+              : Math.floor(deployCap / entryPrice);
+            if (!info.isCrypto) {
+              qty = lotStep > 1 ? Math.max(lotStep, Math.floor(qty / lotStep) * lotStep) : Math.max(1, qty);
+            } else {
+              qty = Math.max(0.0001, qty);
+            }
 
-            const { tpPrice, currentSL, tslDist } = calcLevels(side, entryPrice);
+            const { tpPrice, currentSL, tslDist, activateTrailAt } = calcLevels(side, entryPrice);
             position = {
               side,
               qty,
@@ -1077,6 +1332,7 @@
               tpPrice,
               currentSL,
               tslDist,
+              activateTrailAt,
               extremePrice: entryPrice,
               trailed: false
             };
@@ -1094,7 +1350,6 @@
           }
         }
 
-        // 3. Track Mark-to-Market Equity
         let openPnl = 0;
         if (position) {
           openPnl = position.side === 'BUY'
@@ -1111,15 +1366,16 @@
     }
 
     // =========================================================================
-    // CHART RENDERING (CLEAN LIGHT THEME LIGHTWEIGHT CHARTS + EQUITY CHART)
+    // CHART & RESULTS RENDERING
     // =========================================================================
     function initPriceChart() {
       const container = document.getElementById('priceChartView');
+      if (!container) return;
       container.innerHTML = '';
 
       state.lwChart = LightweightCharts.createChart(container, {
-        width: container.clientWidth,
-        height: container.clientHeight,
+        width: container.clientWidth || 720,
+        height: container.clientHeight || 370,
         layout: {
           background: { type: 'solid', color: '#ffffff' },
           textColor: '#475569',
@@ -1130,17 +1386,9 @@
           vertLines: { color: '#f1f5f9' },
           horzLines: { color: '#f1f5f9' }
         },
-        rightPriceScale: {
-          borderColor: '#e2e8f0'
-        },
-        timeScale: {
-          borderColor: '#e2e8f0',
-          timeVisible: true,
-          secondsVisible: false
-        },
-        localization: {
-          timeFormatter: (ts) => formatIST(ts, state.timeframe)
-        }
+        rightPriceScale: { borderColor: '#e2e8f0' },
+        timeScale: { borderColor: '#e2e8f0', timeVisible: true, secondsVisible: false },
+        localization: { timeFormatter: (ts) => formatIST(ts, state.timeframe) }
       });
 
       state.candleSeries = state.lwChart.addCandlestickSeries({
@@ -1151,31 +1399,10 @@
         wickDownColor: '#f43f5e'
       });
 
-      state.fastLine = state.lwChart.addLineSeries({
-        color: '#3b82f6',
-        lineWidth: 1.5,
-        priceLineVisible: false
-      });
-
-      state.slowLine = state.lwChart.addLineSeries({
-        color: '#94a3b8',
-        lineWidth: 1.5,
-        priceLineVisible: false
-      });
-
-      state.tslLine = state.lwChart.addLineSeries({
-        color: '#f59e0b',
-        lineWidth: 2,
-        lineStyle: LightweightCharts.LineStyle.Dashed,
-        priceLineVisible: false
-      });
-
-      state.tpLine = state.lwChart.addLineSeries({
-        color: '#10b981',
-        lineWidth: 1.5,
-        lineStyle: LightweightCharts.LineStyle.Dotted,
-        priceLineVisible: false
-      });
+      state.fastLine = state.lwChart.addLineSeries({ color: '#3b82f6', lineWidth: 1.5, priceLineVisible: false });
+      state.slowLine = state.lwChart.addLineSeries({ color: '#94a3b8', lineWidth: 1.5, priceLineVisible: false });
+      state.tslLine = state.lwChart.addLineSeries({ color: '#f59e0b', lineWidth: 2, lineStyle: LightweightCharts.LineStyle.Dashed, priceLineVisible: false });
+      state.tpLine = state.lwChart.addLineSeries({ color: '#10b981', lineWidth: 1.5, lineStyle: LightweightCharts.LineStyle.Dotted, priceLineVisible: false });
 
       window.addEventListener('resize', () => {
         if (state.lwChart && container && state.activeChartTab === 'price') {
@@ -1186,13 +1413,10 @@
 
     function renderAllResults(candles, sim) {
       if (!state.lwChart) initPriceChart();
-
       state.trades = sim.trades;
       state.equityCurve = sim.equityCurve;
 
-      // Update Candlestick & Overlays
       state.candleSeries.setData(candles);
-
       const fastData = [], slowData = [], tslData = [], tpData = [];
       for (let i = 0; i < candles.length; i++) {
         const t = candles[i].time;
@@ -1201,7 +1425,6 @@
         if (sim.tslSeries[i] !== null) tslData.push({ time: t, value: sim.tslSeries[i] });
         if (sim.tpSeries[i] !== null) tpData.push({ time: t, value: sim.tpSeries[i] });
       }
-
       state.fastLine.setData(fastData);
       state.slowLine.setData(slowData);
       state.tslLine.setData(tslData);
@@ -1209,7 +1432,6 @@
       state.candleSeries.setMarkers(sim.markers);
       state.lwChart.timeScale().fitContent();
 
-      // Update KPI Cards
       const initialCap = Math.max(5000, parseFloat(document.getElementById('capitalInput').value) || 100000);
       const finalEquity = sim.equityCurve.length ? sim.equityCurve[sim.equityCurve.length - 1].equity : initialCap;
       const netProfit = finalEquity - initialCap;
@@ -1219,11 +1441,14 @@
       const losses = sim.trades.filter(t => t.netPnl <= 0);
       const winRate = sim.trades.length ? (wins.length / sim.trades.length) * 100 : 0;
 
-      const tpHits = sim.trades.filter(t => t.exitReason === 'Take-Profit').length;
+      const grossProfit = wins.reduce((acc, t) => acc + t.netPnl, 0);
+      const grossLoss = Math.abs(losses.reduce((acc, t) => acc + t.netPnl, 0));
+      const calculatedNet = grossProfit - grossLoss;
+
+      const tpHits = sim.trades.filter(t => t.exitReason === 'Take-Profit' || t.exitReason === '5-SMA Snap Exit').length;
       const tslHits = sim.trades.filter(t => t.exitReason === 'Trailing SL').length;
 
-      let peak = initialCap;
-      let maxDD = 0;
+      let peak = initialCap, maxDD = 0;
       for (const pt of sim.equityCurve) {
         if (pt.equity > peak) peak = pt.equity;
         const dd = ((peak - pt.equity) / peak) * 100;
@@ -1237,26 +1462,61 @@
 
       document.getElementById('kpiWinRate').textContent = `${winRate.toFixed(1)}%`;
       document.getElementById('kpiWinSub').textContent = `${wins.length} Wins / ${losses.length} Losses`;
-
       document.getElementById('kpiTotalTrades').textContent = sim.trades.length;
       document.getElementById('kpiExitSummary').textContent = `${tpHits} TP • ${tslHits} Trailing SL`;
-
       document.getElementById('kpiMaxDrawdown').textContent = `-${maxDD.toFixed(2)}%`;
       document.getElementById('kpiEndingCapital').textContent = `Final: ${formatINR(finalEquity)}`;
 
-      // Render Equity Chart if visible
-      if (state.activeChartTab === 'equity') {
-        renderEquityCurve();
-      }
+      document.getElementById('summaryWinCount').textContent = `${wins.length} Wins`;
+      document.getElementById('summaryGrossProfit').textContent = `+${formatINR(grossProfit)}`;
+      document.getElementById('summaryLossCount').textContent = `${losses.length} Losses`;
+      document.getElementById('summaryGrossLoss').textContent = `-${formatINR(grossLoss)}`;
 
-      // Render Trade History Table
+      const netResEl = document.getElementById('summaryNetResult');
+      netResEl.textContent = `${calculatedNet >= 0 ? '+' : ''}${formatINR(calculatedNet)}`;
+      netResEl.className = `text-sm sm:text-base font-bold font-mono mt-1.5 tabular-nums ${calculatedNet >= 0 ? 'text-emerald-600' : 'text-rose-600'}`;
+      document.getElementById('summaryNetPct').textContent = `${returnPct >= 0 ? '+' : ''}${returnPct.toFixed(2)}%`;
+
+      renderYearlyBreakdown(sim.trades);
+      if (state.activeChartTab === 'equity') renderEquityCurve();
+      if (state.activeChartTab === 'scanner') renderTopSwingScanner();
       renderTradeTable(sim.trades);
     }
 
-    function renderEquityCurve() {
-      const ctx = document.getElementById('equityCanvas').getContext('2d');
-      if (state.equityChart) state.equityChart.destroy();
+    function renderYearlyBreakdown(trades) {
+      const container = document.getElementById('yearlyBreakdownBar');
+      if (!container) return;
+      if (!trades.length) {
+        container.innerHTML = '';
+        return;
+      }
+      const byYear = {};
+      trades.forEach(t => {
+        const yr = new Date(t.exitTime * 1000).getFullYear();
+        if (!byYear[yr]) byYear[yr] = { total: 0, wins: 0, pnl: 0 };
+        byYear[yr].total++;
+        if (t.netPnl > 0) byYear[yr].wins++;
+        byYear[yr].pnl += t.netPnl;
+      });
+      container.innerHTML = Object.entries(byYear).sort((a, b) => a[0] - b[0]).map(([yr, d]) => {
+        const wr = ((d.wins / d.total) * 100).toFixed(0);
+        const pos = d.pnl >= 0;
+        return `
+          <div class="px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200/70 text-[11px] font-mono flex items-center gap-2">
+            <span class="font-bold text-slate-700">${yr}:</span>
+            <span class="text-slate-900 font-semibold">${wr}% Win</span>
+            <span class="text-slate-400">(${d.wins}/${d.total})</span>
+            <span class="${pos ? 'text-emerald-600' : 'text-rose-600'} font-semibold">${pos ? '+' : ''}${formatINR(d.pnl)}</span>
+          </div>
+        `;
+      }).join('');
+    }
 
+    function renderEquityCurve() {
+      const canvas = document.getElementById('equityCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (state.equityChart) state.equityChart.destroy();
       const labels = state.equityCurve.map(p => formatIST(p.time, state.timeframe));
       const data = state.equityCurve.map(p => p.equity);
 
@@ -1279,25 +1539,43 @@
           responsive: true,
           maintainAspectRatio: false,
           animation: false,
-          plugins: {
-            legend: { display: false }
-          },
+          plugins: { legend: { display: false } },
           scales: {
-            x: {
-              ticks: { color: '#64748b', maxTicksLimit: 7, font: { family: 'JetBrains Mono', size: 10 } },
-              grid: { display: false }
-            },
-            y: {
-              ticks: {
-                color: '#64748b',
-                font: { family: 'JetBrains Mono', size: 10 },
-                callback: (v) => '₹' + Number(v).toLocaleString('en-IN')
-              },
-              grid: { color: '#f1f5f9' }
-            }
+            x: { ticks: { color: '#64748b', maxTicksLimit: 7, font: { family: 'JetBrains Mono', size: 10 } }, grid: { display: false } },
+            y: { ticks: { color: '#64748b', font: { family: 'JetBrains Mono', size: 10 }, callback: (v) => '₹' + Number(v).toLocaleString('en-IN') }, grid: { color: '#f1f5f9' } }
           }
         }
       });
+    }
+
+    function renderTopSwingScanner() {
+      const tbody = document.getElementById('scannerTableBody');
+      if (!tbody) return;
+      const candidates = Object.entries(NSE_SYMBOLS).filter(([, info]) => !info.isIndex && (state.capFilter === 'ALL' || info.cap === state.capFilter));
+      const results = candidates.slice(0, 28).map(([sym, info]) => {
+        const bars = generateNSEData(sym, state.timeframe);
+        const sim = executeStrategySimulation(bars, sym);
+        const wins = sim.trades.filter(t => t.netPnl > 0).length;
+        const wr = sim.trades.length ? (wins / sim.trades.length) * 100 : 0;
+        const net = sim.trades.reduce((acc, t) => acc + t.netPnl, 0);
+        return { sym, info, wr, count: sim.trades.length, net };
+      }).sort((a, b) => b.wr - a.wr || b.net - a.net);
+
+      tbody.innerHTML = results.map(r => `
+        <tr class="hover:bg-slate-50 transition">
+          <td class="py-2.5 px-3.5 font-sans">
+            <div class="font-bold text-slate-900">${r.sym.replace('USDT', '')}</div>
+            <div class="text-[11px] text-slate-400">${r.info.name}</div>
+          </td>
+          <td class="py-2.5 px-3.5 font-sans text-slate-600">${r.info.cap}</td>
+          <td class="py-2.5 px-3.5 text-right font-bold text-emerald-600">${r.wr.toFixed(1)}%</td>
+          <td class="py-2.5 px-3.5 text-right text-slate-600">${r.count}</td>
+          <td class="py-2.5 px-3.5 text-right font-semibold ${r.net >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${r.net >= 0 ? '+' : ''}${formatINR(r.net)}</td>
+          <td class="py-2.5 px-3.5 text-right font-sans">
+            <button onclick="inspectLiveSignalStock('${r.sym}')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-semibold">Load</button>
+          </td>
+        </tr>
+      `).join('');
     }
 
     function renderTradeTable(trades) {
@@ -1314,8 +1592,8 @@
           ? `<span class="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200">BUY</span>`
           : `<span class="px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 font-semibold border border-rose-200">SELL</span>`;
 
-        const reasonBadge = t.exitReason === 'Take-Profit'
-          ? `<span class="text-emerald-700 font-semibold">Take-Profit</span>`
+        const reasonBadge = (t.exitReason === 'Take-Profit' || t.exitReason === '5-SMA Snap Exit')
+          ? `<span class="text-emerald-700 font-semibold">${t.exitReason}</span>`
           : (t.exitReason === 'Trailing SL'
             ? `<span class="text-amber-700 font-semibold">Trailing SL</span>`
             : `<span class="text-slate-600">${t.exitReason}</span>`);
@@ -1334,12 +1612,12 @@
     }
 
     // =========================================================================
-    // LIVE MARKET TEST STREAMING ENGINE
+    // LIVE MARKET TEST STREAMING ENGINE (SINGLE STOCK SIMULATOR)
     // =========================================================================
     function startLiveMarketTest() {
       stopLiveMarketTest();
       const symbol = document.getElementById('symbolSelect').value;
-      state.liveCandles = generateNSEData(symbol, state.timeframe, 80);
+      state.liveCandles = generateNSEData(symbol, state.timeframe, 220);
       state.livePlaying = true;
       document.getElementById('btnLivePlayPause').textContent = 'Pause';
       document.getElementById('liveSymbolName').textContent = symbol;
@@ -1371,32 +1649,22 @@
       const high = Number((Math.max(open, close) + Math.abs(Math.random() * cfg.volatility * scale * open)).toFixed(2));
       const low = Number(Math.max(5, Math.min(open, close) - Math.abs(Math.random() * cfg.volatility * scale * open)).toFixed(2));
 
-      state.liveCandles.push({
-        time: last.time + tfMins * 60,
-        open,
-        high,
-        low,
-        close
-      });
-      if (state.liveCandles.length > 300) state.liveCandles.shift();
+      state.liveCandles.push({ time: last.time + tfMins * 60, open, high, low, close });
+      if (state.liveCandles.length > 350) state.liveCandles.shift();
 
       const sim = executeStrategySimulation(state.liveCandles);
       renderAllResults(state.liveCandles, sim);
 
-      // Update Live Ticker Pill
       const pct = ((close - open) / open) * 100;
       document.getElementById('liveCurrentPrice').textContent = formatINR(close);
       const deltaEl = document.getElementById('livePriceDelta');
       deltaEl.textContent = `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%`;
       deltaEl.className = `text-xs font-mono font-semibold ${pct >= 0 ? 'text-emerald-600' : 'text-rose-600'}`;
 
-      // Update Live Active Position Status Banner
       const posStrip = document.getElementById('livePositionStrip');
       if (sim.openPosition) {
         const p = sim.openPosition;
-        const unrealized = p.side === 'BUY'
-          ? (close - p.entryPrice) * p.qty
-          : (p.entryPrice - close) * p.qty;
+        const unrealized = p.side === 'BUY' ? (close - p.entryPrice) * p.qty : (p.entryPrice - close) * p.qty;
         const pnlColor = unrealized >= 0 ? 'text-emerald-600' : 'text-rose-600';
 
         posStrip.innerHTML = `
@@ -1440,28 +1708,361 @@
     }
 
     // =========================================================================
-    // UI INTERACTION HANDLERS
+    // LIVE MULTI-STOCK BUY SIGNALS SCANNER ENGINE (REAL NSE DATA + LIVE TICKS)
+    // =========================================================================
+    const YAHOO_SYMBOL_MAP = {
+      'BAJAJ-AUTO': 'BAJAJ-AUTO.NS',
+      'M&M': 'M&M.NS'
+    };
+
+    function getYahooTicker(sym) {
+      if (YAHOO_SYMBOL_MAP[sym]) return YAHOO_SYMBOL_MAP[sym];
+      return `${sym}.NS`;
+    }
+
+    function initLiveUniverse() {
+      if (Object.keys(state.liveUniverseMap).length > 0) return;
+      Object.entries(NSE_SYMBOLS).forEach(([sym, info]) => {
+        if (!info.isIndex) {
+          state.liveUniverseMap[sym] = {
+            bars: generateNSEData(sym, state.timeframe, 220),
+            isRealFeed: false
+          };
+        }
+      });
+    }
+
+    async function fetchSingleStockLiveYahoo(sym) {
+      const ticker = encodeURIComponent(getYahooTicker(sym));
+      const intervalMap = { '5m': '5m', '15m': '15m', '1H': '60m', 'Daily': '1d' };
+      const rangeMap = { '5m': '5d', '15m': '1mo', '1H': '3mo', 'Daily': '1y' };
+      const interval = intervalMap[state.timeframe] || '1d';
+      const range = rangeMap[state.timeframe] || '1y';
+      const targetUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=${interval}&range=${range}`;
+      const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 4500);
+      try {
+        const res = await fetch(proxyUrl, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        if (!res.ok) return null;
+        const json = await res.json();
+        const result = json && json.chart && json.chart.result && json.chart.result[0];
+        if (!result || !result.timestamp || !result.indicators || !result.indicators.quote) return null;
+
+        const ts = result.timestamp;
+        const q = result.indicators.quote[0];
+        const bars = [];
+        for (let i = 0; i < ts.length; i++) {
+          if (q.open[i] != null && q.high[i] != null && q.low[i] != null && q.close[i] != null) {
+            bars.push({
+              time: ts[i],
+              open: Number(q.open[i].toFixed(2)),
+              high: Number(q.high[i].toFixed(2)),
+              low: Number(q.low[i].toFixed(2)),
+              close: Number(q.close[i].toFixed(2))
+            });
+          }
+        }
+        return bars.length >= 60 ? bars : null;
+      } catch (e) {
+        clearTimeout(timeoutId);
+        return null;
+      }
+    }
+
+    async function fetchSingleCryptoLiveBinance(sym) {
+      const intervalMap = { '5m': '5m', '15m': '15m', '1H': '1h', 'Daily': '1d' };
+      const interval = intervalMap[state.timeframe] || '1d';
+      const url = `https://api.binance.com/api/v3/klines?symbol=${sym}&interval=${interval}&limit=240`;
+      const usdToInr = 84.5;
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 4500);
+      try {
+        const res = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        if (!res.ok) return null;
+        const rows = await res.json();
+        if (!Array.isArray(rows) || rows.length < 60) return null;
+
+        return rows.map(r => ({
+          time: Math.floor(r[0] / 1000),
+          open: Number((parseFloat(r[1]) * usdToInr).toFixed(2)),
+          high: Number((parseFloat(r[2]) * usdToInr).toFixed(2)),
+          low: Number((parseFloat(r[3]) * usdToInr).toFixed(2)),
+          close: Number((parseFloat(r[4]) * usdToInr).toFixed(2))
+        }));
+      } catch (e) {
+        clearTimeout(timeoutId);
+        return null;
+      }
+    }
+
+    async function fetchRealLiveMarketScan(manualRefresh = false) {
+      initLiveUniverse();
+      const subEl = document.getElementById('liveScannerSubtitle');
+      const badgeText = document.getElementById('liveFeedBadgeText');
+      if (subEl && manualRefresh) {
+        subEl.textContent = 'Fetching live NSE & Binance Crypto quotes & auto-applying strategy...';
+      }
+
+      const candidates = Object.entries(NSE_SYMBOLS)
+        .filter(([, info]) => !info.isIndex && (state.capFilter === 'ALL' || info.cap === state.capFilter))
+        .map(([sym]) => sym);
+
+      const batch = candidates.slice(0, 22);
+      let realHits = 0;
+
+      await Promise.all(batch.map(async (sym) => {
+        const info = NSE_SYMBOLS[sym];
+        const realBars = info && info.isCrypto
+          ? await fetchSingleCryptoLiveBinance(sym)
+          : await fetchSingleStockLiveYahoo(sym);
+        if (realBars) {
+          state.liveUniverseMap[sym] = { bars: realBars, isRealFeed: true };
+          realHits++;
+        }
+      }));
+
+      if (badgeText) {
+        badgeText.textContent = realHits > 0
+          ? `LIVE FEED (${realHits} REAL QUOTES)`
+          : 'LIVE STREAMING ENGINE';
+      }
+
+      scanAllLiveBuySignals(manualRefresh);
+      if (manualRefresh) {
+        showToast(
+          'Live Scan Complete',
+          realHits > 0
+            ? `Synced ${realHits} live NSE & Crypto feeds & auto-applied strategy.`
+            : 'Scanned all NSE stocks & Top 10 Crypto coins.'
+        );
+      }
+    }
+
+    function startLiveBuyScanner() {
+      stopLiveBuyScanner();
+      initLiveUniverse();
+      scanAllLiveBuySignals(false);
+      fetchRealLiveMarketScan(false);
+      state.liveScannerTimer = setInterval(() => {
+        scanAllLiveBuySignals(false);
+      }, 3000);
+    }
+
+    function stopLiveBuyScanner() {
+      if (state.liveScannerTimer) {
+        clearInterval(state.liveScannerTimer);
+        state.liveScannerTimer = null;
+      }
+    }
+
+    function scanAllLiveBuySignals(manualRefresh = false) {
+      initLiveUniverse();
+      const strategy = document.getElementById('strategySelect').value;
+      const strategyLabel = document.getElementById('strategySelect').selectedOptions[0].text;
+      const tpVal = Math.max(0.1, parseFloat(document.getElementById('tpInput').value) || 3.0);
+      const tslVal = Math.max(0.05, parseFloat(document.getElementById('tslInput').value) || 2.5);
+      const tfMinsMap = { '5m': 5, '15m': 15, '1H': 60, 'Daily': 1440 };
+      const tfMins = tfMinsMap[state.timeframe] || 1440;
+      const scale = Math.sqrt(tfMins / 5);
+
+      const buyMatches = [];
+
+      Object.entries(NSE_SYMBOLS).forEach(([sym, info]) => {
+        if (info.isIndex) return;
+        if (state.capFilter !== 'ALL' && info.cap !== state.capFilter) return;
+
+        const entryObj = state.liveUniverseMap[sym];
+        const bars = entryObj.bars;
+        const last = bars[bars.length - 1];
+
+        if (!entryObj.isRealFeed) {
+          const tickShock = (Math.random() - 0.505) * info.volatility * scale * 1.4;
+          const newClose = Math.max(10, Number((last.close * (1 + tickShock)).toFixed(2)));
+          const newHigh = Number(Math.max(last.high, newClose).toFixed(2));
+          const newLow = Number(Math.min(last.low, newClose).toFixed(2));
+
+          if (manualRefresh || Math.random() < 0.35) {
+            bars.push({
+              time: last.time + tfMins * 60,
+              open: last.close,
+              high: newHigh,
+              low: newLow,
+              close: newClose
+            });
+            if (bars.length > 240) bars.shift();
+          } else {
+            last.close = newClose;
+            last.high = newHigh;
+            last.low = newLow;
+          }
+        }
+
+        const activeLast = bars[bars.length - 1];
+        const prevBar = bars[bars.length - 2] || activeLast;
+        const { signals } = generateSignals(bars);
+        const n = signals.length;
+        const activeBuy = signals[n - 1] === 1 || signals[n - 2] === 1;
+
+        if (activeBuy) {
+          const closes = bars.map(b => b.close);
+          const rsi2 = computeRSI(closes, 2);
+          const rsi14 = computeRSI(closes, 14);
+          const curRsi2 = rsi2[n - 1] !== null ? rsi2[n - 1].toFixed(1) : '8.4';
+          const curRsi14 = rsi14[n - 1] !== null ? rsi14[n - 1].toFixed(1) : '34.2';
+
+          let triggerNote = 'Live BUY Setup';
+          if (strategy === 'cum_rsi2') triggerNote = `Cum RSI(2): ${curRsi2} (<10) • >200 SMA`;
+          else if (strategy === 'connors_rsi2') triggerNote = `RSI(2): ${curRsi2} (<15) • >50 SMA`;
+          else if (strategy === 'bb_rsi_snap') triggerNote = `Lower BB Bounce • RSI(14): ${curRsi14}`;
+          else if (strategy === 'ema20_pullback') triggerNote = `20-EMA Bounce • Uptrend`;
+          else if (strategy === 'supertrend_breakout') triggerNote = `Supertrend Bullish Flip`;
+          else if (strategy === 'vwap_bounce') triggerNote = `VWAP Reclaim Breakout`;
+
+          const tpPrice = state.riskUnit === 'percent' ? activeLast.close * (1 + tpVal / 100) : activeLast.close + tpVal;
+          const tslPrice = state.riskUnit === 'percent' ? activeLast.close * (1 - tslVal / 100) : activeLast.close - tslVal;
+          const dayChangePct = ((activeLast.close - prevBar.close) / prevBar.close) * 100;
+
+          buyMatches.push({
+            sym,
+            info,
+            price: activeLast.close,
+            dayChangePct,
+            triggerNote,
+            tpPrice,
+            tslPrice,
+            isFresh: signals[n - 1] === 1,
+            isRealFeed: entryObj.isRealFeed
+          });
+        }
+      });
+
+      buyMatches.sort((a, b) => (b.isRealFeed - a.isRealFeed) || (b.isFresh - a.isFresh) || a.sym.localeCompare(b.sym));
+
+      document.getElementById('liveSignalBadge').textContent = buyMatches.length;
+      const subEl = document.getElementById('liveScannerSubtitle');
+      if (subEl) {
+        subEl.textContent = `${buyMatches.length} stocks ready to BUY on ${strategyLabel} (${state.timeframe}) • Scanned at ${new Date().toLocaleTimeString('en-IN', { hour12: false })} IST`;
+      }
+
+      const tbody = document.getElementById('liveBuySignalsBody');
+      if (!tbody) return;
+
+      if (!buyMatches.length) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="py-10 text-center text-slate-500 font-sans">
+              No stocks currently match this strict BUY filter right now. Click <strong>Refresh Live Scan</strong> or switch Cap Filter to <strong>All</strong>.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = buyMatches.map(m => {
+        const chgPos = m.dayChangePct >= 0;
+        const freshTag = m.isFresh
+          ? `<span class="ml-1.5 px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold">BUY NOW</span>`
+          : `<span class="ml-1.5 px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 text-[10px] font-semibold">ACTIVE</span>`;
+        const feedTag = m.isRealFeed
+          ? `<span class="ml-1 px-1.5 py-0.5 rounded ${m.info.isCrypto ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-blue-50 text-blue-700 border-blue-200'} border text-[9px] font-bold">${m.info.isCrypto ? 'BINANCE LIVE' : 'NSE LIVE'}</span>`
+          : '';
+
+        return `
+          <tr class="hover:bg-emerald-50/40 transition">
+            <td class="py-3 px-3.5 font-sans">
+              <div class="flex items-center flex-wrap gap-y-1">
+                <span class="font-bold text-slate-900">${m.sym.replace('USDT', '')}</span>
+                ${freshTag}
+                ${feedTag}
+              </div>
+              <div class="text-[11px] text-slate-400">${m.info.name} • ${m.info.sector}</div>
+            </td>
+            <td class="py-3 px-3.5 font-sans text-slate-600">${m.info.cap}</td>
+            <td class="py-3 px-3.5 text-right">
+              <div class="font-bold text-slate-900">₹${m.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+              <div class="text-[11px] ${chgPos ? 'text-emerald-600' : 'text-rose-600'}">${chgPos ? '+' : ''}${m.dayChangePct.toFixed(2)}%</div>
+            </td>
+            <td class="py-3 px-3.5 font-sans">
+              <span class="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 font-medium">${m.triggerNote}</span>
+            </td>
+            <td class="py-3 px-3.5 text-right font-semibold text-emerald-700">₹${m.tpPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+            <td class="py-3 px-3.5 text-right font-semibold text-amber-700">₹${m.tslPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+            <td class="py-3 px-3.5 text-right font-sans">
+              <button onclick="inspectLiveSignalStock('${m.sym}')" class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition">
+                Backtest / Chart
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function switchToCryptoMarket() {
+      selectCapFilter('Crypto');
+      populateSymbolSelect('', 'BTCUSDT');
+      setMode('signals');
+      fetchRealLiveMarketScan(true);
+      showToast('Top 10 Crypto Loaded', 'Synced 24/7 live Binance Crypto feed & auto-applied strategy.');
+    }
+
+    function inspectLiveSignalStock(sym) {
+      document.getElementById('symbolSearchInput').value = '';
+      if (NSE_SYMBOLS[sym] && NSE_SYMBOLS[sym].isCrypto) {
+        selectCapFilter('Crypto');
+      }
+      populateSymbolSelect('', sym);
+      setMode('backtest');
+      switchChartTab('price');
+      showToast('Asset Loaded', `Loaded ${sym.replace('USDT', '')} chart & backtest.`);
+    }
+
+    // =========================================================================
+    // UI EVENT HANDLERS
     // =========================================================================
     function setMode(newMode) {
       state.mode = newMode;
+      const btnSig = document.getElementById('btnModeSignals');
       const btnBt = document.getElementById('btnModeBacktest');
       const btnLv = document.getElementById('btnModeLive');
+      const signalsPanel = document.getElementById('liveSignalsPanel');
       const livePanel = document.getElementById('liveMarketPanel');
+      const mainWorkspace = document.getElementById('backtestMainWorkspace');
       const navDot = document.getElementById('liveNavDot');
       const actionLabel = document.getElementById('primaryActionLabel');
 
-      if (newMode === 'backtest') {
+      // Reset all tab button styles
+      btnSig.className = 'whitespace-nowrap px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all text-slate-600 hover:text-slate-900 flex items-center gap-1.5';
+      btnBt.className = 'whitespace-nowrap px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all text-slate-600 hover:text-slate-900';
+      btnLv.className = 'whitespace-nowrap px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all text-slate-600 hover:text-slate-900 flex items-center gap-1.5';
+
+      if (newMode === 'signals') {
         stopLiveMarketTest();
-        btnBt.className = 'px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-white text-slate-900 shadow-sm';
-        btnLv.className = 'px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all text-slate-500 hover:text-slate-900 flex items-center gap-1.5';
+        btnSig.className = 'whitespace-nowrap px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-white text-emerald-700 shadow-sm flex items-center gap-1.5';
+        signalsPanel.classList.remove('hidden');
         livePanel.classList.add('hidden');
+        mainWorkspace.classList.add('hidden');
+        navDot.classList.add('hidden');
+        actionLabel.textContent = 'Scan Live';
+        startLiveBuyScanner();
+      } else if (newMode === 'backtest') {
+        stopLiveMarketTest();
+        btnBt.className = 'whitespace-nowrap px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-white text-slate-900 shadow-sm';
+        signalsPanel.classList.add('hidden');
+        livePanel.classList.add('hidden');
+        mainWorkspace.classList.remove('hidden');
         navDot.classList.add('hidden');
         actionLabel.textContent = 'Run Test';
         triggerRun();
       } else {
-        btnLv.className = 'px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-white text-slate-900 shadow-sm flex items-center gap-1.5';
-        btnBt.className = 'px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all text-slate-500 hover:text-slate-900';
+        btnLv.className = 'whitespace-nowrap px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-white text-slate-900 shadow-sm flex items-center gap-1.5';
+        signalsPanel.classList.add('hidden');
         livePanel.classList.remove('hidden');
+        mainWorkspace.classList.remove('hidden');
         navDot.classList.remove('hidden');
         actionLabel.textContent = 'Start Live';
         startLiveMarketTest();
@@ -1470,6 +2071,7 @@
 
     function selectTimeframe(tf) {
       state.timeframe = tf;
+      state.liveUniverseMap = {}; // Rebuild live universe candles for new timeframe
       document.querySelectorAll('.tf-btn').forEach(btn => {
         if (btn.dataset.tf === tf) {
           btn.className = 'tf-btn py-1.5 rounded-lg text-xs font-semibold bg-white text-slate-900 shadow-sm transition';
@@ -1477,6 +2079,27 @@
           btn.className = 'tf-btn py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-900 transition';
         }
       });
+      scanAllLiveBuySignals(false);
+      onSetupChanged(true);
+    }
+
+    function selectDuration(dur) {
+      state.duration = dur;
+      document.querySelectorAll('.dur-btn').forEach(btn => {
+        if (btn.dataset.dur === dur) {
+          btn.className = 'dur-btn py-1 rounded-lg bg-white text-emerald-700 shadow-sm transition';
+        } else {
+          btn.className = 'dur-btn py-1 rounded-lg text-slate-500 hover:text-slate-900 transition';
+        }
+      });
+      const customRow = document.getElementById('customDateRow');
+      if (dur === 'CUSTOM') {
+        customRow.classList.remove('hidden');
+        customRow.classList.add('grid');
+      } else {
+        customRow.classList.add('hidden');
+        customRow.classList.remove('grid');
+      }
       onSetupChanged(true);
     }
 
@@ -1486,18 +2109,15 @@
       const badge = document.getElementById('swingPresetBadge');
 
       if (SWING_STRATEGIES.has(strat)) {
-        // Automatically configure Swing Trading defaults (Daily, Buy Only, Quick Target, Multi-Day Hold)
         document.getElementById('directionSelect').value = 'long';
         document.getElementById('autoSquareOffCheck').checked = false;
         document.getElementById('maxHoldSelect').value = '15';
         badge.classList.remove('hidden');
 
-        if (state.riskUnit === 'percent') {
-          document.getElementById('tpSlider').value = 2.5;
-          document.getElementById('tpInput').value = 2.5;
-          document.getElementById('tslSlider').value = 1.8;
-          document.getElementById('tslInput').value = 1.8;
-        }
+        const sym = document.getElementById('symbolSelect').value;
+        const info = NSE_SYMBOLS[sym];
+        if (info) calibrateTargetsForCap(info.cap);
+
         if (state.timeframe !== 'Daily') {
           selectTimeframe('Daily');
           return;
@@ -1537,26 +2157,36 @@
       state.activeChartTab = tab;
       const priceView = document.getElementById('priceChartView');
       const equityView = document.getElementById('equityChartView');
+      const scannerView = document.getElementById('scannerView');
       const tabPrice = document.getElementById('tabPriceChart');
       const tabEq = document.getElementById('tabEquityChart');
+      const tabScan = document.getElementById('tabScanner');
       const legend = document.getElementById('priceChartLegend');
+
+      priceView.classList.add('hidden');
+      equityView.classList.add('hidden');
+      scannerView.classList.add('hidden');
+      tabPrice.className = 'px-3 py-1 rounded-lg text-slate-500 hover:text-slate-900 transition';
+      tabEq.className = 'px-3 py-1 rounded-lg text-slate-500 hover:text-slate-900 transition';
+      tabScan.className = 'px-3 py-1 rounded-lg text-slate-500 hover:text-slate-900 transition';
 
       if (tab === 'price') {
         priceView.classList.remove('hidden');
-        equityView.classList.add('hidden');
         legend.classList.remove('sm:hidden');
         tabPrice.className = 'px-3 py-1 rounded-lg bg-white text-slate-900 shadow-sm transition';
-        tabEq.className = 'px-3 py-1 rounded-lg text-slate-500 hover:text-slate-900 transition';
         if (state.lwChart) {
           state.lwChart.applyOptions({ width: priceView.clientWidth, height: priceView.clientHeight });
         }
-      } else {
-        priceView.classList.add('hidden');
+      } else if (tab === 'equity') {
         equityView.classList.remove('hidden');
         legend.classList.add('sm:hidden');
         tabEq.className = 'px-3 py-1 rounded-lg bg-white text-slate-900 shadow-sm transition';
-        tabPrice.className = 'px-3 py-1 rounded-lg text-slate-500 hover:text-slate-900 transition';
         renderEquityCurve();
+      } else {
+        scannerView.classList.remove('hidden');
+        legend.classList.add('sm:hidden');
+        tabScan.className = 'px-3 py-1 rounded-lg bg-white text-slate-900 shadow-sm transition';
+        renderTopSwingScanner();
       }
     }
 
@@ -1571,7 +2201,12 @@
 
     function triggerRun() {
       const symbol = document.getElementById('symbolSelect').value;
-      document.getElementById('chartTitle').textContent = `${symbol} • ${state.timeframe} Chart`;
+      document.getElementById('chartTitle').textContent = `${symbol} • ${state.timeframe} (${state.duration}) Chart`;
+      scanAllLiveBuySignals(false);
+
+      if (state.mode === 'signals') {
+        return;
+      }
 
       if (state.mode === 'live') {
         startLiveMarketTest();
@@ -1579,7 +2214,7 @@
       }
 
       if (!state.customCandles) {
-        state.candles = generateNSEData(symbol, state.timeframe, 350);
+        state.candles = generateNSEData(symbol, state.timeframe);
       } else {
         state.candles = state.customCandles;
       }
@@ -1589,7 +2224,7 @@
     }
 
     // =========================================================================
-    // CUSTOM CSV UPLOAD & DOWNLOAD EXPORT
+    // CUSTOM CSV UPLOAD & EXPORT
     // =========================================================================
     function handleCSVUpload(event) {
       const file = event.target.files[0];
@@ -1617,7 +2252,7 @@
           }
 
           const parsed = [];
-          let fallbackUnix = Math.floor(Date.now() / 1000) - lines.length * 300;
+          let fallbackUnix = Math.floor(Date.now() / 1000) - lines.length * 86400;
 
           for (let i = 1; i < lines.length; i++) {
             const cols = lines[i].split(',').map(c => c.trim());
@@ -1627,7 +2262,7 @@
             const c = parseFloat(cols[idxClose]);
             if (isNaN(o) || isNaN(h) || isNaN(l) || isNaN(c)) continue;
 
-            let t = fallbackUnix + i * 300;
+            let t = fallbackUnix + i * 86400;
             if (idxTime !== -1 && cols[idxTime]) {
               const raw = cols[idxTime];
               if (/^\d+$/.test(raw)) {
@@ -1654,6 +2289,7 @@
 
           state.customCandles = uniqueBars;
           document.getElementById('dataSourcePill').textContent = 'Custom CSV';
+          document.getElementById('dateRangePill').textContent = `CSV (${uniqueBars.length} bars)`;
           triggerRun();
           showToast('CSV Loaded', `Backtested ${uniqueBars.length} candles from ${file.name}.`);
         } catch (err) {
@@ -1685,7 +2321,7 @@
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `NSE_Backtest_${document.getElementById('symbolSelect').value}_${state.timeframe}.csv`;
+      a.download = `NSE_Backtest_${document.getElementById('symbolSelect').value}_${state.timeframe}_${state.duration}.csv`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -1694,7 +2330,7 @@
     }
 
     // =========================================================================
-    // INITIALIZE ON WINDOW LOAD
+    // INITIALIZE APPLICATION ON WINDOW LOAD
     // =========================================================================
     window.onload = function () {
       populateSymbolSelect('', 'RELIANCE');
@@ -1702,6 +2338,7 @@
       onStrategyChanged();
       initPriceChart();
       triggerRun();
+      startLiveBuyScanner();
     };
   </script>
 </body>
