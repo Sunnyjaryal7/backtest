@@ -437,146 +437,118 @@
 
   <script>
     // =========================================================================
-    // 1. UNIVERSE CONFIGURATION (NSE LARGE/MID/SMALL + TOP 50 TRUSTED CRYPTO)
+    // 1. ASSET UNIVERSE (NSE LARGE/MID/SMALL + 50 TRUSTED CRYPTO COINS)
     // =========================================================================
-    let liveUsdToInr = 84.50;
-
     const NSE_SYMBOLS = {
-      // --- NSE INDICES ---
-      'NIFTY':      { name: 'NIFTY 50 Index',              cap: 'Large', sector: 'Index',         isIndex: true },
-      'BANKNIFTY':  { name: 'NIFTY Bank Index',            cap: 'Large', sector: 'Banking',       isIndex: true },
-
-      // --- NSE LARGE-CAP LEADERS ---
-      'RELIANCE':   { name: 'Reliance Industries Ltd',     cap: 'Large', sector: 'Energy' },
-      'TCS':        { name: 'Tata Consultancy Services',   cap: 'Large', sector: 'IT Services' },
-      'HDFCBANK':   { name: 'HDFC Bank Ltd',               cap: 'Large', sector: 'Banking' },
-      'ICICIBANK':  { name: 'ICICI Bank Ltd',              cap: 'Large', sector: 'Banking' },
-      'INFY':       { name: 'Infosys Ltd',                 cap: 'Large', sector: 'IT Services' },
-      'SBIN':       { name: 'State Bank of India',         cap: 'Large', sector: 'PSU Bank' },
-      'BHARTIARTL': { name: 'Bharti Airtel Ltd',           cap: 'Large', sector: 'Telecom' },
-      'LT':         { name: 'Larsen & Toubro Ltd',         cap: 'Large', sector: 'Infra' },
-      'ITC':        { name: 'ITC Ltd',                     cap: 'Large', sector: 'FMCG' },
-      'HINDUNILVR': { name: 'Hindustan Unilever Ltd',      cap: 'Large', sector: 'FMCG' },
-      'AXISBANK':   { name: 'Axis Bank Ltd',               cap: 'Large', sector: 'Banking' },
-      'KOTAKBANK':  { name: 'Kotak Mahindra Bank Ltd',     cap: 'Large', sector: 'Banking' },
-      'BAJFINANCE': { name: 'Bajaj Finance Ltd',           cap: 'Large', sector: 'NBFC' },
-      'MARUTI':     { name: 'Maruti Suzuki India Ltd',     cap: 'Large', sector: 'Auto' },
-      'M&M':        { name: 'Mahindra & Mahindra Ltd',     cap: 'Large', sector: 'Auto' },
-      'SUNPHARMA':  { name: 'Sun Pharmaceutical Ind',      cap: 'Large', sector: 'Pharma' },
-      'TITAN':      { name: 'Titan Company Ltd',           cap: 'Large', sector: 'Consumer' },
-      'TATASTEEL':  { name: 'Tata Steel Ltd',              cap: 'Large', sector: 'Metals' },
-      'JSWSTEEL':   { name: 'JSW Steel Ltd',               cap: 'Large', sector: 'Metals' },
-      'NTPC':       { name: 'NTPC Ltd',                    cap: 'Large', sector: 'Power' },
-      'POWERGRID':  { name: 'Power Grid Corp of India',    cap: 'Large', sector: 'Power' },
-      'COALINDIA':  { name: 'Coal India Ltd',              cap: 'Large', sector: 'Mining' },
-      'HCLTECH':    { name: 'HCL Technologies Ltd',        cap: 'Large', sector: 'IT Services' },
-      'WIPRO':      { name: 'Wipro Ltd',                   cap: 'Large', sector: 'IT Services' },
-      'BEL':        { name: 'Bharat Electronics Ltd',      cap: 'Large', sector: 'Defence' },
-      'HAL':        { name: 'Hindustan Aeronautics Ltd',   cap: 'Large', sector: 'Defence' },
-      'TRENT':      { name: 'Trent Ltd',                   cap: 'Large', sector: 'Retail' },
-      'INDIGO':     { name: 'InterGlobe Aviation Ltd',     cap: 'Large', sector: 'Aviation' },
-      'CIPLA':      { name: 'Cipla Ltd',                   cap: 'Large', sector: 'Pharma' },
-      'ASIANPAINT': { name: 'Asian Paints Ltd',            cap: 'Large', sector: 'Consumer' },
-      'GRASIM':     { name: 'Grasim Industries Ltd',       cap: 'Large', sector: 'Materials' },
-      'EICHERMOT':  { name: 'Eicher Motors Ltd',           cap: 'Large', sector: 'Auto' },
-
-      // --- NSE MID-CAP HIGH-BETA LEADERS ---
-      'CGPOWER':    { name: 'CG Power & Industrial Sol',   cap: 'Mid',   sector: 'Capital Goods' },
-      'CUMMINSIND': { name: 'Cummins India Ltd',           cap: 'Mid',   sector: 'Capital Goods' },
-      'POLYCAB':    { name: 'Polycab India Ltd',           cap: 'Mid',   sector: 'Cables' },
-      'PERSISTENT': { name: 'Persistent Systems Ltd',      cap: 'Mid',   sector: 'IT Midcap' },
-      'COFORGE':    { name: 'Coforge Ltd',                 cap: 'Mid',   sector: 'IT Midcap' },
-      'KPITTECH':   { name: 'KPIT Technologies Ltd',       cap: 'Mid',   sector: 'Auto Tech' },
-      'DIXON':      { name: 'Dixon Technologies Ltd',      cap: 'Mid',   sector: 'Electronics' },
-      'MAXHEALTH':  { name: 'Max Healthcare Institute',    cap: 'Mid',   sector: 'Healthcare' },
-      'FEDERALBNK': { name: 'Federal Bank Ltd',            cap: 'Mid',   sector: 'Banking' },
-      'IDFCFIRSTB': { name: 'IDFC First Bank Ltd',         cap: 'Mid',   sector: 'Banking' },
-      'ASTRAL':     { name: 'Astral Ltd',                  cap: 'Mid',   sector: 'Building Mat' },
-      'MUTHOOTFIN': { name: 'Muthoot Finance Ltd',         cap: 'Mid',   sector: 'NBFC' },
-      'BHEL':       { name: 'Bharat Heavy Electricals',    cap: 'Mid',   sector: 'Capital Goods' },
-      'SUZLON':     { name: 'Suzlon Energy Ltd',           cap: 'Mid',   sector: 'Renewables' },
-
-      // --- NSE SMALL-CAP HIGH-BETA LEADERS ---
-      'MCX':        { name: 'Multi Commodity Exchange',    cap: 'Small', sector: 'Exchange' },
-      'CDSL':       { name: 'Central Depository Services', cap: 'Small', sector: 'Depository' },
-      'BSE':        { name: 'BSE Ltd',                     cap: 'Small', sector: 'Exchange' },
-      'ANGELONE':   { name: 'Angel One Ltd',               cap: 'Small', sector: 'Broking' },
-      'LAURUSLABS': { name: 'Laurus Labs Ltd',             cap: 'Small', sector: 'Pharma API' },
-      'NAVINFLUOR': { name: 'Navin Fluorine Intl',         cap: 'Small', sector: 'Specialty Chem' },
-      'KEI':        { name: 'KEI Industries Ltd',          cap: 'Small', sector: 'Cables' },
-      'CYIENT':     { name: 'Cyient Ltd',                  cap: 'Small', sector: 'ER&D Tech' },
-      'SONACOMS':   { name: 'Sona BLW Precision Forgings', cap: 'Small', sector: 'EV Auto' },
-      'KARURVYSYA': { name: 'Karur Vysya Bank Ltd',        cap: 'Small', sector: 'Banking' },
-      'REDINGTON':  { name: 'Redington Ltd',               cap: 'Small', sector: 'IT Dist' },
-      'GSPL':       { name: 'Gujarat State Petronet',      cap: 'Small', sector: 'Gas Grid' },
-      'IEX':        { name: 'Indian Energy Exchange',      cap: 'Small', sector: 'Power Exch' },
-      'TANLA':      { name: 'Tanla Platforms Ltd',         cap: 'Small', sector: 'CPaaS Tech' },
-
-      // --- TOP 50 TRUSTED, HIGH-MARKET-CAP, BATTLE-TESTED CRYPTO COINS ---
-      'BTCUSDT':    { name: 'Bitcoin (BTC)',               cap: 'Crypto', sector: 'Layer-1',    binanceSym: 'BTCUSDT',    isCrypto: true, trust: 'Est. 2009 • US Spot ETF Approved • #1 Market Cap & Institutional Reserve' },
-      'ETHUSDT':    { name: 'Ethereum (ETH)',              cap: 'Crypto', sector: 'Layer-1',    binanceSym: 'ETHUSDT',    isCrypto: true, trust: 'Est. 2015 • US Spot ETF Approved • #1 Smart Contract & DeFi Settlement' },
-      'BNBUSDT':    { name: 'BNB (BNB Chain)',             cap: 'Crypto', sector: 'Layer-1',    binanceSym: 'BNBUSDT',    isCrypto: true, trust: 'Est. 2017 • Top-5 Market Cap • Quarterly Auto-Burn & High Liquidity' },
-      'SOLUSDT':    { name: 'Solana (SOL)',                cap: 'Crypto', sector: 'Layer-1',    binanceSym: 'SOLUSDT',    isCrypto: true, trust: 'Est. 2020 • Top-5 Market Cap • Visa/PayPal Settlement & High TPS L1' },
-      'XRPUSDT':    { name: 'XRP (Ripple)',                cap: 'Crypto', sector: 'Payments',   binanceSym: 'XRPUSDT',    isCrypto: true, trust: 'Est. 2012 • 12+ Yr Uptime • Global Bank Cross-Border Liquidity Network' },
-      'ADAUSDT':    { name: 'Cardano (ADA)',               cap: 'Crypto', sector: 'Layer-1',    binanceSym: 'ADAUSDT',    isCrypto: true, trust: 'Est. 2017 • Peer-Reviewed PoS • Zero Mainnet Downtime Since Launch' },
-      'DOGEUSDT':   { name: 'Dogecoin (DOGE)',             cap: 'Crypto', sector: 'Payments',   binanceSym: 'DOGEUSDT',   isCrypto: true, trust: 'Est. 2013 • 11+ Yr PoW History • Top-10 Liquidity & Merchant Adoption' },
-      'TRXUSDT':    { name: 'TRON (TRX)',                  cap: 'Crypto', sector: 'Layer-1',    binanceSym: 'TRXUSDT',    isCrypto: true, trust: 'Est. 2017 • Top-10 Cap • $60B+ USDT Stablecoin Settlement Backbone' },
-      'TONUSDT':    { name: 'Toncoin (TON)',               cap: 'Crypto', sector: 'Layer-1',    binanceSym: 'TONUSDT',    isCrypto: true, trust: 'Est. 2018 • Telegram Native Web3 • 900M+ User Distribution Ecosystem' },
-      'AVAXUSDT':   { name: 'Avalanche (AVAX)',            cap: 'Crypto', sector: 'Layer-1',    binanceSym: 'AVAXUSDT',   isCrypto: true, trust: 'Est. 2020 • JPMorgan/Citi Subnets • Sub-Second Finality Enterprise L1' },
-      'LINKUSDT':   { name: 'Chainlink (LINK)',            cap: 'Crypto', sector: 'Oracle',     binanceSym: 'LINKUSDT',   isCrypto: true, trust: 'Est. 2017 • SWIFT & DTCC Partner • #1 Decentralized Oracle Standard' },
-      'DOTUSDT':    { name: 'Polkadot (DOT)',              cap: 'Crypto', sector: 'Layer-0',    binanceSym: 'DOTUSDT',    isCrypto: true, trust: 'Est. 2020 • Web3 Foundation • Multi-Chain Parachain Interoperability' },
-      'LTCUSDT':    { name: 'Litecoin (LTC)',              cap: 'Crypto', sector: 'Payments',   binanceSym: 'LTCUSDT',    isCrypto: true, trust: 'Est. 2011 • 13+ Yr 100% Uptime • BitPay Top-3 Global Payment Coin' },
-      'BCHUSDT':    { name: 'Bitcoin Cash (BCH)',          cap: 'Crypto', sector: 'Payments',   binanceSym: 'BCHUSDT',    isCrypto: true, trust: 'Est. 2017 • Fidelity/EDX Listed • Low-Fee Peer-to-Peer Cash Network' },
-      'UNIUSDT':    { name: 'Uniswap (UNI)',               cap: 'Crypto', sector: 'DeFi',       binanceSym: 'UNIUSDT',    isCrypto: true, trust: 'Est. 2018 • $2T+ Cumulative Volume • #1 Decentralized Exchange Protocol' },
-      'ATOMUSDT':   { name: 'Cosmos (ATOM)',               cap: 'Crypto', sector: 'Layer-0',    binanceSym: 'ATOMUSDT',   isCrypto: true, trust: 'Est. 2019 • IBC Interchain Standard • Powers 100+ Sovereign Chains' },
-      'XLMUSDT':    { name: 'Stellar (XLM)',               cap: 'Crypto', sector: 'Payments',   binanceSym: 'XLMUSDT',    isCrypto: true, trust: 'Est. 2014 • MoneyGram & Franklin Templeton • Regulated Asset Rails' },
-      'NEARUSDT':   { name: 'NEAR Protocol (NEAR)',        cap: 'Crypto', sector: 'Layer-1',    binanceSym: 'NEARUSDT',   isCrypto: true, trust: 'Est. 2020 • Sharded PoS + AI • High Daily Active User L1 Network' },
-      'APTUSDT':    { name: 'Aptos (APT)',                 cap: 'Crypto', sector: 'Layer-1',    binanceSym: 'APTUSDT',    isCrypto: true, trust: 'Est. 2022 • a16z/BlackRock BUIDL • Move Language High-Throughput L1' },
-      'FILUSDT':    { name: 'Filecoin (FIL)',              cap: 'Crypto', sector: 'Storage',    binanceSym: 'FILUSDT',    isCrypto: true, trust: 'Est. 2017 • Grayscale Trust • #1 Decentralized Cloud Storage Network' },
-      'ICPUSDT':    { name: 'Internet Computer (ICP)',     cap: 'Crypto', sector: 'Cloud L1',   binanceSym: 'ICPUSDT',    isCrypto: true, trust: 'Est. 2021 • DFINITY Foundation • Full-Stack On-Chain Web Hosting' },
-      'HBARUSDT':   { name: 'Hedera (HBAR)',               cap: 'Crypto', sector: 'Enterprise', binanceSym: 'HBARUSDT',   isCrypto: true, trust: 'Est. 2019 • Governed by Google/IBM/Boeing • Hashgraph Enterprise DLT' },
-      'VETUSDT':    { name: 'VeChain (VET)',               cap: 'Crypto', sector: 'Supply',     binanceSym: 'VETUSDT',    isCrypto: true, trust: 'Est. 2015 • Walmart China & BMW • Enterprise Supply-Chain Tracking' },
-      'ALGOUSDT':   { name: 'Algorand (ALGO)',             cap: 'Crypto', sector: 'Layer-1',    binanceSym: 'ALGOUSDT',   isCrypto: true, trust: 'Est. 2019 • MIT Turing-Award Tech • Zero Downtime & Instant Finality' },
-      'AAVEUSDT':   { name: 'Aave (AAVE)',                 cap: 'Crypto', sector: 'DeFi',       binanceSym: 'AAVEUSDT',   isCrypto: true, trust: 'Est. 2017 • $15B+ TVL • #1 Battle-Tested DeFi Lending Protocol' },
-      'MKRUSDT':    { name: 'Maker (MKR)',                 cap: 'Crypto', sector: 'DeFi',       binanceSym: 'MKRUSDT',    isCrypto: true, trust: 'Est. 2017 • DAI Stablecoin Issuer • Real-World US Treasury Yield Pioneer' },
-      'GRTUSDT':    { name: 'The Graph (GRT)',             cap: 'Crypto', sector: 'Web3 Data',  binanceSym: 'GRTUSDT',    isCrypto: true, trust: 'Est. 2020 • Web3 Indexing Standard • Essential Query Layer for dApps' },
-      'RENDERUSDT': { name: 'Render (RENDER)',             cap: 'Crypto', sector: 'AI / GPU',   binanceSym: 'RENDERUSDT', isCrypto: true, trust: 'Est. 2017 • OTOY & Apple Ecosystem • #1 Decentralized GPU Compute' },
-      'INJUSDT':    { name: 'Injective (INJ)',             cap: 'Crypto', sector: 'DeFi L1',    binanceSym: 'INJUSDT',    isCrypto: true, trust: 'Est. 2020 • Pantera/Mark Cuban Backed • Zero-Gas On-Chain Orderbook L1' },
-      'OPUSDT':     { name: 'Optimism (OP)',               cap: 'Crypto', sector: 'Layer-2',    binanceSym: 'OPUSDT',     isCrypto: true, trust: 'Est. 2021 • Powers Coinbase Base • #1 Ethereum Superchain Rollup' },
-      'ARBUSDT':    { name: 'Arbitrum (ARB)',              cap: 'Crypto', sector: 'Layer-2',    binanceSym: 'ARBUSDT',    isCrypto: true, trust: 'Est. 2021 • #1 Ethereum L2 TVL • Institutional DeFi Rollup Leader' },
-      'STXUSDT':    { name: 'Stacks (STX)',                cap: 'Crypto', sector: 'BTC L2',     binanceSym: 'STXUSDT',    isCrypto: true, trust: 'Est. 2017 • SEC-Qualified Reg A+ • Leading Bitcoin Smart Contract L2' },
-      'IMXUSDT':    { name: 'Immutable (IMX)',             cap: 'Crypto', sector: 'Gaming L2',  binanceSym: 'IMXUSDT',    isCrypto: true, trust: 'Est. 2021 • Temasek/Tencent Backed • Leading ZK-Rollup for Web3 Gaming' },
-      'LDOUSDT':    { name: 'Lido DAO (LDO)',              cap: 'Crypto', sector: 'Staking',    binanceSym: 'LDOUSDT',    isCrypto: true, trust: 'Est. 2020 • $25B+ Staked ETH • #1 Liquid Staking Infrastructure' },
-      'ETCUSDT':    { name: 'Ethereum Classic (ETC)',      cap: 'Crypto', sector: 'Layer-1',    binanceSym: 'ETCUSDT',    isCrypto: true, trust: 'Est. 2016 • Grayscale Trust • Immutable Proof-of-Work Smart Contracts' },
-      'XMRUSDT':    { name: 'Monero (XMR)',                cap: 'Crypto', sector: 'Privacy',    binanceSym: 'XMRUSDT',    isCrypto: true, trust: 'Est. 2014 • 10+ Yr Cypherpunk Standard • #1 Privacy-Preserving Coin' },
-      'THETAUSDT':  { name: 'Theta Network (THETA)',       cap: 'Crypto', sector: 'Media',      binanceSym: 'THETAUSDT',  isCrypto: true, trust: 'Est. 2018 • Google/Sony/Samsung Nodes • Patented Edge Video Delivery' },
-      'XTZUSDT':    { name: 'Tezos (XTZ)',                 cap: 'Crypto', sector: 'Layer-1',    binanceSym: 'XTZUSDT',    isCrypto: true, trust: 'Est. 2018 • Self-Amending Ledger • 15+ Seamless Forkless Upgrades' },
-      'EGLDUSDT':   { name: 'MultiversX (EGLD)',           cap: 'Crypto', sector: 'Layer-1',    binanceSym: 'EGLDUSDT',   isCrypto: true, trust: 'Est. 2019 • Adaptive State Sharding • European Regulated Web3 Payments' },
-      'FLOWUSDT':   { name: 'Flow (FLOW)',                 cap: 'Crypto', sector: 'Consumer',   binanceSym: 'FLOWUSDT',   isCrypto: true, trust: 'Est. 2020 • NBA/NFL/Disney IP • Consumer-Scale Digital Collectibles' },
-      'SANDUSDT':   { name: 'The Sandbox (SAND)',          cap: 'Crypto', sector: 'Metaverse',  binanceSym: 'SANDUSDT',   isCrypto: true, trust: 'Est. 2018 • Animoca/Adidas/Gucci • Leading Virtual Real-Estate Platform' },
-      'MANAUSDT':   { name: 'Decentraland (MANA)',         cap: 'Crypto', sector: 'Metaverse',  binanceSym: 'MANAUSDT',   isCrypto: true, trust: 'Est. 2017 • Grayscale Trust • Pioneer Decentralized Virtual World DAO' },
-      'AXSUSDT':    { name: 'Axie Infinity (AXS)',         cap: 'Crypto', sector: 'Gaming',     binanceSym: 'AXSUSDT',    isCrypto: true, trust: 'Est. 2018 • Ronin Sidechain Ecosystem • Pioneer Play-and-Earn Studio' },
-      'CRVUSDT':    { name: 'Curve DAO (CRV)',             cap: 'Crypto', sector: 'DeFi',       binanceSym: 'CRVUSDT',    isCrypto: true, trust: 'Est. 2020 • Core Stablecoin Liquidity • Essential DeFi Forex AMM' },
-      'COMPUSDT':   { name: 'Compound (COMP)',             cap: 'Crypto', sector: 'DeFi',       binanceSym: 'COMPUSDT',   isCrypto: true, trust: 'Est. 2018 • Audited Institutional DeFi • Pioneer Algorithmic Money Market' },
-      'SNXUSDT':    { name: 'Synthetix (SNX)',             cap: 'Crypto', sector: 'Derivs',     binanceSym: 'SNXUSDT',    isCrypto: true, trust: 'Est. 2017 • 7+ Yr DeFi Veteran • On-Chain Perpetuals Liquidity Layer' },
-      'CHZUSDT':    { name: 'Chiliz (CHZ)',                cap: 'Crypto', sector: 'Sports',     binanceSym: 'CHZUSDT',    isCrypto: true, trust: 'Est. 2018 • FC Barcelona/PSG/UFC • Global Sports Fan-Token Network' },
-      'QNTUSDT':    { name: 'Quant (QNT)',                 cap: 'Crypto', sector: 'Enterprise', binanceSym: 'QNTUSDT',    isCrypto: true, trust: 'Est. 2018 • Overledger CBDC Tech • Bank of England / BIS Project Partner' },
-      'RUNEUSDT':   { name: 'THORChain (RUNE)',            cap: 'Crypto', sector: 'Cross-DEX',  binanceSym: 'RUNEUSDT',   isCrypto: true, trust: 'Est. 2019 • Native BTC/ETH Swaps • Decentralized Cross-Chain Liquidity' },
-      'SUIUSDT':    { name: 'Sui (SUI)',                   cap: 'Crypto', sector: 'Layer-1',    binanceSym: 'SUIUSDT',    isCrypto: true, trust: 'Est. 2023 • Ex-Meta Diem Engineers • Object-Centric Parallel Execution' }
+      // Indices
+      NIFTY: { name: 'Nifty 50 Index', cap: 'Large', sector: 'Benchmark Index', isCrypto: false },
+      BANKNIFTY: { name: 'Nifty Bank Index', cap: 'Large', sector: 'Banking Index', isCrypto: false },
+      // NSE Large-Caps
+      ICICIBANK: { name: 'ICICI Bank Ltd', cap: 'Large', sector: 'Banking', isCrypto: false },
+      RELIANCE: { name: 'Reliance Industries Ltd', cap: 'Large', sector: 'Energy & Telecom', isCrypto: false },
+      HDFCBANK: { name: 'HDFC Bank Ltd', cap: 'Large', sector: 'Banking', isCrypto: false },
+      TCS: { name: 'Tata Consultancy Services', cap: 'Large', sector: 'IT Services', isCrypto: false },
+      INFY: { name: 'Infosys Ltd', cap: 'Large', sector: 'IT Services', isCrypto: false },
+      BHARTIARTL: { name: 'Bharti Airtel Ltd', cap: 'Large', sector: 'Telecom', isCrypto: false },
+      SBIN: { name: 'State Bank of India', cap: 'Large', sector: 'PSU Banking', isCrypto: false },
+      LT: { name: 'Larsen & Toubro Ltd', cap: 'Large', sector: 'Infrastructure', isCrypto: false },
+      BAJFINANCE: { name: 'Bajaj Finance Ltd', cap: 'Large', sector: 'NBFC', isCrypto: false },
+      M_M: { name: 'Mahindra & Mahindra Ltd', cap: 'Large', sector: 'Automobiles', isCrypto: false },
+      SUNPHARMA: { name: 'Sun Pharmaceutical Ind', cap: 'Large', sector: 'Pharma', isCrypto: false },
+      TITAN: { name: 'Titan Company Ltd', cap: 'Large', sector: 'Consumer', isCrypto: false },
+      NTPC: { name: 'NTPC Ltd', cap: 'Large', sector: 'Power', isCrypto: false },
+      AXISBANK: { name: 'Axis Bank Ltd', cap: 'Large', sector: 'Banking', isCrypto: false },
+      TATAMOTORS: { name: 'Tata Motors Ltd', cap: 'Large', sector: 'Automobiles', isCrypto: false },
+      TATASTEEL: { name: 'Tata Steel Ltd', cap: 'Large', sector: 'Metals', isCrypto: false },
+      JSWSTEEL: { name: 'JSW Steel Ltd', cap: 'Large', sector: 'Metals', isCrypto: false },
+      TRENT: { name: 'Trent Ltd', cap: 'Large', sector: 'Retail', isCrypto: false },
+      BEL: { name: 'Bharat Electronics Ltd', cap: 'Large', sector: 'Defence', isCrypto: false },
+      HAL: { name: 'Hindustan Aeronautics Ltd', cap: 'Large', sector: 'Defence', isCrypto: false },
+      // NSE Mid-Caps
+      CGPOWER: { name: 'CG Power & Industrial', cap: 'Mid', sector: 'Capital Goods', isCrypto: false },
+      CUMMINSIND: { name: 'Cummins India Ltd', cap: 'Mid', sector: 'Industrials', isCrypto: false },
+      PERSISTENT: { name: 'Persistent Systems Ltd', cap: 'Mid', sector: 'Mid-Cap IT', isCrypto: false },
+      COFORGE: { name: 'Coforge Ltd', cap: 'Mid', sector: 'Mid-Cap IT', isCrypto: false },
+      POLYCAB: { name: 'Polycab India Ltd', cap: 'Mid', sector: 'Cables & Wires', isCrypto: false },
+      DIXON: { name: 'Dixon Technologies Ltd', cap: 'Mid', sector: 'Electronics Mfg', isCrypto: false },
+      MAXHEALTH: { name: 'Max Healthcare Institute', cap: 'Mid', sector: 'Healthcare', isCrypto: false },
+      INDHOTEL: { name: 'Indian Hotels Co Ltd', cap: 'Mid', sector: 'Hospitality', isCrypto: false },
+      FEDERALBNK: { name: 'Federal Bank Ltd', cap: 'Mid', sector: 'Banking', isCrypto: false },
+      ASTRAL: { name: 'Astral Ltd', cap: 'Mid', sector: 'Building Materials', isCrypto: false },
+      // NSE Small-Caps
+      MCX: { name: 'Multi Commodity Exchange', cap: 'Small', sector: 'Exchange', isCrypto: false },
+      CDSL: { name: 'Central Depository Services', cap: 'Small', sector: 'Capital Markets', isCrypto: false },
+      BSE: { name: 'BSE Ltd', cap: 'Small', sector: 'Exchange', isCrypto: false },
+      KPITTECH: { name: 'KPIT Technologies Ltd', cap: 'Small', sector: 'Auto Tech', isCrypto: false },
+      LAURUSLABS: { name: 'Laurus Labs Ltd', cap: 'Small', sector: 'Pharma API', isCrypto: false },
+      ANGELONE: { name: 'Angel One Ltd', cap: 'Small', sector: 'Broking', isCrypto: false },
+      SUZLON: { name: 'Suzlon Energy Ltd', cap: 'Small', sector: 'Renewables', isCrypto: false },
+      // Top 50 Trusted Crypto Coins (Live Binance Public API)
+      BTCUSDT: { name: 'Bitcoin (BTC)', cap: 'Crypto', sector: 'Layer-1 Pioneer', isCrypto: true, binanceSym: 'BTCUSDT', trust: 'Est. 2009 • Spot ETF Approved • #1 Market Cap' },
+      ETHUSDT: { name: 'Ethereum (ETH)', cap: 'Crypto', sector: 'Smart Contracts', isCrypto: true, binanceSym: 'ETHUSDT', trust: 'Est. 2015 • Spot ETF Approved • #1 DeFi Ecosystem' },
+      BNBUSDT: { name: 'BNB (BNB)', cap: 'Crypto', sector: 'Exchange & L1', isCrypto: true, binanceSym: 'BNBUSDT', trust: 'Est. 2017 • Top-5 Market Cap • High Liquidity' },
+      SOLUSDT: { name: 'Solana (SOL)', cap: 'Crypto', sector: 'High-Speed L1', isCrypto: true, binanceSym: 'SOLUSDT', trust: 'Est. 2020 • Institutional DeFi & Payments L1' },
+      XRPUSDT: { name: 'XRP (XRP)', cap: 'Crypto', sector: 'Cross-Border Pay', isCrypto: true, binanceSym: 'XRPUSDT', trust: 'Est. 2012 • Bank Settlement Network • Top-10 Cap' },
+      ADAUSDT: { name: 'Cardano (ADA)', cap: 'Crypto', sector: 'Peer-Reviewed L1', isCrypto: true, binanceSym: 'ADAUSDT', trust: 'Est. 2017 • Academic Proof-of-Stake L1' },
+      DOGEUSDT: { name: 'Dogecoin (DOGE)', cap: 'Crypto', sector: 'Payments & PoW', isCrypto: true, binanceSym: 'DOGEUSDT', trust: 'Est. 2013 • Top-10 Liquidity • Scrypt PoW' },
+      TRXUSDT: { name: 'TRON (TRX)', cap: 'Crypto', sector: 'Stablecoin Rails', isCrypto: true, binanceSym: 'TRXUSDT', trust: 'Est. 2017 • Leading Global USDT Settlement Rail' },
+      TONUSDT: { name: 'Toncoin (TON)', cap: 'Crypto', sector: 'Social Web3 L1', isCrypto: true, binanceSym: 'TONUSDT', trust: 'Telegram Ecosystem L1 • High Throughput' },
+      AVAXUSDT: { name: 'Avalanche (AVAX)', cap: 'Crypto', sector: 'Subnets L1', isCrypto: true, binanceSym: 'AVAXUSDT', trust: 'Est. 2020 • Institutional RWA & Subnet L1' },
+      LINKUSDT: { name: 'Chainlink (LINK)', cap: 'Crypto', sector: 'Oracle Network', isCrypto: true, binanceSym: 'LINKUSDT', trust: 'Est. 2017 • #1 DeFi Oracle • SWIFT Partner' },
+      DOTUSDT: { name: 'Polkadot (DOT)', cap: 'Crypto', sector: 'Multichain L0', isCrypto: true, binanceSym: 'DOTUSDT', trust: 'Est. 2020 • Cross-Chain Parachain Architecture' },
+      LTCUSDT: { name: 'Litecoin (LTC)', cap: 'Crypto', sector: 'Digital Silver', isCrypto: true, binanceSym: 'LTCUSDT', trust: 'Est. 2011 • 100% Network Uptime • BitPay Top Coin' },
+      BCHUSDT: { name: 'Bitcoin Cash (BCH)', cap: 'Crypto', sector: 'PoW Payments', isCrypto: true, binanceSym: 'BCHUSDT', trust: 'Est. 2017 • SHA-256 PoW • Grayscale Trust' },
+      UNIUSDT: { name: 'Uniswap (UNI)', cap: 'Crypto', sector: 'DEX Blue-Chip', isCrypto: true, binanceSym: 'UNIUSDT', trust: 'Est. 2020 • #1 Decentralized Exchange Protocol' },
+      ATOMUSDT: { name: 'Cosmos (ATOM)', cap: 'Crypto', sector: 'IBC Interop', isCrypto: true, binanceSym: 'ATOMUSDT', trust: 'Est. 2019 • Inter-Blockchain Communication Hub' },
+      XLMUSDT: { name: 'Stellar (XLM)', cap: 'Crypto', sector: 'Remittances', isCrypto: true, binanceSym: 'XLMUSDT', trust: 'Est. 2014 • MoneyGram & Franklin Templeton Partner' },
+      NEARUSDT: { name: 'NEAR Protocol (NEAR)', cap: 'Crypto', sector: 'Sharded AI L1', isCrypto: true, binanceSym: 'NEARUSDT', trust: 'Est. 2020 • Nightshade Sharding • High Developer Activity' },
+      APTUSDT: { name: 'Aptos (APT)', cap: 'Crypto', sector: 'Move L1', isCrypto: true, binanceSym: 'APTUSDT', trust: 'a16z/BlackRock BUIDL • Sub-Second Finality' },
+      FILUSDT: { name: 'Filecoin (FIL)', cap: 'Crypto', sector: 'DePIN Storage', isCrypto: true, binanceSym: 'FILUSDT', trust: 'Est. 2020 • #1 Decentralized Cloud Storage' },
+      ICPUSDT: { name: 'Internet Computer (ICP)', cap: 'Crypto', sector: 'On-Chain Cloud', isCrypto: true, binanceSym: 'ICPUSDT', trust: 'DFINITY Foundation • Full-Stack Web3 Hosting' },
+      HBARUSDT: { name: 'Hedera (HBAR)', cap: 'Crypto', sector: 'Enterprise DLT', isCrypto: true, binanceSym: 'HBARUSDT', trust: 'Google, IBM & Boeing Governed Council' },
+      VETUSDT: { name: 'VeChain (VET)', cap: 'Crypto', sector: 'Supply Chain', isCrypto: true, binanceSym: 'VETUSDT', trust: 'Est. 2015 • Walmart China & BMW Enterprise Track' },
+      ALGOUSDT: { name: 'Algorand (ALGO)', cap: 'Crypto', sector: 'Pure PoS L1', isCrypto: true, binanceSym: 'ALGOUSDT', trust: 'Est. 2019 • MIT Turing Award Founder • Zero Forks' },
+      AAVEUSDT: { name: 'Aave (AAVE)', cap: 'Crypto', sector: 'DeFi Lending', isCrypto: true, binanceSym: 'AAVEUSDT', trust: '#1 DeFi Money Market • $15B+ TVL • Audited' },
+      MKRUSDT: { name: 'Maker (MKR)', cap: 'Crypto', sector: 'RWA & Stablecoin', isCrypto: true, binanceSym: 'MKRUSDT', trust: 'Est. 2017 • US Treasury RWA Pioneer' },
+      GRTUSDT: { name: 'The Graph (GRT)', cap: 'Crypto', sector: 'Web3 Indexing', isCrypto: true, binanceSym: 'GRTUSDT', trust: 'Est. 2020 • Core Query Layer for Ethereum & L2s' },
+      RENDERUSDT: { name: 'Render (RENDER)', cap: 'Crypto', sector: 'AI GPU DePIN', isCrypto: true, binanceSym: 'RENDERUSDT', trust: 'Est. 2017 • Decentralized GPU Rendering Network' },
+      INJUSDT: { name: 'Injective (INJ)', cap: 'Crypto', sector: 'DeFi Orderbook L1', isCrypto: true, binanceSym: 'INJUSDT', trust: 'Binance & Pantera Backed • Zero-Gas DeFi L1' },
+      OPUSDT: { name: 'Optimism (OP)', cap: 'Crypto', sector: 'Ethereum L2', isCrypto: true, binanceSym: 'OPUSDT', trust: 'Coinbase Base Superchain Stack • Top Rollup' },
+      ARBUSDT: { name: 'Arbitrum (ARB)', cap: 'Crypto', sector: 'Ethereum L2', isCrypto: true, binanceSym: 'ARBUSDT', trust: '#1 Ethereum Layer-2 by DeFi TVL' },
+      STXUSDT: { name: 'Stacks (STX)', cap: 'Crypto', sector: 'Bitcoin L2', isCrypto: true, binanceSym: 'STXUSDT', trust: 'Est. 2017 • SEC-Qualified Reg A+ • Leading BTC Smart L2' },
+      IMXUSDT: { name: 'Immutable (IMX)', cap: 'Crypto', sector: 'Gaming ZK-L2', isCrypto: true, binanceSym: 'IMXUSDT', trust: 'Leading Web3 Gaming ZK-Rollup Ecosystem' },
+      LDOUSDT: { name: 'Lido DAO (LDO)', cap: 'Crypto', sector: 'Liquid Staking', isCrypto: true, binanceSym: 'LDOUSDT', trust: '#1 Ethereum Liquid Staking Protocol' },
+      ETCUSDT: { name: 'Ethereum Classic (ETC)', cap: 'Crypto', sector: 'Original EVM PoW', isCrypto: true, binanceSym: 'ETCUSDT', trust: 'Est. 2016 • Immutable Proof-of-Work EVM Chain' },
+      THETAUSDT: { name: 'Theta Network (THETA)', cap: 'Crypto', sector: 'Video DePIN', isCrypto: true, binanceSym: 'THETAUSDT', trust: 'Est. 2018 • Sony & Samsung Enterprise Validators' },
+      XTZUSDT: { name: 'Tezos (XTZ)', cap: 'Crypto', sector: 'Self-Amending L1', isCrypto: true, binanceSym: 'XTZUSDT', trust: 'Est. 2018 • Forkless On-Chain Governance' },
+      EGLDUSDT: { name: 'MultiversX (EGLD)', cap: 'Crypto', sector: 'Adaptive Sharding', isCrypto: true, binanceSym: 'EGLDUSDT', trust: 'Est. 2019 • High-Speed State Sharded L1' },
+      FLOWUSDT: { name: 'Flow (FLOW)', cap: 'Crypto', sector: 'Consumer Web3', isCrypto: true, binanceSym: 'FLOWUSDT', trust: 'NBA Top Shot & Disney Pinnacle Partner' },
+      SANDUSDT: { name: 'The Sandbox (SAND)', cap: 'Crypto', sector: 'Metaverse', isCrypto: true, binanceSym: 'SANDUSDT', trust: 'Animoca Brands • Atari & Gucci Partnerships' },
+      MANAUSDT: { name: 'Decentraland (MANA)', cap: 'Crypto', sector: 'Virtual World', isCrypto: true, binanceSym: 'MANAUSDT', trust: 'Est. 2017 • Pioneer Decentralized Metaverse' },
+      AXSUSDT: { name: 'Axie Infinity (AXS)', cap: 'Crypto', sector: 'GameFi', isCrypto: true, binanceSym: 'AXSUSDT', trust: 'Est. 2018 • Ronin Network Flagship Game' },
+      CRVUSDT: { name: 'Curve DAO (CRV)', cap: 'Crypto', sector: 'Stablecoin AMM', isCrypto: true, binanceSym: 'CRVUSDT', trust: 'Est. 2020 • Core DeFi Stablecoin Liquidity Engine' },
+      COMPUSDT: { name: 'Compound (COMP)', cap: 'Crypto', sector: 'DeFi Money Market', isCrypto: true, binanceSym: 'COMPUSDT', trust: 'Est. 2018 • Pioneer DeFi Lending Protocol' },
+      SNXUSDT: { name: 'Synthetix (SNX)', cap: 'Crypto', sector: 'DeFi Derivatives', isCrypto: true, binanceSym: 'SNXUSDT', trust: 'Est. 2018 • Pioneer On-Chain Liquidity & Perps' },
+      CHZUSDT: { name: 'Chiliz (CHZ)', cap: 'Crypto', sector: 'Sports Fan Tokens', isCrypto: true, binanceSym: 'CHZUSDT', trust: 'FC Barcelona / PSG / UFC Official Partner' },
+      QNTUSDT: { name: 'Quant (QNT)', cap: 'Crypto', sector: 'Enterprise Overledger', isCrypto: true, binanceSym: 'QNTUSDT', trust: 'Est. 2018 • Bank & CBDC Interoperability' },
+      RUNEUSDT: { name: 'THORChain (RUNE)', cap: 'Crypto', sector: 'Native Cross-Chain', isCrypto: true, binanceSym: 'RUNEUSDT', trust: 'Est. 2019 • Native BTC-to-ETH Decentralized Swaps' },
+      SUIUSDT: { name: 'Sui (SUI)', cap: 'Crypto', sector: 'Object-Centric L1', isCrypto: true, binanceSym: 'SUIUSDT', trust: 'Mysten Labs • Parallel Execution High-Cap L1' },
+      SEIUSDT: { name: 'Sei (SEI)', cap: 'Crypto', sector: 'Parallelized EVM', isCrypto: true, binanceSym: 'SEIUSDT', trust: 'Sub-400ms Parallelized Trading Layer-1' }
     };
 
     const STRATEGY_DESCRIPTIONS = {
       cum_rsi2: 'Ultra-selective 1-click entry: Buys uptrending assets (Price > 200 SMA & 50 SMA > 200 SMA) when the 2-day cumulative RSI(2) drops below 10, and exits on a 5-SMA snapback or quick Take-Profit.',
-      connors_rsi2: 'Buys strong uptrends (Price > 200 SMA) when single-day RSI(2) plunges below 10, and exits once price closes back above the 5-day SMA or hits Take-Profit.',
-      bb_rsi_snap: 'Mean-reversion bounce: Buys oversold dips touching the Lower Bollinger Band (20,2) with RSI(14) < 35 inside an uptrend, exiting at the middle band or Take-Profit.',
-      ema20_pullback: 'Trend continuation: Buys healthy pullbacks to the rising 20-EMA when 20-EMA > 50-EMA and RSI(14) resets between 38–52.',
-      ema_cross: 'Momentum crossover: Enters when fast 9-EMA crosses above slow 21-EMA with positive candle momentum.',
-      supertrend_breakout: 'Volatility breakout: Enters when price closes cleanly above the ATR(10,2.5) Supertrend upper band.',
-      vwap_bounce: 'Intraday/Swing reclaim: Enters when price reclaims the rolling 20-bar VWAP anchor with bullish close.'
+      connors_rsi2: 'Classic Larry Connors RSI(2) mean-reversion: Buys when Price > 200 SMA and single-bar RSI(2) drops below 10, exiting on a close above the 5-SMA.',
+      bb_rsi_snap: 'Volatility oversold bounce: Buys in a 50-SMA uptrend when price touches the Lower Bollinger Band (20, 2) with RSI(14) < 35.',
+      ema20_pullback: 'Trend continuation pullback: Buys when 20-EMA > 50-EMA and price dips into the 20-EMA support zone with healthy RSI(14) between 38 and 55.',
+      ema_cross: 'Momentum trend following: Enters Long when fast 9-EMA crosses above slow 21-EMA, and Short on bearish crossover.',
+      supertrend_breakout: 'Volatility breakout: Enters Long when price breaks above the upper ATR(10, 2.5) dynamic band.',
+      vwap_bounce: 'Institutional anchor reclaim: Enters Long when price reclaims the rolling 20-bar anchor average with a bullish close.'
     };
 
-    const SWING_STRATEGIES = new Set(['cum_rsi2', 'connors_rsi2', 'bb_rsi_snap', 'ema20_pullback']);
-    const SIGNALS_STORAGE_KEY = 'nse_algolab_persistent_signals_v3';
+    const SWING_STRATEGIES = new Set(['cum_rsi2', 'connors_rsi2', 'bb_rsi_snap']);
+    const SIGNALS_STORAGE_KEY = 'nse_algolab_persistent_signals_v1';
+    let liveUsdToInr = 84.50;
 
     // =========================================================================
     // 2. APPLICATION STATE
@@ -589,8 +561,8 @@
       riskUnit: 'percent',
       cryptoCurrency: 'INR',
       candles: [],
-      lastTrades: [],
       equityCurve: [],
+      lastTrades: [],
       priceChart: null,
       equityChart: null,
       liveUniverseMap: {},
@@ -599,55 +571,50 @@
     };
 
     // =========================================================================
-    // 3. SYMBOL FILTERING & DROPDOWN MANAGEMENT
+    // 3. UNIVERSE DROPDOWN & FILTER CONTROLS
     // =========================================================================
     function populateSymbolSelect(searchQuery = '', preferredSym = null) {
       const sel = document.getElementById('symbolSelect');
+      const countLbl = document.getElementById('universeCountLabel');
       if (!sel) return;
-      const currentVal = preferredSym || sel.value || 'ICICIBANK';
-      const q = (searchQuery || '').trim().toLowerCase();
+
+      const q = searchQuery.trim().toLowerCase();
+      const prevVal = preferredSym || sel.value || 'ICICIBANK';
 
       const entries = Object.entries(NSE_SYMBOLS).filter(([sym, info]) => {
-        const capMatch = state.capFilter === 'ALL' || info.cap === state.capFilter;
-        if (!capMatch) return false;
-        if (!q) return true;
-        return sym.toLowerCase().includes(q) ||
-               info.name.toLowerCase().includes(q) ||
-               info.sector.toLowerCase().includes(q);
+        const matchesCap = state.capFilter === 'ALL' || info.cap === state.capFilter;
+        const matchesQuery = !q || sym.toLowerCase().includes(q) || info.name.toLowerCase().includes(q) || info.sector.toLowerCase().includes(q);
+        return matchesCap && matchesQuery;
       });
 
-      const countLbl = document.getElementById('universeCountLabel');
-      if (countLbl) countLbl.textContent = `(${entries.length})`;
-
-      if (!entries.length) {
-        sel.innerHTML = `<option value="ICICIBANK">No matching symbols</option>`;
-        return;
+      if (countLbl) {
+        countLbl.textContent = `(${entries.length})`;
       }
 
       sel.innerHTML = entries.map(([sym, info]) => {
-        const displaySym = sym.replace('USDT', '');
-        const tag = info.cap === 'Crypto' ? ' [Crypto]' : '';
-        return `<option value="${sym}">${displaySym} — ${info.name}${tag}</option>`;
+        const displayCode = sym.replace('USDT', '');
+        return `<option value="${sym}">${displayCode} — ${info.name}</option>`;
       }).join('');
 
-      if (entries.some(([sym]) => sym === currentVal)) {
-        sel.value = currentVal;
-      } else {
+      if (entries.some(([sym]) => sym === prevVal)) {
+        sel.value = prevVal;
+      } else if (entries.length > 0) {
         sel.value = entries[0][0];
       }
-      updateSymbolMeta();
+
+      updateSymbolMetaLabel();
     }
 
-    function updateSymbolMeta() {
-      const sel = document.getElementById('symbolSelect');
+    function updateSymbolMetaLabel() {
+      const sym = document.getElementById('symbolSelect')?.value || 'ICICIBANK';
       const metaEl = document.getElementById('symbolMetaText');
-      if (!sel || !metaEl) return;
-      const cfg = NSE_SYMBOLS[sel.value];
-      if (!cfg) return;
-      if (cfg.isCrypto && cfg.trust) {
-        metaEl.textContent = `${cfg.sector} • ${cfg.trust}`;
+      const info = NSE_SYMBOLS[sym];
+      if (!metaEl || !info) return;
+
+      if (info.isCrypto) {
+        metaEl.textContent = `${info.name} • Crypto • ${info.trust || info.sector}`;
       } else {
-        metaEl.textContent = `${cfg.name} • ${cfg.cap}-Cap • ${cfg.sector}`;
+        metaEl.textContent = `${info.name} • ${info.cap}-Cap • ${info.sector}`;
       }
     }
 
@@ -655,18 +622,20 @@
       state.capFilter = cap;
       document.querySelectorAll('.cap-btn').forEach(btn => {
         const isActive = btn.dataset.cap === cap;
-        if (isActive) {
-          btn.className = cap === 'Crypto'
+        if (btn.dataset.cap === 'Crypto') {
+          btn.className = isActive
             ? 'cap-btn py-1 rounded-lg text-[11px] font-semibold bg-amber-500 text-white shadow-sm transition'
-            : 'cap-btn py-1 rounded-lg text-[11px] font-semibold bg-white text-slate-900 shadow-sm transition';
+            : 'cap-btn py-1 rounded-lg text-[11px] font-semibold text-amber-700 hover:text-amber-900 transition';
         } else {
-          btn.className = btn.dataset.cap === 'Crypto'
-            ? 'cap-btn py-1 rounded-lg text-[11px] font-semibold text-amber-700 hover:text-amber-900 transition'
+          btn.className = isActive
+            ? 'cap-btn py-1 rounded-lg text-[11px] font-semibold bg-white text-slate-900 shadow-sm transition'
             : 'cap-btn py-1 rounded-lg text-[11px] font-semibold text-slate-500 hover:text-slate-900 transition';
         }
       });
-      const searchVal = document.getElementById('symbolSearchInput')?.value || '';
-      populateSymbolSelect(searchVal);
+
+      const q = document.getElementById('symbolSearchInput')?.value || '';
+      populateSymbolSelect(q);
+
       if (state.mode === 'signals') {
         renderActiveSignalsTable();
         scanAllLiveBuySignals(false);
@@ -675,26 +644,86 @@
       }
     }
 
-    function switchToCryptoMarket() {
-      selectCapFilter('Crypto');
-      if (state.mode !== 'signals') {
-        setMode('signals');
-      }
-    }
-
     function filterSymbolDropdown(query) {
       populateSymbolSelect(query);
     }
 
-    function onSetupChanged() {
-      updateSymbolMeta();
-      triggerRun();
+    function onSetupChanged(shouldRun = true) {
+      updateSymbolMetaLabel();
+      if (shouldRun && state.mode !== 'signals') {
+        triggerRun();
+      }
+    }
+
+    function switchToCryptoMarket() {
+      selectCapFilter('Crypto');
+      populateSymbolSelect('', 'BTCUSDT');
+      if (state.mode === 'signals') {
+        scanAllLiveBuySignals(false);
+      } else {
+        triggerRun();
+      }
+      showToast('Top 50 Trusted Crypto', 'Switched to 24/7 live Binance crypto feeds.');
     }
 
     // =========================================================================
-    // 4. 100% REAL LIVE DATA FETCHERS (BINANCE PUBLIC API + YAHOO FINANCE NSE)
+    // 4. 100% REAL LIVE DATA FETCHERS (BINANCE PUBLIC API + MULTI-RELAY NSE)
     // =========================================================================
     const realCandleCache = {};
+    let currentFetchToken = 0;
+
+    function parseYahooCSV(csvText) {
+      if (!csvText || typeof csvText !== 'string' || !csvText.includes('Date,Open,High,Low,Close')) return null;
+      const lines = csvText.trim().split('\n');
+      const candles = [];
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',');
+        if (cols.length < 5) continue;
+        const ts = Math.floor(new Date(cols[0].trim() + 'T09:15:00+05:30').getTime() / 1000);
+        const o = parseFloat(cols[1]);
+        const h = parseFloat(cols[2]);
+        const l = parseFloat(cols[3]);
+        const c = parseFloat(cols[4]);
+        const v = parseFloat(cols[6] || cols[5] || '0');
+        if (!isNaN(ts) && !isNaN(c) && c > 0 && o > 0) {
+          candles.push({
+            time: ts,
+            open: Number(o.toFixed(2)),
+            high: Number(h.toFixed(2)),
+            low: Number(l.toFixed(2)),
+            close: Number(c.toFixed(2)),
+            volume: isNaN(v) ? 0 : v
+          });
+        }
+      }
+      candles.sort((a, b) => a.time - b.time);
+      return candles.length >= 30 ? candles : null;
+    }
+
+    function parseYahooChartJSON(json) {
+      const result = json?.chart?.result?.[0];
+      if (!result || !result.timestamp || !result.indicators?.quote?.[0]) return null;
+      const ts = result.timestamp;
+      const q = result.indicators.quote[0];
+      const candles = [];
+      for (let i = 0; i < ts.length; i++) {
+        const o = q.open?.[i];
+        const h = q.high?.[i];
+        const l = q.low?.[i];
+        const c = q.close?.[i];
+        if (o != null && h != null && l != null && c != null && c > 0) {
+          candles.push({
+            time: ts[i],
+            open: Number(o.toFixed(2)),
+            high: Number(h.toFixed(2)),
+            low: Number(l.toFixed(2)),
+            close: Number(c.toFixed(2)),
+            volume: q.volume?.[i] || 0
+          });
+        }
+      }
+      return candles.length >= 30 ? candles : null;
+    }
 
     async function fetchLiveUsdInrRate() {
       try {
@@ -705,17 +734,6 @@
           if (!isNaN(rate) && rate > 50 && rate < 150) {
             liveUsdToInr = rate;
             return liveUsdToInr;
-          }
-        }
-      } catch (e) {}
-      try {
-        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent('https://query1.finance.yahoo.com/v8/finance/chart/USDINR=X?interval=1d&range=5d')}`;
-        const res = await fetch(proxyUrl);
-        if (res.ok) {
-          const json = await res.json();
-          const closes = json?.chart?.result?.[0]?.indicators?.quote?.[0]?.close?.filter(Boolean);
-          if (closes && closes.length) {
-            liveUsdToInr = closes[closes.length - 1];
           }
         }
       } catch (e) {}
@@ -750,6 +768,7 @@
 
     async function fetchYahooNSECandles(sym, tf, dur) {
       const yahooSym = sym === 'NIFTY' ? '^NSEI' : (sym === 'BANKNIFTY' ? '^NSEBANK' : `${sym}.NS`);
+      const stooqSym = sym === 'NIFTY' ? '^nf' : (sym === 'BANKNIFTY' ? '^nfb' : `${sym.toLowerCase()}.in`);
       const intervalMap = { '5m': '5m', '15m': '15m', '1H': '60m', 'Daily': '1d' };
       const rangeMap = {
         '5m': '5d',
@@ -760,60 +779,68 @@
       const interval = intervalMap[tf] || '1d';
       const range = rangeMap[tf] || '2y';
 
-      const yahooUrls = [
-        `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSym)}?interval=${interval}&range=${range}&events=history`,
-        `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSym)}?interval=${interval}&range=${range}&events=history`
-      ];
+      const chartUrl1 = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSym)}?interval=${interval}&range=${range}&includePrePost=false`;
+      const chartUrl2 = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSym)}?interval=${interval}&range=${range}&includePrePost=false`;
 
-      const relayBuilders = [
-        (u) => ({ url: `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`, wrapped: true }),
-        (u) => ({ url: `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`, wrapped: false }),
-        (u) => ({ url: `https://corsproxy.io/?${encodeURIComponent(u)}`, wrapped: false }),
-        (u) => ({ url: `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`, wrapped: false })
-      ];
+      const nowSec = Math.floor(Date.now() / 1000);
+      const yearsSec = dur === '6Y' ? 6 * 365 * 86400 : (dur === '3Y' ? 3 * 365 * 86400 : 2 * 365 * 86400);
+      const yahooCsvUrl = `https://query1.finance.yahoo.com/v7/finance/download/${encodeURIComponent(yahooSym)}?period1=${nowSec - yearsSec}&period2=${nowSec}&interval=1d&events=history`;
+      const stooqCsvUrl = `https://stooq.com/q/d/l/?s=${encodeURIComponent(stooqSym)}&i=d`;
 
-      for (const yUrl of yahooUrls) {
-        for (const build of relayBuilders) {
-          const { url: proxyUrl, wrapped } = build(yUrl);
-          try {
-            const controller = new AbortController();
-            const timer = setTimeout(() => controller.abort(), 7000);
-            const res = await fetch(proxyUrl, { signal: controller.signal });
-            clearTimeout(timer);
-            if (!res.ok) continue;
-
-            let json = await res.json();
-            if (wrapped && json && typeof json.contents === 'string') {
-              json = JSON.parse(json.contents);
-            }
-
-            const result = json?.chart?.result?.[0];
-            if (!result || !result.timestamp || !result.indicators?.quote?.[0]) continue;
-
-            const ts = result.timestamp;
-            const q = result.indicators.quote[0];
-            const candles = [];
-            for (let i = 0; i < ts.length; i++) {
-              const o = q.open?.[i];
-              const h = q.high?.[i];
-              const l = q.low?.[i];
-              const c = q.close?.[i];
-              if (o != null && h != null && l != null && c != null && c > 0) {
-                candles.push({
-                  time: ts[i],
-                  open: Number(o.toFixed(2)),
-                  high: Number(h.toFixed(2)),
-                  low: Number(l.toFixed(2)),
-                  close: Number(c.toFixed(2)),
-                  volume: q.volume?.[i] || 0
-                });
-              }
-            }
-            if (candles.length >= 30) return candles;
-          } catch (e) {}
+      const fetchRace = async (proxyUrl, mode) => {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 9000);
+        try {
+          const res = await fetch(proxyUrl, { signal: controller.signal });
+          clearTimeout(timer);
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          if (mode === 'csv') {
+            const txt = await res.text();
+            const parsed = parseYahooCSV(txt);
+            if (!parsed) throw new Error('Bad CSV');
+            return parsed;
+          }
+          if (mode === 'wrapped_csv') {
+            const wrapper = await res.json();
+            const parsed = parseYahooCSV(wrapper?.contents || '');
+            if (!parsed) throw new Error('Bad Wrapped CSV');
+            return parsed;
+          }
+          let json = await res.json();
+          if (mode === 'wrapped' && json && typeof json.contents === 'string') {
+            json = JSON.parse(json.contents);
+          }
+          const parsed = parseYahooChartJSON(json);
+          if (!parsed) throw new Error('Bad Chart JSON');
+          return parsed;
+        } catch (err) {
+          clearTimeout(timer);
+          throw err;
         }
+      };
+
+      const candidates = [
+        fetchRace(`https://api.allorigins.win/get?url=${encodeURIComponent(chartUrl1)}`, 'wrapped'),
+        fetchRace(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(chartUrl1)}`, 'json'),
+        fetchRace(`https://corsproxy.io/?url=${encodeURIComponent(chartUrl2)}`, 'json'),
+        fetchRace(`https://thingproxy.freeboard.io/fetch/${chartUrl2}`, 'json'),
+        fetchRace(`https://api.cors.lol/?url=${encodeURIComponent(chartUrl1)}`, 'json')
+      ];
+
+      if (tf === 'Daily') {
+        candidates.push(
+          fetchRace(`https://api.allorigins.win/get?url=${encodeURIComponent(stooqCsvUrl)}`, 'wrapped_csv'),
+          fetchRace(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(stooqCsvUrl)}`, 'csv'),
+          fetchRace(`https://corsproxy.io/?url=${encodeURIComponent(stooqCsvUrl)}`, 'csv'),
+          fetchRace(`https://api.allorigins.win/get?url=${encodeURIComponent(yahooCsvUrl)}`, 'wrapped_csv')
+        );
       }
-      return null;
+
+      try {
+        return await Promise.any(candidates);
+      } catch (e) {
+        return null;
+      }
     }
 
     async function fetchRealHistoricalCandles(sym, tf, dur) {
@@ -1627,10 +1654,135 @@
       showToast('Tracker Cleared', 'All saved signal entries have been cleared.');
     }
 
+    function loadSymbolAndBacktest(sym) {
+      const searchInp = document.getElementById('symbolSearchInput');
+      if (searchInp) searchInp.value = '';
+      if (state.capFilter !== 'ALL' && NSE_SYMBOLS[sym]?.cap !== state.capFilter) {
+        selectCapFilter('ALL');
+      }
+      populateSymbolSelect('', sym);
+      setMode('backtest');
+    }
+
+    function switchChartTab(tab) {
+      const pView = document.getElementById('priceChartView');
+      const eView = document.getElementById('equityChartView');
+      const sView = document.getElementById('scannerChartView');
+      const tPrice = document.getElementById('tabPrice');
+      const tEquity = document.getElementById('tabEquity');
+      const tScan = document.getElementById('tabScan');
+
+      const activeBtn = 'whitespace-nowrap px-3 py-1 rounded-lg bg-white text-slate-900 shadow-sm transition';
+      const inactiveBtn = 'whitespace-nowrap px-3 py-1 rounded-lg text-slate-500 hover:text-slate-900 transition';
+
+      if (pView) pView.classList.add('hidden');
+      if (eView) eView.classList.add('hidden');
+      if (sView) sView.classList.add('hidden');
+      if (tPrice) tPrice.className = inactiveBtn;
+      if (tEquity) tEquity.className = inactiveBtn;
+      if (tScan) tScan.className = inactiveBtn;
+
+      if (tab === 'price') {
+        if (pView) pView.classList.remove('hidden');
+        if (tPrice) tPrice.className = activeBtn;
+        if (state.priceChart) state.priceChart.timeScale().fitContent();
+      } else if (tab === 'equity') {
+        if (eView) eView.classList.remove('hidden');
+        if (tEquity) tEquity.className = activeBtn;
+        renderEquityCurve();
+      } else if (tab === 'scanner') {
+        if (sView) sView.classList.remove('hidden');
+        if (tScan) tScan.className = activeBtn;
+        renderTopSwingScanner();
+      }
+    }
+
+    function renderEquityCurve() {
+      const canvas = document.getElementById('equityCanvas');
+      if (!canvas || typeof Chart === 'undefined' || !state.equityCurve.length) return;
+      if (state.equityChart) state.equityChart.destroy();
+
+      const labels = state.equityCurve.map(pt => formatIST(pt.time, state.timeframe));
+      const data = state.equityCurve.map(pt => pt.equity);
+
+      state.equityChart = new Chart(canvas.getContext('2d'), {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Portfolio Equity (₹)',
+            data,
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.10)',
+            borderWidth: 2,
+            pointRadius: 0,
+            fill: true,
+            tension: 0.2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { maxTicksLimit: 8, font: { size: 10 } }, grid: { display: false } },
+            y: { ticks: { font: { size: 10 } }, grid: { color: '#f1f5f9' } }
+          }
+        }
+      });
+    }
+
+    async function renderTopSwingScanner() {
+      const tbody = document.getElementById('scannerTableBody');
+      if (!tbody) return;
+      const highWinOnly = document.getElementById('highWinFilterCheck')?.checked ?? true;
+      const cap = state.capFilter;
+      const symbols = Object.entries(NSE_SYMBOLS)
+        .filter(([, info]) => cap === 'ALL' || info.cap === cap)
+        .map(([sym]) => sym);
+
+      tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-400 text-xs">Scanning real historical data across ${symbols.length} assets...</td></tr>`;
+      const results = [];
+
+      await fetchInBatches(symbols, async (sym) => {
+        const candles = await fetchRealHistoricalCandles(sym, state.timeframe, state.duration);
+        if (!candles || candles.length < 60) return;
+        const sim = executeStrategySimulation(candles, sym);
+        const total = sim.trades.length;
+        const wins = sim.trades.filter(t => t.netPnl > 0).length;
+        const winRate = total > 0 ? (wins / total) * 100 : 0;
+        const netProfit = sim.trades.reduce((a, b) => a + b.netPnl, 0);
+        results.push({ sym, cap: NSE_SYMBOLS[sym].cap, winRate, total, netProfit });
+      }, 4);
+
+      const filtered = results
+        .filter(r => !highWinOnly || (r.winRate >= 70 && r.total >= 5))
+        .sort((a, b) => b.winRate - a.winRate || b.netProfit - a.netProfit);
+
+      if (!filtered.length) {
+        tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-400 text-xs">No assets matched the current filter (try unchecking the ≥70% filter or switching to Crypto / 6 Years).</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(r => `
+        <tr class="hover:bg-slate-50 transition">
+          <td class="px-5 py-2.5 font-bold text-slate-900">${r.sym.replace('USDT', '')}</td>
+          <td class="px-4 py-2.5 text-slate-500">${r.cap}</td>
+          <td class="px-4 py-2.5 text-right font-mono font-bold ${r.winRate >= 70 ? 'text-emerald-600' : 'text-slate-700'}">${r.winRate.toFixed(1)}%</td>
+          <td class="px-4 py-2.5 text-right font-mono text-slate-600">${r.total}</td>
+          <td class="px-4 py-2.5 text-right font-mono font-bold ${r.netProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${formatINR(r.netProfit, true)}</td>
+          <td class="px-5 py-2.5 text-center">
+            <button onclick="loadSymbolAndBacktest('${r.sym}')" class="px-2.5 py-1 rounded-lg bg-slate-900 text-white text-[11px] font-semibold">Load</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
     // =========================================================================
     // 9. BACKTEST CHARTS, SCANNER & LIVE MARKET REPLAY
     // =========================================================================
     async function triggerRun() {
+      const reqToken = ++currentFetchToken;
       try {
         const sym = document.getElementById('symbolSelect')?.value || 'ICICIBANK';
         const displaySym = sym.replace('USDT', '');
@@ -1648,13 +1800,18 @@
           return;
         }
 
-        showToast('Fetching Live Data', `Loading real historical bars for ${displaySym}...`);
+        const container = document.getElementById('tvChartContainer');
+        if (container) {
+          container.innerHTML = `<div class="h-full flex items-center justify-center text-xs text-slate-400 bg-slate-50/60">Fetching real live market candles for ${displaySym}...</div>`;
+        }
+
         if (NSE_SYMBOLS[sym]?.isCrypto) {
           await fetchLiveUsdInrRate();
         }
         const candles = await fetchRealHistoricalCandles(sym, state.timeframe, state.duration);
+        if (reqToken !== currentFetchToken) return;
+
         if (!candles || candles.length < 30) {
-          const container = document.getElementById('tvChartContainer');
           if (container) {
             container.innerHTML = `<div class="h-full flex flex-col items-center justify-center text-center p-6 bg-slate-50 text-slate-500">
               <div class="text-sm font-bold text-slate-800 mb-1">Live NSE Feed Temporarily Rate-Limited for ${displaySym}</div>
@@ -1670,6 +1827,7 @@
         const sim = executeStrategySimulation(candles, sym);
         renderAllResults(candles, sim, sym);
       } catch (err) {
+        if (reqToken !== currentFetchToken) return;
         console.error('Backtest simulation error:', err);
         showToast('Simulation Error', err.message || 'Unable to compute strategy.', true);
       }
@@ -1740,9 +1898,12 @@
       if (!container || typeof LightweightCharts === 'undefined') return;
       container.innerHTML = '';
 
+      const chartWidth = container.clientWidth || container.parentElement?.clientWidth || 820;
+      const chartHeight = container.clientHeight || 360;
+
       const chart = LightweightCharts.createChart(container, {
-        width: container.clientWidth,
-        height: container.clientHeight || 360,
+        width: chartWidth,
+        height: chartHeight,
         layout: { background: { color: '#ffffff' }, textColor: '#475569', fontFamily: 'JetBrains Mono' },
         grid: { vertLines: { color: '#f1f5f9' }, horzLines: { color: '#f1f5f9' } },
         timeScale: { borderColor: '#e2e8f0', timeVisible: state.timeframe !== 'Daily' },
@@ -1769,140 +1930,18 @@
 
       chart.timeScale().fitContent();
       state.priceChart = chart;
-    }
 
-    function renderEquityCurve() {
-      const canvas = document.getElementById('equityCanvas');
-      if (!canvas || typeof Chart === 'undefined') return;
-      const ctx = canvas.getContext('2d');
-      if (state.equityChart) state.equityChart.destroy();
-
-      state.equityChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: state.equityCurve.map(p => formatIST(p.time, state.timeframe)),
-          datasets: [{
-            label: 'Portfolio Value (₹)',
-            data: state.equityCurve.map(p => p.equity),
-            borderColor: '#10b981',
-            backgroundColor: 'rgba(16, 185, 129, 0.08)',
-            borderWidth: 2,
-            fill: true,
-            pointRadius: 0,
-            tension: 0.15
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { ticks: { maxTicksLimit: 8, font: { family: 'JetBrains Mono', size: 10 } }, grid: { display: false } },
-            y: { ticks: { font: { family: 'JetBrains Mono', size: 10 } }, grid: { color: '#f1f5f9' } }
+      if (window.__chartResizeObserver) {
+        window.__chartResizeObserver.disconnect();
+      }
+      if (typeof ResizeObserver !== 'undefined') {
+        window.__chartResizeObserver = new ResizeObserver(() => {
+          if (container.clientWidth > 0 && state.priceChart) {
+            state.priceChart.resize(container.clientWidth, container.clientHeight || 360);
+            state.priceChart.timeScale().fitContent();
           }
-        }
-      });
-    }
-
-    async function renderTopSwingScanner() {
-      const tbody = document.getElementById('scannerTableBody');
-      if (!tbody) return;
-      const highWinOnly = document.getElementById('highWinFilterCheck')?.checked ?? true;
-      const cap = state.capFilter;
-      const candidates = Object.entries(NSE_SYMBOLS).filter(([, info]) => cap === 'ALL' || info.cap === cap);
-
-      tbody.innerHTML = `<tr><td colspan="6" class="py-10 text-center text-slate-400 text-xs">Scanning real historical candles across ${candidates.length} ${cap === 'ALL' ? '' : cap + ' '}assets...</td></tr>`;
-
-      const results = [];
-      await fetchInBatches(candidates.map(([sym]) => sym), async (sym) => {
-        const candles = await fetchRealHistoricalCandles(sym, state.timeframe, state.duration);
-        if (!candles || candles.length < 60) return;
-        const sim = executeStrategySimulation(candles, sym);
-        const total = sim.trades.length;
-        if (total === 0) return;
-        const wins = sim.trades.filter(t => t.netPnl > 0).length;
-        const winRate = (wins / total) * 100;
-        const netProfit = sim.trades.reduce((acc, t) => acc + t.netPnl, 0);
-        results.push({ sym, info: NSE_SYMBOLS[sym], winRate, total, netProfit });
-      }, 3);
-
-      let filtered = results;
-      if (highWinOnly) {
-        const strict = results.filter(r => r.total >= 5 && r.winRate >= 70);
-        filtered = strict.length > 0 ? strict : results.filter(r => r.winRate >= 60);
-      }
-
-      filtered.sort((a, b) => (b.winRate - a.winRate) || (b.netProfit - a.netProfit));
-
-      if (!filtered.length) {
-        tbody.innerHTML = `<tr><td colspan="6" class="py-10 text-center text-slate-400 text-xs">No live historical setups matched the filter. Try switching duration to 6 Years or unchecking the ≥70% filter.</td></tr>`;
-        return;
-      }
-
-      tbody.innerHTML = filtered.map(r => {
-        const displaySym = r.sym.replace('USDT', '');
-        const wrColor = r.winRate >= 70 ? 'text-emerald-600' : (r.winRate >= 50 ? 'text-amber-600' : 'text-rose-500');
-        const pnlColor = r.netProfit >= 0 ? 'text-emerald-600' : 'text-rose-600';
-        return `
-          <tr class="hover:bg-slate-50/80 transition">
-            <td class="px-5 py-3">
-              <div class="font-bold text-slate-900 text-xs">${displaySym}</div>
-              <div class="text-[11px] text-slate-400">${r.info.name}</div>
-            </td>
-            <td class="px-4 py-3 text-xs text-slate-600">${r.info.cap}</td>
-            <td class="px-4 py-3 text-right font-mono font-bold text-xs ${wrColor}">${r.winRate.toFixed(1)}%</td>
-            <td class="px-4 py-3 text-right font-mono text-xs text-slate-700">${r.total}</td>
-            <td class="px-4 py-3 text-right font-mono font-bold text-xs ${pnlColor}">${formatINR(r.netProfit, true)}</td>
-            <td class="px-5 py-3 text-center">
-              <button onclick="loadSymbolAndBacktest('${r.sym}')" class="px-3 py-1 bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-semibold rounded-lg transition">Load</button>
-            </td>
-          </tr>
-        `;
-      }).join('');
-    }
-
-    function loadSymbolAndBacktest(sym) {
-      const sel = document.getElementById('symbolSelect');
-      if (sel) {
-        if (![...sel.options].some(o => o.value === sym)) {
-          selectCapFilter('ALL');
-        }
-        sel.value = sym;
-        updateSymbolMeta();
-      }
-      switchChartTab('price');
-      setMode('backtest');
-    }
-
-    function switchChartTab(tab) {
-      const priceView = document.getElementById('priceChartView');
-      const equityView = document.getElementById('equityChartView');
-      const scannerView = document.getElementById('scannerChartView');
-      const tabPrice = document.getElementById('tabPrice');
-      const tabEquity = document.getElementById('tabEquity');
-      const tabScan = document.getElementById('tabScan');
-
-      [priceView, equityView, scannerView].forEach(el => el && el.classList.add('hidden'));
-      [tabPrice, tabEquity, tabScan].forEach(btn => {
-        if (btn) btn.className = 'whitespace-nowrap px-3 py-1 rounded-lg text-slate-500 hover:text-slate-900 transition';
-      });
-
-      if (tab === 'price') {
-        if (priceView) priceView.classList.remove('hidden');
-        if (tabPrice) tabPrice.className = 'whitespace-nowrap px-3 py-1 rounded-lg bg-white text-slate-900 shadow-sm transition';
-        if (state.priceChart) {
-          const container = document.getElementById('tvChartContainer');
-          if (container) state.priceChart.resize(container.clientWidth, container.clientHeight);
-          state.priceChart.timeScale().fitContent();
-        }
-      } else if (tab === 'equity') {
-        if (equityView) equityView.classList.remove('hidden');
-        if (tabEquity) tabEquity.className = 'whitespace-nowrap px-3 py-1 rounded-lg bg-white text-slate-900 shadow-sm transition';
-        renderEquityCurve();
-      } else {
-        if (scannerView) scannerView.classList.remove('hidden');
-        if (tabScan) tabScan.className = 'whitespace-nowrap px-3 py-1 rounded-lg bg-white text-slate-900 shadow-sm transition';
-        renderTopSwingScanner();
+        });
+        window.__chartResizeObserver.observe(container);
       }
     }
 
