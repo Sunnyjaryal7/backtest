@@ -147,107 +147,107 @@
 
         <div class="mt-2 p-2.5 rounded-xl bg-emerald-50/60 border border-emerald-200/80">
           <div class="flex items-center justify-between text-[11px] font-semibold text-emerald-800 mb-1">
-            <span>Quant Mean-Reversion</span>
-            <span id="strategyWinBadge">~80–85% Win</span>
-          </div>
-          <p id="strategyDescBox" class="text-[11px] text-slate-600 leading-relaxed">
-            <strong>Entry:</strong> Uptrend confirmed (Close &gt; 200 SMA &amp; 50 SMA &gt; 200 SMA), pullback below 5 SMA, and 2-day cumulative RSI(2)[t] + RSI(2)[t-1] &lt; 10.<br/>
-            <strong>Exit:</strong> Quick snapback close &gt; 5 SMA, or Take-Profit / Trailing SL / Max Hold.
-          </p>
-        </div>
-      </div>
-
-      <!-- 4. Exit Targets (Take-Profit & Trailing Stop-Loss) -->
-      <div class="space-y-3 pt-1 border-t border-slate-100">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-semibold text-slate-700">Exit Targets</span>
-          <div class="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200/60">
-            <button id="unitPctBtn" onclick="setRiskUnit('percent')" class="px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-white text-slate-900 shadow-sm transition">%</button>
-            <button id="unitPtsBtn" onclick="setRiskUnit('points')" class="px-2.5 py-0.5 rounded-md text-[11px] font-semibold text-slate-500 hover:text-slate-900 transition">Points (₹)</button>
+          <div class="flex items-center gap-3 text-xs">
+            <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 font-mono">
+              <span>Credits Used Today:</span>
+              <strong id="creditsUsedLabel">0</strong>
+              <span>/</span>
+              <input id="creditCapInput" type="number" min="10" max="800" value="650" onchange="saveTwelveDataSettings()" class="w-12 text-center font-bold bg-white border border-emerald-300 rounded px-1 py-0.2 text-emerald-900" />
+              <span class="text-[10px] text-emerald-600">(Max 800)</span>
+            </div>
+            <button onclick="clear24HrNseCache()" class="text-[11px] font-semibold text-slate-500 hover:text-slate-800 underline">Purge 24h Cache</button>
           </div>
         </div>
-
-        <!-- Take-Profit -->
-        <div>
-          <div class="flex items-center justify-between text-xs mb-1">
-            <span class="font-medium text-emerald-700">Target / Trail Activation</span>
-            <input id="tpInput" type="number" step="0.1" value="5.5" oninput="syncRiskInput('tp', this.value)" class="w-16 px-2 py-0.5 text-right font-mono font-semibold text-xs text-emerald-700 bg-emerald-50/60 border border-emerald-200 rounded-lg" />
-          </div>
-          <input id="tpSlider" type="range" min="0.5" max="20" step="0.5" value="5.5" oninput="syncRiskSlider('tp', this.value)" class="w-full accent-slate-900 cursor-pointer" />
-        </div>
-
-        <!-- Initial Stop-Loss (Fixed until Target Hit) -->
-        <div>
-          <div class="flex items-center justify-between text-xs mb-1">
-            <span class="font-medium text-amber-700">Initial Stop-Loss (Fixed)</span>
-            <input id="tslInput" type="number" step="0.1" value="2.5" oninput="syncRiskInput('tsl', this.value)" class="w-16 px-2 py-0.5 text-right font-mono font-semibold text-xs text-amber-700 bg-amber-50/60 border border-amber-200 rounded-lg" />
-          </div>
-          <input id="tslSlider" type="range" min="0.5" max="15" step="0.5" value="2.5" oninput="syncRiskSlider('tsl', this.value)" class="w-full accent-slate-900 cursor-pointer" />
-          <p class="text-[10px] text-slate-400 mt-1">Stays fixed until Target hits, then auto-trails to lock profits.</p>
-        </div>
-      </div>
-
-      <!-- 5. Starting Capital & Execution Rules -->
-      <div class="space-y-2.5 pt-2 border-t border-slate-100">
-        <div class="flex items-center justify-between text-xs">
-          <span class="font-semibold text-slate-700">Starting Capital (₹)</span>
-          <input id="capitalInput" type="number" step="5000" value="100000" onchange="triggerRun()" class="w-28 px-2.5 py-1 text-right font-mono font-semibold text-xs text-slate-900 bg-slate-50 border border-slate-200 rounded-lg" />
-        </div>
-
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label class="block text-[10px] font-semibold text-slate-500 mb-1">Trade Direction</label>
-            <select id="directionSelect" onchange="triggerRun()" class="w-full px-2 py-1.5 text-xs font-medium bg-slate-50 border border-slate-200 rounded-lg">
-              <option value="long" selected>Long Only (Mean-Rev)</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-[10px] font-semibold text-slate-500 mb-1">Max Hold Bars</label>
-            <select id="maxHoldSelect" onchange="triggerRun()" class="w-full px-2 py-1.5 text-xs font-medium bg-slate-50 border border-slate-200 rounded-lg">
-              <option value="15" selected>15 Bars Exit</option>
-              <option value="10">10 Bars Exit</option>
-              <option value="25">25 Bars Exit</option>
-              <option value="0">No Time Limit</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="flex items-center justify-between pt-1 text-[11px] text-slate-600">
-          <label class="inline-flex items-center gap-1.5 cursor-pointer">
-            <input id="includeTaxesCheck" type="checkbox" checked onchange="triggerRun()" class="rounded text-emerald-600 focus:ring-emerald-500" />
-            <span>STT & Brokerage</span>
-          </label>
-          <label class="inline-flex items-center gap-1.5 cursor-pointer">
-            <input id="intradayExitCheck" type="checkbox" onchange="triggerRun()" class="rounded text-emerald-600 focus:ring-emerald-500" />
-            <span>15:15 Intraday Exit</span>
-          </label>
-        </div>
-      </div>
-    </aside>
-
-    <!-- RIGHT WORKSPACE AREA (9 COLS) -->
-    <section class="lg:col-span-9 space-y-5">
 
       <!-- =================================================================== -->
-      <!-- TWELVE DATA API KEY & CREDIT-SAFE GUARD BAR                         -->
+      <!-- ₹1,00,000 VIRTUAL PAPER TRADING WALLET (1-CLICK ₹20,000 BUY)        -->
       <!-- =================================================================== -->
-      <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-3.5 sm:px-5 flex flex-wrap items-center justify-between gap-3">
-        <div class="flex flex-wrap items-center gap-2 flex-1 min-w-[260px]">
-          <span class="text-xs font-bold text-slate-800">NSE Twelve Data API Key:</span>
-          <input id="twelveDataKeyInput" type="password" onchange="saveTwelveDataSettings()" placeholder="Paste Twelve Data API key (optional for NSE)" class="px-3 py-1.5 text-xs font-mono bg-slate-50 border border-slate-200 rounded-xl w-64 focus:outline-none focus:border-emerald-500" />
-          <button onclick="saveTwelveDataSettings(true)" class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition">Save Key</button>
-          <button onclick="clearTwelveDataKey()" class="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-medium transition">Clear</button>
+      <div id="paperWalletPanel" class="bg-white rounded-2xl border border-indigo-200/80 shadow-sm overflow-hidden">
+        <div class="p-4 sm:px-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-indigo-50/70 via-white to-white">
+          <div>
+            <div class="flex items-center gap-2 mb-0.5">
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-800">₹1,00,000 VIRTUAL PAPER WALLET</span>
+              <span class="text-[11px] font-medium text-slate-500">₹20,000 per trade • Two-Stage SL/Trail + Real Brokerage/STT</span>
+            </div>
+            <h3 class="text-sm sm:text-base font-bold text-slate-900">Live Strategy Paper Portfolio &amp; Practical Win Rate</h3>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="resetPaperWallet()" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition">Reset ₹1L Wallet</button>
+          </div>
         </div>
 
-        <div class="flex flex-wrap items-center gap-3 text-xs">
-          <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 font-mono">
-            <span>Credits Used Today:</span>
-            <strong id="creditsUsedLabel">0</strong>
-            <span>/</span>
-            <input id="creditCapInput" type="number" min="10" max="800" value="650" onchange="saveTwelveDataSettings()" class="w-12 text-center font-bold bg-white border border-emerald-300 rounded px-1 py-0.2 text-emerald-900" />
-            <span class="text-[10px] text-emerald-600">(Max 800)</span>
+        <!-- 5 Live Paper Portfolio KPIs -->
+        <div class="grid grid-cols-2 sm:grid-cols-5 divide-y sm:divide-y-0 sm:divide-x divide-slate-100 border-b border-slate-100 bg-slate-50/40">
+          <div class="p-3.5">
+            <div class="text-[11px] font-medium text-slate-500">Total Paper Equity</div>
+            <div id="paperTotalEquity" class="text-base font-bold font-mono text-slate-900 mt-0.5">₹1,00,000.00</div>
+            <div id="paperTotalReturnPct" class="text-[11px] font-mono text-slate-400">+0.00%</div>
           </div>
-          <button onclick="clear24HrNseCache()" class="text-[11px] font-semibold text-slate-500 hover:text-slate-800 underline">Purge 24h Cache</button>
+          <div class="p-3.5">
+            <div class="text-[11px] font-medium text-slate-500">Available Cash</div>
+            <div id="paperCashBalance" class="text-base font-bold font-mono text-indigo-700 mt-0.5">₹1,00,000.00</div>
+            <div id="paperSlotsLabel" class="text-[11px] text-slate-400">5 Slots × ₹20,000</div>
+          </div>
+          <div class="p-3.5">
+            <div class="text-[11px] font-medium text-slate-500">Unrealized Live P&amp;L</div>
+            <div id="paperUnrealizedPnl" class="text-base font-bold font-mono text-slate-700 mt-0.5">+₹0.00</div>
+            <div id="paperOpenCountLabel" class="text-[11px] text-slate-400">0 Open Positions</div>
+          </div>
+          <div class="p-3.5">
+            <div class="text-[11px] font-medium text-slate-500">Realized Net P&amp;L</div>
+            <div id="paperRealizedPnl" class="text-base font-bold font-mono text-emerald-600 mt-0.5">+₹0.00</div>
+            <div class="text-[11px] text-slate-400">After STT &amp; Brokerage</div>
+          </div>
+          <div class="p-3.5 col-span-2 sm:col-span-1">
+            <div class="text-[11px] font-medium text-slate-500">Practical Win Rate</div>
+            <div id="paperWinRate" class="text-base font-bold font-mono text-emerald-700 mt-0.5">0.0%</div>
+            <div id="paperWinLossCount" class="text-[11px] text-slate-400">0 Wins / 0 Losses</div>
+          </div>
+        </div>
+
+        <!-- Open Paper Positions & Closed Paper History Tabs -->
+        <div class="px-4 sm:px-5 py-2 bg-white border-b border-slate-100 flex items-center justify-between">
+          <div class="flex items-center gap-1.5 text-xs font-semibold">
+            <button id="paperTabOpenBtn" onclick="switchPaperTab('open')" class="px-3 py-1 rounded-lg bg-indigo-50 text-indigo-800 transition">Open Paper Trades (<span id="paperOpenTabCount">0</span>)</button>
+            <button id="paperTabClosedBtn" onclick="switchPaperTab('closed')" class="px-3 py-1 rounded-lg text-slate-500 hover:text-slate-900 transition">Closed Paper History (<span id="paperClosedTabCount">0</span>)</button>
+          </div>
+          <span class="text-[11px] text-slate-400 hidden sm:inline">Click <strong>Paper Buy ₹20k</strong> on any signal below to enter</span>
+        </div>
+
+        <!-- Open Paper Positions Table -->
+        <div id="paperOpenPositionsView" class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-slate-100 text-[10px] font-semibold text-slate-500 uppercase bg-slate-50/50">
+                <th class="px-4 py-2.5">Asset &amp; Strategy</th>
+                <th class="px-3 py-2.5">Allocated</th>
+                <th class="px-3 py-2.5">Entry / Live Price</th>
+                <th class="px-3 py-2.5">Target / Active SL</th>
+                <th class="px-3 py-2.5 text-right">Live Net P&amp;L</th>
+                <th class="px-4 py-2.5 text-center">Exit</th>
+              </tr>
+            </thead>
+            <tbody id="paperOpenPositionsBody" class="divide-y divide-slate-100 text-xs">
+              <tr><td colspan="6" class="py-5 text-center text-slate-400 text-xs">No open paper positions yet. Click <strong>Paper Buy ₹20k</strong> on any live signal below.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Closed Paper History Table -->
+        <div id="paperClosedHistoryView" class="hidden overflow-x-auto max-h-[260px]">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-slate-100 text-[10px] font-semibold text-slate-500 uppercase bg-slate-50/50">
+                <th class="px-4 py-2.5">Asset</th>
+                <th class="px-3 py-2.5">Entry → Exit</th>
+                <th class="px-3 py-2.5">Exit Reason</th>
+                <th class="px-4 py-2.5 text-right">Net P&amp;L (After Fees)</th>
+              </tr>
+            </thead>
+            <tbody id="paperClosedHistoryBody" class="divide-y divide-slate-100 text-xs">
+              <tr><td colspan="4" class="py-5 text-center text-slate-400 text-xs">No closed paper trades yet.</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -594,6 +594,9 @@
     const TD_CREDITS_KEY = 'nse_algolab_td_credits_v1';
     const NSE_CACHE_24H_KEY = 'nse_algolab_nse_cache_24h_v1';
     const WA_PREFS_KEY = 'nse_algolab_wa_prefs_v1';
+    const PAPER_WALLET_STORAGE_KEY = 'nse_algolab_paper_wallet_v1';
+    const PAPER_INITIAL_CAPITAL = 100000;
+    const PAPER_TRADE_ALLOCATION = 20000;
 
     let liveUsdToInr = 84.50;
 
@@ -611,6 +614,12 @@
       memoryCandleCache: {},
       activeSignalsTracker: {},
       closedSignalsToday: [],
+      paperWallet: {
+        cash: PAPER_INITIAL_CAPITAL,
+        openPositions: {},
+        closedTrades: []
+      },
+      paperTab: 'open',
       tdApiKey: '',
       tdSafetyCap: 650,
       tdCreditsUsedToday: 0,
@@ -1498,6 +1507,279 @@
     }
 
     // =========================================================================
+    // 7B. ₹1,00,000 VIRTUAL PAPER WALLET (₹20,000 PER TRADE + AUTO TWO-STAGE EXIT)
+    // =========================================================================
+    function savePaperWallet() {
+      try {
+        localStorage.setItem(PAPER_WALLET_STORAGE_KEY, JSON.stringify(state.paperWallet));
+      } catch (e) {}
+    }
+
+    function loadPaperWallet() {
+      try {
+        const raw = JSON.parse(localStorage.getItem(PAPER_WALLET_STORAGE_KEY) || 'null');
+        if (raw && typeof raw.cash === 'number' && raw.openPositions && Array.isArray(raw.closedTrades)) {
+          state.paperWallet = raw;
+          return;
+        }
+      } catch (e) {}
+      state.paperWallet = {
+        cash: PAPER_INITIAL_CAPITAL,
+        openPositions: {},
+        closedTrades: []
+      };
+    }
+
+    function resetPaperWallet() {
+      state.paperWallet = {
+        cash: PAPER_INITIAL_CAPITAL,
+        openPositions: {},
+        closedTrades: []
+      };
+      savePaperWallet();
+      renderPaperWalletUI();
+      renderActiveSignalsTable();
+      showToast('Paper Wallet Reset', 'Restored virtual balance to ₹1,00,000.00.');
+    }
+
+    function switchPaperTab(tab) {
+      state.paperTab = tab;
+      const openView = $('paperOpenPositionsView');
+      const closedView = $('paperClosedHistoryView');
+      const openBtn = $('paperTabOpenBtn');
+      const closedBtn = $('paperTabClosedBtn');
+
+      if (openView) openView.classList.toggle('hidden', tab !== 'open');
+      if (closedView) closedView.classList.toggle('hidden', tab !== 'closed');
+      if (openBtn) {
+        openBtn.className = tab === 'open'
+          ? 'px-3 py-1 rounded-lg bg-indigo-50 text-indigo-800 transition'
+          : 'px-3 py-1 rounded-lg text-slate-500 hover:text-slate-900 transition';
+      }
+      if (closedBtn) {
+        closedBtn.className = tab === 'closed'
+          ? 'px-3 py-1 rounded-lg bg-indigo-50 text-indigo-800 transition'
+          : 'px-3 py-1 rounded-lg text-slate-500 hover:text-slate-900 transition';
+      }
+    }
+
+    function executePaperBuy(sym) {
+      const sig = state.activeSignalsTracker[sym];
+      if (!sig) {
+        showToast('Signal Unavailable', 'This signal is no longer active.', true);
+        return;
+      }
+      if (state.paperWallet.openPositions[sym]) {
+        showToast('Already Holding', `You already hold a ₹20,000 paper position in ${sym.replace('USDT', '')}.`, true);
+        return;
+      }
+      if (state.paperWallet.cash < PAPER_TRADE_ALLOCATION) {
+        showToast('Insufficient Paper Cash', `Available cash (${formatINR(state.paperWallet.cash).replace('+', '')}) is below ₹20,000.00.`, true);
+        return;
+      }
+
+      const entryPrice = sig.livePrice || sig.entryPrice;
+      const tpVal = parseFloat($('tpInput')?.value) || 5.5;
+      const slVal = parseFloat($('tslInput')?.value) || 2.5;
+      const isCrypto = Boolean(ASSET_UNIVERSE[sym]?.isCrypto);
+      const priceScale = isCrypto ? liveUsdToInr : 1;
+
+      const tpDist = state.riskUnit === 'percent' ? entryPrice * (tpVal / 100) : (tpVal / priceScale);
+      const slDist = state.riskUnit === 'percent' ? entryPrice * (slVal / 100) : (slVal / priceScale);
+
+      state.paperWallet.cash -= PAPER_TRADE_ALLOCATION;
+      state.paperWallet.openPositions[sym] = {
+        sym,
+        allocated: PAPER_TRADE_ALLOCATION,
+        entryPrice,
+        livePrice: entryPrice,
+        highestPrice: entryPrice,
+        tpPrice: entryPrice + tpDist,
+        activeSl: entryPrice - slDist,
+        trailDist: slDist,
+        targetHit: false,
+        strategyName: sig.reason || 'Top-3 Mean-Reversion',
+        boughtAtIST: `${formatISTDateBadge(Math.floor(Date.now() / 1000))} • ${formatExactISTTimestamp(Math.floor(Date.now() / 1000))}`
+      };
+
+      savePaperWallet();
+      renderPaperWalletUI();
+      renderActiveSignalsTable();
+      playAlertChime();
+      showToast('Paper Buy Executed (₹20,000)', `Bought ${sym.replace('USDT', '')} @ ${formatAssetPrice(entryPrice, sym)}. Monitoring two-stage SL/Trail.`);
+    }
+
+    function closePaperPosition(sym, exitPrice, exitReason) {
+      const pos = state.paperWallet.openPositions[sym];
+      if (!pos) return;
+
+      const includeTaxes = $('includeTaxesCheck')?.checked ?? true;
+      const feePct = includeTaxes ? 0.0018 : 0; // Realistic NSE/Crypto brokerage + STT
+      const rawReturn = (exitPrice - pos.entryPrice) / pos.entryPrice;
+      const netPnl = pos.allocated * (rawReturn - feePct);
+
+      state.paperWallet.cash += pos.allocated + netPnl;
+      state.paperWallet.closedTrades.unshift({
+        sym,
+        allocated: pos.allocated,
+        entryPrice: pos.entryPrice,
+        exitPrice,
+        exitReason,
+        netPnl,
+        closedAtIST: `${formatISTDateBadge(Math.floor(Date.now() / 1000))} • ${formatExactISTTimestamp(Math.floor(Date.now() / 1000))}`
+      });
+      delete state.paperWallet.openPositions[sym];
+
+      savePaperWallet();
+      renderPaperWalletUI();
+      renderActiveSignalsTable();
+    }
+
+    function manualSellPaperPosition(sym) {
+      const pos = state.paperWallet.openPositions[sym];
+      if (!pos) return;
+      closePaperPosition(sym, pos.livePrice || pos.entryPrice, 'Manual Square-Off');
+      showToast('Paper Position Closed', `Exited ${sym.replace('USDT', '')} @ ${formatAssetPrice(pos.livePrice || pos.entryPrice, sym)}.`);
+    }
+
+    function updatePaperPositionWithLivePrice(sym, livePrice) {
+      const pos = state.paperWallet.openPositions[sym];
+      if (!pos || !(livePrice > 0)) return false;
+
+      pos.livePrice = livePrice;
+      if (livePrice > pos.highestPrice) {
+        pos.highestPrice = livePrice;
+      }
+
+      // Stage 2: Once Target Price hits, unlock Trailing Stop-Loss to lock profits
+      if (!pos.targetHit && livePrice >= pos.tpPrice) {
+        pos.targetHit = true;
+        pos.activeSl = Math.max(pos.entryPrice * 1.002, pos.highestPrice - pos.trailDist);
+        playAlertChime();
+        showToast('Paper Target Hit!', `${sym.replace('USDT', '')} reached Target! SL now trailing at ${formatAssetPrice(pos.activeSl, sym)}.`);
+      } else if (pos.targetHit) {
+        const trailedSl = pos.highestPrice - pos.trailDist;
+        if (trailedSl > pos.activeSl) {
+          pos.activeSl = trailedSl;
+        }
+      }
+
+      // Auto-close if Fixed Initial SL or Trailed Profit SL is triggered
+      if (livePrice <= pos.activeSl) {
+        const reason = pos.targetHit ? 'Trailed Profit SL Hit' : 'Fixed Initial SL Hit';
+        closePaperPosition(sym, pos.activeSl, reason);
+        return true;
+      }
+
+      savePaperWallet();
+      return true;
+    }
+
+    function renderPaperWalletUI() {
+      const w = state.paperWallet;
+      const openList = Object.values(w.openPositions || {});
+      const closedList = w.closedTrades || [];
+      const includeTaxes = $('includeTaxesCheck')?.checked ?? true;
+      const feePct = includeTaxes ? 0.0018 : 0;
+
+      let openMarketValue = 0;
+      let unrealizedPnl = 0;
+      for (const p of openList) {
+        const rawRet = ((p.livePrice || p.entryPrice) - p.entryPrice) / p.entryPrice;
+        const netUnrealized = p.allocated * (rawRet - feePct);
+        unrealizedPnl += netUnrealized;
+        openMarketValue += p.allocated + netUnrealized;
+      }
+
+      const realizedPnl = closedList.reduce((acc, t) => acc + t.netPnl, 0);
+      const totalEquity = w.cash + openMarketValue;
+      const totalReturnPct = ((totalEquity - PAPER_INITIAL_CAPITAL) / PAPER_INITIAL_CAPITAL) * 100;
+
+      const wins = closedList.filter(t => t.netPnl > 0).length;
+      const losses = closedList.length - wins;
+      const winRate = closedList.length > 0 ? (wins / closedList.length) * 100 : 0;
+
+      if ($('paperTotalEquity')) $('paperTotalEquity').textContent = formatINR(totalEquity).replace('+', '');
+      if ($('paperTotalReturnPct')) {
+        $('paperTotalReturnPct').textContent = `${totalReturnPct >= 0 ? '+' : ''}${totalReturnPct.toFixed(2)}% vs ₹1L`;
+        $('paperTotalReturnPct').className = `text-[11px] font-mono ${totalReturnPct >= 0 ? 'text-emerald-600' : 'text-rose-600'}`;
+      }
+      if ($('paperCashBalance')) $('paperCashBalance').textContent = formatINR(w.cash).replace('+', '');
+      if ($('paperSlotsLabel')) {
+        const slotsLeft = Math.floor(w.cash / PAPER_TRADE_ALLOCATION);
+        $('paperSlotsLabel').textContent = `${slotsLeft} Slots × ₹20,000 Left`;
+      }
+      if ($('paperUnrealizedPnl')) {
+        $('paperUnrealizedPnl').textContent = formatINR(unrealizedPnl);
+        $('paperUnrealizedPnl').className = `text-base font-bold font-mono mt-0.5 ${unrealizedPnl >= 0 ? 'text-emerald-600' : 'text-rose-600'}`;
+      }
+      if ($('paperOpenCountLabel')) $('paperOpenCountLabel').textContent = `${openList.length} Open Position${openList.length === 1 ? '' : 's'}`;
+      if ($('paperRealizedPnl')) {
+        $('paperRealizedPnl').textContent = formatINR(realizedPnl);
+        $('paperRealizedPnl').className = `text-base font-bold font-mono mt-0.5 ${realizedPnl >= 0 ? 'text-emerald-600' : 'text-rose-600'}`;
+      }
+      if ($('paperWinRate')) $('paperWinRate').textContent = `${winRate.toFixed(1)}%`;
+      if ($('paperWinLossCount')) $('paperWinLossCount').textContent = `${wins} Wins / ${losses} Losses`;
+      if ($('paperOpenTabCount')) $('paperOpenTabCount').textContent = openList.length;
+      if ($('paperClosedTabCount')) $('paperClosedTabCount').textContent = closedList.length;
+
+      const openBody = $('paperOpenPositionsBody');
+      if (openBody) {
+        if (openList.length === 0) {
+          openBody.innerHTML = `<tr><td colspan="6" class="py-5 text-center text-slate-400 text-xs">No open paper positions yet. Click <strong>Paper Buy ₹20k</strong> on any live signal below.</td></tr>`;
+        } else {
+          openBody.innerHTML = openList.map(p => {
+            const rawRet = ((p.livePrice || p.entryPrice) - p.entryPrice) / p.entryPrice;
+            const netPnl = p.allocated * (rawRet - feePct);
+            const stageTag = p.targetHit
+              ? `<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">🎯 Trailing SL</span>`
+              : `<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-600">Fixed Initial SL</span>`;
+            return `
+              <tr class="hover:bg-slate-50/70 transition">
+                <td class="px-4 py-2.5">
+                  <div class="font-bold text-slate-900">${p.sym.replace('USDT', '')} ${stageTag}</div>
+                  <div class="text-[10px] text-slate-400">${p.boughtAtIST}</div>
+                </td>
+                <td class="px-3 py-2.5 font-mono font-semibold text-slate-700">₹20,000</td>
+                <td class="px-3 py-2.5 font-mono">
+                  <div class="font-bold text-slate-900">${formatAssetPrice(p.livePrice || p.entryPrice, p.sym)}</div>
+                  <div class="text-[10px] text-slate-400">In: ${formatAssetPrice(p.entryPrice, p.sym)}</div>
+                </td>
+                <td class="px-3 py-2.5 font-mono text-[11px]">
+                  <div class="text-emerald-600 font-semibold">TP: ${formatAssetPrice(p.tpPrice, p.sym)}</div>
+                  <div class="text-amber-700 font-semibold">SL: ${formatAssetPrice(p.activeSl, p.sym)}</div>
+                </td>
+                <td class="px-3 py-2.5 text-right font-mono font-bold ${netPnl >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${formatINR(netPnl)}</td>
+                <td class="px-4 py-2.5 text-center">
+                  <button onclick="manualSellPaperPosition('${p.sym}')" class="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[11px] font-semibold transition">Sell Now</button>
+                </td>
+              </tr>
+            `;
+          }).join('');
+        }
+      }
+
+      const closedBody = $('paperClosedHistoryBody');
+      if (closedBody) {
+        if (closedList.length === 0) {
+          closedBody.innerHTML = `<tr><td colspan="4" class="py-5 text-center text-slate-400 text-xs">No closed paper trades yet.</td></tr>`;
+        } else {
+          closedBody.innerHTML = closedList.map(t => `
+            <tr class="hover:bg-slate-50/70 transition">
+              <td class="px-4 py-2.5">
+                <div class="font-bold text-slate-900">${t.sym.replace('USDT', '')}</div>
+                <div class="text-[10px] text-slate-400">${t.closedAtIST}</div>
+              </td>
+              <td class="px-3 py-2.5 font-mono text-slate-700">${formatAssetPrice(t.entryPrice, t.sym)} → ${formatAssetPrice(t.exitPrice, t.sym)}</td>
+              <td class="px-3 py-2.5"><span class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-700">${t.exitReason}</span></td>
+              <td class="px-4 py-2.5 text-right font-mono font-bold ${t.netPnl >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${formatINR(t.netPnl)}</td>
+            </tr>
+          `).join('');
+        }
+      }
+    }
+
+    // =========================================================================
     // 8. 2X DAILY IST AUTO-SCANNER (10:00 AM & 3:00 PM IST)
     // =========================================================================
     function hasScannedCurrentISTSlot(slotKey) {
@@ -1571,6 +1853,11 @@
         syncedCount++;
 
         const livePrice = candles[candles.length - 1].close;
+
+        // 0. Sync any open ₹20,000 Paper Wallet position on this asset
+        if (state.paperWallet.openPositions[sym]) {
+          updatePaperPositionWithLivePrice(sym, livePrice);
+        }
 
         // 1. Update existing active signal with two-stage Fixed SL -> Post-Target Trailing SL
         if (state.activeSignalsTracker[sym]) {
@@ -1649,6 +1936,7 @@
 
       if (slotKey) markScannedCurrentISTSlot(slotKey);
       if (trackerChanged) savePersistentSignals();
+      renderPaperWalletUI();
       renderActiveSignalsTable();
 
       if (badge) {
@@ -1722,7 +2010,11 @@
               <div class="text-[10px] text-slate-400">${s.targetHit ? 'Profit-Locked Trail' : 'Fixed Stop-Loss'}</div>
             </td>
             <td class="px-5 py-3.5 text-center">
-              <div class="inline-flex items-center gap-1.5">
+              <div class="inline-flex flex-wrap items-center justify-center gap-1.5">
+                ${state.paperWallet.openPositions[s.sym]
+                  ? `<span class="px-2.5 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200 text-[11px] font-bold">Holding ₹20k</span>`
+                  : `<button onclick="executePaperBuy('${s.sym}')" class="px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-semibold shadow-sm transition">Paper Buy ₹20k</button>`
+                }
                 <button onclick="sendSingleSignalWhatsApp('${s.sym}')" class="px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[11px] font-semibold transition">Alert</button>
                 <button onclick="loadSymbolAndBacktest('${s.sym}')" class="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-semibold transition">Chart</button>
               </div>
@@ -2345,9 +2637,11 @@
     async function initApp() {
       loadTwelveDataSettings();
       loadWhatsAppPrefs();
+      loadPaperWallet();
       populateSymbolSelect();
       onStrategyChanged();
       loadPersistentSignals();
+      renderPaperWalletUI();
       renderActiveSignalsTable();
       setMode('signals');
       startTwoDailySlotsWatcher();
