@@ -758,29 +758,141 @@
     }
 
     function playSignalChime(isSuccess = true) {
-      const chk = document.getElementById('soundAlertCheck');
-      if (chk && !chk.checked) return;
       try {
+        const chk = document.getElementById('soundAlertCheck');
+        if (chk && !chk.checked) return;
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
         if (!AudioCtx) return;
         const ctx = new AudioCtx();
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(isSuccess ? 880 : 440, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(isSuccess ? 1174.66 : 330, ctx.currentTime + 0.18);
+        osc.frequency.setValueAtTime(isSuccess ? 660 : 330, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(isSuccess ? 880 : 220, ctx.currentTime + 0.18);
         gain.gain.setValueAtTime(0.08, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.22);
         osc.connect(gain);
         gain.connect(ctx.destination);
         osc.start();
-        osc.stop(ctx.currentTime + 0.26);
+        osc.stop(ctx.currentTime + 0.24);
       } catch (e) {}
     }
 
     // =========================================================================
-    // 3. SYMBOL FILTERING & CAP TIER CALIBRATION
+    // 3. WHATSAPP CONFIG & ALERT HELPERS
     // =========================================================================
+    function loadWhatsAppConfig() {
+      try {
+        const raw = localStorage.getItem(WA_STORAGE_KEY);
+        if (!raw) return;
+        const cfg = JSON.parse(raw);
+        if (cfg.phone) document.getElementById('waPhoneInput').value = cfg.phone;
+        if (cfg.apiKey) document.getElementById('waApiKeyInput').value = cfg.apiKey;
+      } catch (e) {}
+    }
+
+    function saveWhatsAppConfig() {
+      try {
+        const phone = document.getElementById('waPhoneInput').value.trim();
+        const apiKey = document.getElementById('waApiKeyInput').value.trim();
+        localStorage.setItem(WA_STORAGE_KEY, JSON.stringify({ phone, apiKey }));
+        showToast('WhatsApp Saved', phone ? `Alerts configured for ${phone}` : 'Cleared WhatsApp phone number.');
+      } catch (e) {}
+    }
+
+    function triggerWhatsAppDispatch(messageText, openBrowserIfManual = false) {
+      const phone = (document.getElementById('waPhoneInput').value || '').replace(/[^\d+]/g, '');
+      const apiKey = (document.getElementById('waApiKeyInput').value || '').trim();
+      const encoded = encodeURIComponent(messageText);
+
+      if (phone && apiKey) {
+        const cleanPhone = phone.replace('+', '');
+        const url = `https://api.callmebot.com/whatsapp.php?phone=${cleanPhone}&text=${encoded}&apikey=${encodeURIComponent(apiKey)}`;
+        fetch(url, { mode: 'no-cors' }).catch(() => {});
+        return;
+      }
+
+      if (openBrowserIfManual) {
+        const waUrl = phone
+          ? `https://wa.me/${phone.replace('+', '')}?text=${encoded}`
+          : `https://wa.me/?text=${encoded}`;
+        window.open(waUrl, '_blank');
+      }
+    }
+
+    function sendSingleSignalWhatsApp(sym) {
+      const item = state.activeSignalsTracker[sym];
+      if (!item) return;
+      const cleanSym = sym.replace('USDT', '');
+      const msg =
+        `🚀 *LIVE BUY SIGNAL: ${cleanSym}* (${item.cap})\n` +
+        `📅 Date: ${item.signalDate || item.candleIST}\n` +
+        `⏰ Triggered: ${item.triggeredAtIST}\n` +
+        `💰 Entry Price: ₹${item.entryPrice.toFixed(2)}\n` +
+        `🎯 Target (TP): ₹${item.tpPrice.toFixed(2)} (+${item.tpDistPct.toFixed(2)}%)\n` +
+        `🛡️ Trailing SL: ₹${item.tslPrice.toFixed(2)} (-${item.slDistPct.toFixed(2)}%)\n` +
+        `📊 Rule: ${item.reason}`;
+      triggerWhatsAppDispatch(msg, true);
+    }
+
+    function sendAllActiveSignalsWhatsApp() {
+      const activeList = Object.values(state.activeSignalsTracker);
+      if (!activeList.length) {
+        showToast('No Active Signals', 'There are currently no active BUY signals to send.', true);
+        return;
+      }
+      const lines = activeList.map((s, idx) => {
+        const cleanSym = s.sym.replace('USDT', '');
+        return `${idx + 1}. *${cleanSym}* | Entry: ₹${s.entryPrice.toFixed(2)} | Target: ₹${s.tpPrice.toFixed(2)} | SL: ₹${s.tslPrice.toFixed(2)} (${s.signalDate || s.candleIST})`;
+      });
+      const msg = `📈 *NSE & Crypto Live Buy Signals (${activeList.length} Active)*\n\n` + lines.join('\n');
+      triggerWhatsAppDispatch(msg, true);
+    }
+
+    // =========================================================================
+    // 4. FILTERING, CAP PRESETS & DROPDOWN MANAGEMENT
+    // =========================================================================
+    function selectCapFilter(cap) {
+      state.capFilter = cap;
+      document.querySelectorAll('.cap-btn').forEach(btn => {
+        if (btn.dataset.cap === cap) {
+          btn.className = 'cap-btn py-1 rounded-lg text-[11px] font-semibold bg-white text-slate-900 shadow-sm transition';
+        } else {
+          btn.className = `cap-btn py-1 rounded-lg text-[11px] font-semibold ${btn.dataset.cap === 'Crypto' ? 'text-amber-700 hover:text-amber-900' : 'text-slate-500 hover:text-slate-900'} transition`;
+        }
+      });
+
+      // Calibrate default Target & Trailing SL per Cap Tier when in % mode
+      if (state.riskUnit === 'percent') {
+        const presets = {
+          'ALL':    { tp: 3.5, tsl: 2.0 },
+          'Large':  { tp: 3.0, tsl: 1.5 },
+          'Mid':    { tp: 4.5, tsl: 2.0 },
+          'Small':  { tp: 5.5, tsl: 2.5 },
+          'Crypto': { tp: 6.0, tsl: 3.0 }
+        };
+        const p = presets[cap] || presets['ALL'];
+        document.getElementById('tpSlider').value = p.tp;
+        document.getElementById('tpInput').value = p.tp;
+        document.getElementById('tslSlider').value = p.tsl;
+        document.getElementById('tslInput').value = p.tsl;
+      }
+
+      const q = document.getElementById('symbolSearchInput').value;
+      populateSymbolSelect(q);
+      if (state.mode === 'signals') {
+        renderActiveSignalsTable();
+      } else {
+        triggerRun();
+      }
+    }
+
+    function switchToCryptoMarket() {
+      selectCapFilter('Crypto');
+      setMode('signals');
+      showToast('Top 10 Crypto Synced', 'Live 24/7 Binance market feed active for BTC, ETH, SOL, BNB, XRP & more.');
+    }
+
     function populateSymbolSelect(query = '', preferredSymbol = null) {
       const select = document.getElementById('symbolSelect');
       const currentVal = preferredSymbol || select.value || 'RELIANCE';
@@ -794,33 +906,23 @@
                info.sector.toLowerCase().includes(q);
       });
 
-      const groups = {
-        'Crypto': entries.filter(([, i]) => i.isCrypto),
-        'Large': entries.filter(([, i]) => i.cap === 'Large' && !i.isCrypto),
-        'Mid': entries.filter(([, i]) => i.cap === 'Mid'),
-        'Small': entries.filter(([, i]) => i.cap === 'Small')
-      };
+      const groups = [
+        { label: 'NSE Indices', items: entries.filter(([, i]) => i.isIndex) },
+        { label: 'Large-Cap (Nifty 50)', items: entries.filter(([, i]) => !i.isIndex && i.cap === 'Large') },
+        { label: 'Mid-Cap (Nifty Midcap 150)', items: entries.filter(([, i]) => i.cap === 'Mid') },
+        { label: 'Small-Cap (Liquid)', items: entries.filter(([, i]) => i.cap === 'Small') },
+        { label: 'Top 10 Crypto (INR)', items: entries.filter(([, i]) => i.cap === 'Crypto') }
+      ];
 
       let html = '';
-      if (groups.Crypto.length) {
-        html += `<optgroup label="Top 10 Crypto (${groups.Crypto.length})">` +
-          groups.Crypto.map(([s, i]) => `<option value="${s}">${s.replace('USDT', '')} — ${i.name}</option>`).join('') +
-          `</optgroup>`;
-      }
-      if (groups.Large.length) {
-        html += `<optgroup label="Large-Cap & Indices (${groups.Large.length})">` +
-          groups.Large.map(([s, i]) => `<option value="${s}">${s} — ${i.name}</option>`).join('') +
-          `</optgroup>`;
-      }
-      if (groups.Mid.length) {
-        html += `<optgroup label="Mid-Cap Leaders (${groups.Mid.length})">` +
-          groups.Mid.map(([s, i]) => `<option value="${s}">${s} — ${i.name}</option>`).join('') +
-          `</optgroup>`;
-      }
-      if (groups.Small.length) {
-        html += `<optgroup label="Liquid Small-Cap (${groups.Small.length})">` +
-          groups.Small.map(([s, i]) => `<option value="${s}">${s} — ${i.name}</option>`).join('') +
-          `</optgroup>`;
+      for (const g of groups) {
+        if (g.items.length) {
+          html += `<optgroup label="${g.label} (${g.items.length})">`;
+          html += g.items.map(([sym, info]) =>
+            `<option value="${sym}">${sym.replace('USDT', '')} — ${info.name}</option>`
+          ).join('');
+          html += `</optgroup>`;
+        }
       }
 
       if (!html) {
@@ -836,40 +938,6 @@
       updateSymbolMeta();
     }
 
-    function selectCapFilter(cap) {
-      state.capFilter = cap;
-      document.querySelectorAll('.cap-btn').forEach(btn => {
-        if (btn.dataset.cap === cap) {
-          btn.className = 'cap-btn py-1 rounded-lg text-[11px] font-semibold bg-white text-slate-900 shadow-sm transition';
-        } else {
-          btn.className = 'cap-btn py-1 rounded-lg text-[11px] font-semibold text-slate-500 hover:text-slate-900 transition';
-        }
-      });
-
-      // Calibrate TP & Trailing SL defaults by Market Cap / Crypto volatility
-      if (state.riskUnit === 'percent') {
-        const tpEl = document.getElementById('tpInput');
-        const tpSl = document.getElementById('tpSlider');
-        const slEl = document.getElementById('tslInput');
-        const slSl = document.getElementById('tslSlider');
-        if (cap === 'Large') { tpEl.value = tpSl.value = 3.0; slEl.value = slSl.value = 1.6; }
-        else if (cap === 'Mid') { tpEl.value = tpSl.value = 4.5; slEl.value = slSl.value = 2.2; }
-        else if (cap === 'Small') { tpEl.value = tpSl.value = 5.5; slEl.value = slSl.value = 2.8; }
-        else if (cap === 'Crypto') { tpEl.value = tpSl.value = 6.0; slEl.value = slSl.value = 3.2; }
-        else { tpEl.value = tpSl.value = 3.5; slEl.value = slSl.value = 2.0; }
-      }
-
-      populateSymbolSelect(document.getElementById('symbolSearchInput').value);
-      onSetupChanged(true);
-      if (state.mode === 'signals') scanAllLiveBuySignals(false);
-    }
-
-    function switchToCryptoMarket() {
-      selectCapFilter('Crypto');
-      setMode('signals');
-      showToast('Top 10 Crypto Synced', 'Scanning live 24/7 Binance crypto feeds in INR.');
-    }
-
     function filterSymbolDropdown(query) {
       const prev = document.getElementById('symbolSelect').value;
       populateSymbolSelect(query);
@@ -881,38 +949,36 @@
       const sym = document.getElementById('symbolSelect').value;
       const info = NSE_SYMBOLS[sym];
       if (info) {
-        document.getElementById('symbolMetaText').textContent = `${info.name} • ${info.cap} • ${info.sector}`;
+        document.getElementById('symbolMetaText').textContent = `${info.name} • ${info.cap}-Cap • ${info.sector}`;
       }
     }
 
     // =========================================================================
-    // 4. HISTORICAL DATA ENGINE (1Y / 3Y / 6Y) & INDICATORS
+    // 5. MARKET DATA ENGINE (6-YEAR MULTI-CYCLE GENERATOR + LIVE BINANCE/YAHOO)
     // =========================================================================
-    function getDurationBarCount(tf, dur) {
-      const dailyBars = dur === '1Y' ? 252 : (dur === '3Y' ? 756 : 1512);
-      if (tf === 'Daily') return dailyBars;
-      if (tf === '1H') return Math.min(1800, dailyBars * 2);
-      if (tf === '15m') return Math.min(1800, dailyBars * 3);
-      return Math.min(1800, dailyBars * 4);
+    function getBarCountForDuration(tf, dur) {
+      const barsPerYear = { '5m': 1200, '15m': 900, '1H': 650, 'Daily': 252 };
+      const mult = dur === '1Y' ? 1 : (dur === '3Y' ? 3 : 6);
+      return (barsPerYear[tf] || 252) * mult;
     }
 
-    function generateNSEData(symbol, tf, customBars = null) {
+    function generateNSEData(symbol, tf, customCount = null) {
       const cfg = NSE_SYMBOLS[symbol] || NSE_SYMBOLS['RELIANCE'];
-      const barCount = customBars || getDurationBarCount(tf, state.duration);
+      const barCount = customCount || getBarCountForDuration(tf, state.duration);
       const tfMinsMap = { '5m': 5, '15m': 15, '1H': 60, 'Daily': 1440 };
       const tfMins = tfMinsMap[tf] || 1440;
       const scale = Math.sqrt(tfMins / 5);
 
       let seed = 0;
       for (let i = 0; i < symbol.length; i++) seed += symbol.charCodeAt(i) * (i + 19);
-      seed += tfMins * 37 + barCount;
+      seed += tfMins * 37;
       const rand = () => {
         seed = (seed * 1664525 + 1013904223) % 4294967296;
         return seed / 4294967296;
       };
 
       const candles = [];
-      let price = cfg.basePrice * (barCount > 800 ? 0.52 : 0.82);
+      let price = cfg.basePrice * (barCount > 600 ? 0.52 : 0.84);
       let cursor = Math.floor(Date.now() / 1000) - barCount * tfMins * 60;
 
       for (let i = 0; i < barCount; i++) {
@@ -931,9 +997,9 @@
           }
         }
 
-        const drift = 0.00032 * scale;
-        const cycle = Math.sin(i / 13) * 0.0024 * scale;
-        const shock = (rand() - 0.485) * cfg.volatility * scale * 2.25;
+        const drift = 0.00024 * scale;
+        const cycle = Math.sin(i / 16) * 0.0024 * scale;
+        const shock = (rand() - 0.49) * cfg.volatility * scale * 2.15;
         const open = Number(price.toFixed(2));
         const close = Math.max(5, Number((open * (1 + drift + cycle + shock)).toFixed(2)));
         const wickUp = Math.abs(rand() * cfg.volatility * scale * open);
@@ -945,6 +1011,84 @@
         price = close;
       }
       return candles;
+    }
+
+    async function fetchLiveBinanceCandles(binanceSym, tf) {
+      try {
+        const intervalMap = { '5m': '5m', '15m': '15m', '1H': '1h', 'Daily': '1d' };
+        const interval = intervalMap[tf] || '1d';
+        const url = `https://api.binance.com/api/v3/klines?symbol=${binanceSym}&interval=${interval}&limit=260`;
+        const resp = await fetch(url);
+        if (!resp.ok) return null;
+        const raw = await resp.json();
+        if (!Array.isArray(raw) || raw.length < 60) return null;
+        return raw.map(k => ({
+          time: Math.floor(k[0] / 1000),
+          open: Number((parseFloat(k[1]) * state.usdInrRate).toFixed(2)),
+          high: Number((parseFloat(k[2]) * state.usdInrRate).toFixed(2)),
+          low: Number((parseFloat(k[3]) * state.usdInrRate).toFixed(2)),
+          close: Number((parseFloat(k[4]) * state.usdInrRate).toFixed(2))
+        }));
+      } catch (e) {
+        return null;
+      }
+    }
+
+    async function fetchSingleStockLiveYahoo(sym, tf) {
+      const cfg = NSE_SYMBOLS[sym];
+      if (!cfg || cfg.isIndex || cfg.isCrypto) return null;
+      const yahooTicker = cfg.yahooSym || `${sym}.NS`;
+      const intervalMap = { '5m': '5m', '15m': '15m', '1H': '60m', 'Daily': '1d' };
+      const rangeMap = { '5m': '5d', '15m': '15d', '1H': '60d', 'Daily': '1y' };
+      const targetUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooTicker)}?interval=${intervalMap[tf] || '1d'}&range=${rangeMap[tf] || '1y'}`;
+
+      const proxies = [
+        `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`,
+        `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`
+      ];
+
+      for (const proxyUrl of proxies) {
+        try {
+          const res = await fetch(proxyUrl);
+          if (!res.ok) continue;
+          const json = await res.json();
+          const result = json?.chart?.result?.[0];
+          const timestamps = result?.timestamp;
+          const quote = result?.indicators?.quote?.[0];
+          if (!timestamps || !quote || timestamps.length < 60) continue;
+
+          const bars = [];
+          for (let i = 0; i < timestamps.length; i++) {
+            const o = quote.open[i], h = quote.high[i], l = quote.low[i], c = quote.close[i];
+            if (o == null || h == null || l == null || c == null) continue;
+            bars.push({
+              time: timestamps[i],
+              open: Number(o.toFixed(2)),
+              high: Number(h.toFixed(2)),
+              low: Number(l.toFixed(2)),
+              close: Number(c.toFixed(2))
+            });
+          }
+          if (bars.length >= 60) return bars;
+        } catch (e) {}
+      }
+      return null;
+    }
+
+    // =========================================================================
+    // 6. TECHNICAL INDICATORS & STRATEGY SIGNAL ENGINE
+    // =========================================================================
+    function computeSMA(values, period) {
+      const sma = new Array(values.length).fill(null);
+      if (values.length < period) return sma;
+      let sum = 0;
+      for (let i = 0; i < period; i++) sum += values[i];
+      sma[period - 1] = sum / period;
+      for (let i = period; i < values.length; i++) {
+        sum += values[i] - values[i - period];
+        sma[i] = sum / period;
+      }
+      return sma;
     }
 
     function computeEMA(values, period) {
@@ -960,19 +1104,6 @@
         ema[i] = prev;
       }
       return ema;
-    }
-
-    function computeSMA(values, period) {
-      const sma = new Array(values.length).fill(null);
-      if (values.length < period) return sma;
-      let sum = 0;
-      for (let i = 0; i < period; i++) sum += values[i];
-      sma[period - 1] = sum / period;
-      for (let i = period; i < values.length; i++) {
-        sum += values[i] - values[i - period];
-        sma[i] = sum / period;
-      }
-      return sma;
     }
 
     function computeRSI(values, period = 14) {
@@ -1020,6 +1151,7 @@
       const strategy = document.getElementById('strategySelect').value;
       const closes = candles.map(c => c.close);
       const signals = new Array(candles.length).fill(0);
+      const reasons = new Array(candles.length).fill('');
       let fastLine = new Array(candles.length).fill(null);
       let slowLine = new Array(candles.length).fill(null);
 
@@ -1033,9 +1165,9 @@
         for (let i = 200; i < candles.length; i++) {
           if (rsi2[i] !== null && rsi2[i - 1] !== null && sma5[i] !== null && sma50[i] !== null && sma200[i] !== null) {
             const cumRsi = rsi2[i] + rsi2[i - 1];
-            const uptrend = closes[i] > sma200[i] && sma50[i] > sma200[i];
-            if (uptrend && cumRsi < 10 && closes[i] < sma5[i]) {
+            if (closes[i] > sma200[i] && sma50[i] > sma200[i] && cumRsi < 10 && closes[i] < sma5[i]) {
               signals[i] = 1;
+              reasons[i] = `Cum RSI(2): ${cumRsi.toFixed(1)} (<10) • >200 SMA`;
             } else if (closes[i] > sma5[i] && closes[i - 1] <= sma5[i - 1]) {
               signals[i] = -1;
             }
@@ -1049,8 +1181,12 @@
         slowLine = sma50;
         for (let i = 50; i < candles.length; i++) {
           if (rsi2[i] !== null && sma5[i] !== null && sma50[i] !== null) {
-            if (closes[i] > sma50[i] && rsi2[i] < 15 && closes[i] < sma5[i]) signals[i] = 1;
-            else if (closes[i] > sma5[i] && closes[i - 1] <= sma5[i - 1]) signals[i] = -1;
+            if (closes[i] > sma50[i] && rsi2[i] < 15 && closes[i] < sma5[i]) {
+              signals[i] = 1;
+              reasons[i] = `RSI(2): ${rsi2[i].toFixed(1)} (<15) • >50 SMA`;
+            } else if (closes[i] > sma5[i] && closes[i - 1] <= sma5[i - 1]) {
+              signals[i] = -1;
+            }
           }
         }
       } else if (strategy === 'bb_rsi_snap') {
@@ -1063,8 +1199,12 @@
           if (bb.lower[i] !== null && rsi14[i] !== null && ema50[i] !== null) {
             const inUptrend = closes[i] > ema50[i] * 0.97;
             const touchedLower = candles[i].low <= bb.lower[i] * 1.003 || closes[i] <= bb.lower[i];
-            if (inUptrend && touchedLower && rsi14[i] < 38 && closes[i] >= candles[i].open) signals[i] = 1;
-            else if (closes[i] >= bb.mid[i] && closes[i - 1] < bb.mid[i - 1]) signals[i] = -1;
+            if (inUptrend && touchedLower && rsi14[i] < 38 && closes[i] >= candles[i].open) {
+              signals[i] = 1;
+              reasons[i] = `Lower BB Snap • RSI(14): ${rsi14[i].toFixed(1)}`;
+            } else if (closes[i] >= bb.mid[i] && closes[i - 1] < bb.mid[i - 1]) {
+              signals[i] = -1;
+            }
           }
         }
       } else if (strategy === 'ema20_pullback') {
@@ -1074,8 +1214,11 @@
         slowLine = ema50;
         for (let i = 50; i < candles.length; i++) {
           if (ema20[i] !== null && ema50[i] !== null) {
-            if (ema20[i] > ema50[i] && candles[i].low <= ema20[i] * 1.004 && closes[i] > ema20[i] && closes[i] > candles[i].open) {
+            const uptrend = ema20[i] > ema50[i];
+            const pulledBack = candles[i].low <= ema20[i] * 1.004 && closes[i] > ema20[i];
+            if (uptrend && pulledBack && closes[i] > candles[i].open) {
               signals[i] = 1;
+              reasons[i] = `20-EMA Bounce • Trend Aligned`;
             } else if (closes[i] < ema20[i] && closes[i - 1] >= ema20[i - 1]) {
               signals[i] = -1;
             }
@@ -1086,8 +1229,12 @@
         slowLine = computeEMA(closes, 21);
         for (let i = 1; i < candles.length; i++) {
           if (fastLine[i] !== null && slowLine[i] !== null && fastLine[i - 1] !== null && slowLine[i - 1] !== null) {
-            if (fastLine[i - 1] <= slowLine[i - 1] && fastLine[i] > slowLine[i]) signals[i] = 1;
-            else if (fastLine[i - 1] >= slowLine[i - 1] && fastLine[i] < slowLine[i]) signals[i] = -1;
+            if (fastLine[i - 1] <= slowLine[i - 1] && fastLine[i] > slowLine[i]) {
+              signals[i] = 1;
+              reasons[i] = `9 EMA Crossed Above 21 EMA`;
+            } else if (fastLine[i - 1] >= slowLine[i - 1] && fastLine[i] < slowLine[i]) {
+              signals[i] = -1;
+            }
           }
         }
       } else if (strategy === 'supertrend_breakout') {
@@ -1096,11 +1243,12 @@
         for (let i = period; i < candles.length; i++) {
           let atrSum = 0;
           for (let j = i - period + 1; j <= i; j++) {
-            atrSum += Math.max(
+            const tr = Math.max(
               candles[j].high - candles[j].low,
               Math.abs(candles[j].high - candles[j - 1].close),
               Math.abs(candles[j].low - candles[j - 1].close)
             );
+            atrSum += tr;
           }
           const atr = atrSum / period;
           const mid = (candles[i].high + candles[i].low) / 2;
@@ -1110,8 +1258,12 @@
           if (closes[i] > upperBand) trend = 1;
           else if (closes[i] < lowerBand) trend = -1;
           fastLine[i] = trend === 1 ? lowerBand : upperBand;
-          if (prevTrend === -1 && trend === 1) signals[i] = 1;
-          else if (prevTrend === 1 && trend === -1) signals[i] = -1;
+          if (prevTrend === -1 && trend === 1) {
+            signals[i] = 1;
+            reasons[i] = `Supertrend Bullish Breakout`;
+          } else if (prevTrend === 1 && trend === -1) {
+            signals[i] = -1;
+          }
         }
       } else if (strategy === 'vwap_bounce') {
         const lookback = 20;
@@ -1126,23 +1278,27 @@
           const vwap = pvSum / vSum;
           fastLine[i] = vwap;
           if (i > lookback && fastLine[i - 1] !== null) {
-            if (closes[i - 1] <= fastLine[i - 1] && closes[i] > vwap) signals[i] = 1;
-            else if (closes[i - 1] >= fastLine[i - 1] && closes[i] < vwap) signals[i] = -1;
+            if (closes[i - 1] <= fastLine[i - 1] && closes[i] > vwap) {
+              signals[i] = 1;
+              reasons[i] = `VWAP Reclaim Breakout`;
+            } else if (closes[i - 1] >= fastLine[i - 1] && closes[i] < vwap) {
+              signals[i] = -1;
+            }
           }
         }
       }
 
-      return { signals, fastLine, slowLine };
+      return { signals, reasons, fastLine, slowLine };
     }
 
     // =========================================================================
-    // 5. STRATEGY SIMULATION ENGINE
+    // 7. BACKTEST SIMULATION ENGINE
     // =========================================================================
-    function executeStrategySimulation(candles, overrideSymbol = null) {
-      const symbol = overrideSymbol || document.getElementById('symbolSelect').value;
-      const cfg = NSE_SYMBOLS[symbol] || NSE_SYMBOLS['RELIANCE'];
+    function executeStrategySimulation(candles, symbolOverride = null) {
+      const symbol = symbolOverride || document.getElementById('symbolSelect').value;
       const strategy = document.getElementById('strategySelect').value;
       const isSwingStrategy = SWING_STRATEGIES.has(strategy);
+      const cfg = NSE_SYMBOLS[symbol] || NSE_SYMBOLS['RELIANCE'];
       const lotStep = cfg.lotStep || 1;
       const initialCap = Math.max(5000, parseFloat(document.getElementById('capitalInput').value) || 100000);
       const tpVal = Math.max(0.1, parseFloat(document.getElementById('tpInput').value) || 3.5);
@@ -1179,7 +1335,7 @@
         const bar = candles[i];
         const istMins = getISTMinutesOfDay(bar.time);
         const isIntraday = state.timeframe !== 'Daily';
-        const isSquareOffTime = !cfg.isCrypto && isIntraday && autoSquareOff && istMins >= (15 * 60 + 15);
+        const isSquareOffTime = isIntraday && autoSquareOff && !cfg.isCrypto && istMins >= (15 * 60 + 15);
 
         if (position) {
           let exitPrice = null;
@@ -1193,6 +1349,7 @@
               const newTSL = position.extremePrice - position.tslDist;
               if (newTSL > position.currentSL) {
                 position.currentSL = newTSL;
+                position.trailed = true;
               }
             }
             if (bar.high >= position.tpPrice) {
@@ -1220,6 +1377,7 @@
               const newTSL = position.extremePrice + position.tslDist;
               if (newTSL < position.currentSL) {
                 position.currentSL = newTSL;
+                position.trailed = true;
               }
             }
             if (bar.low <= position.tpPrice) {
@@ -1275,7 +1433,7 @@
           }
         }
 
-        const allowEntry = cfg.isCrypto || !isIntraday || !autoSquareOff || istMins < (15 * 60);
+        const allowEntry = !isIntraday || !autoSquareOff || cfg.isCrypto || istMins < (15 * 60);
         if (!position && allowEntry && signals[i] !== 0) {
           const buyAllowed = signals[i] === 1 && (direction === 'both' || direction === 'long');
           const sellAllowed = signals[i] === -1 && (direction === 'both' || direction === 'short');
@@ -1284,13 +1442,9 @@
             const side = buyAllowed ? 'BUY' : 'SELL';
             const entryPrice = bar.close;
             const deployCap = capital * 0.95;
-            let qty = cfg.isCrypto
-              ? Number((deployCap / entryPrice).toFixed(4))
-              : Math.floor(deployCap / entryPrice);
+            let qty = cfg.isCrypto ? Number((deployCap / entryPrice).toFixed(4)) : Math.floor(deployCap / entryPrice);
             if (!cfg.isCrypto) {
               qty = lotStep > 1 ? Math.max(lotStep, Math.floor(qty / lotStep) * lotStep) : Math.max(1, qty);
-            } else {
-              qty = Math.max(0.0001, qty);
             }
 
             const { tpPrice, currentSL, tslDist } = calcLevels(side, entryPrice);
@@ -1303,7 +1457,8 @@
               tpPrice,
               currentSL,
               tslDist,
-              extremePrice: entryPrice
+              extremePrice: entryPrice,
+              trailed: false
             };
 
             tslSeries[i] = Number(currentSL.toFixed(2));
@@ -1335,7 +1490,367 @@
     }
 
     // =========================================================================
-    // 6. CHARTS, KPI & TRADE HISTORY RENDERING
+    // 8. LIVE BUY SIGNALS SCANNER (PERSISTENT UNTIL TP/SL + SCHEDULED OPEN/CLOSE)
+    // =========================================================================
+    let lastScheduledScanKey = null;
+
+    function getISTScheduleInfo() {
+      const now = new Date();
+      const parts = new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'Asia/Kolkata',
+        weekday: 'short',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      }).formatToParts(now);
+
+      const getPart = (type) => parts.find(p => p.type === type).value;
+      const weekday = getPart('weekday');
+      const dateKey = `${getPart('year')}-${getPart('month')}-${getPart('day')}`;
+      const hour = parseInt(getPart('hour'), 10);
+      const minute = parseInt(getPart('minute'), 10);
+      const minsOfDay = hour * 60 + minute;
+      const isWeekday = weekday !== 'Sat' && weekday !== 'Sun';
+
+      const OPEN_MINS = 9 * 60 + 15;  // 09:15 IST
+      const CLOSE_MINS = 15 * 60 + 30; // 15:30 IST
+
+      let nextSessionLabel = 'Next Open: 09:15 IST';
+      if (isWeekday && minsOfDay < OPEN_MINS) {
+        nextSessionLabel = 'Next Auto-Scan: Today 09:15 IST (Market Open)';
+      } else if (isWeekday && minsOfDay >= OPEN_MINS && minsOfDay < CLOSE_MINS) {
+        nextSessionLabel = 'Next Auto-Scan: Today 15:30 IST (Market Close)';
+      } else {
+        nextSessionLabel = 'Next Auto-Scan: Next Trading Day 09:15 IST';
+      }
+
+      return {
+        isWeekday,
+        dateKey,
+        minsOfDay,
+        isMarketOpenTick: isWeekday && minsOfDay === OPEN_MINS,
+        isMarketCloseTick: isWeekday && minsOfDay === CLOSE_MINS,
+        nextSessionLabel
+      };
+    }
+
+    function checkMarketOpenCloseAutoRefresh() {
+      if (state.mode !== 'signals') return;
+      const sched = getISTScheduleInfo();
+      if (sched.isMarketOpenTick) {
+        const key = `${sched.dateKey}_OPEN`;
+        if (lastScheduledScanKey !== key) {
+          lastScheduledScanKey = key;
+          scanAllLiveBuySignals(true);
+          showToast('Market Open Auto-Scan (09:15 IST)', 'Refreshed Live Buy Signals at NSE Market Open.');
+        }
+      } else if (sched.isMarketCloseTick) {
+        const key = `${sched.dateKey}_CLOSE`;
+        if (lastScheduledScanKey !== key) {
+          lastScheduledScanKey = key;
+          scanAllLiveBuySignals(true);
+          showToast('Market Close Auto-Scan (15:30 IST)', 'Refreshed Live Buy Signals at NSE Market Close.');
+        }
+      }
+    }
+
+    function startLiveBuyScanner() {
+      stopLiveBuyScanner();
+      scanAllLiveBuySignals(true);
+      // Only trigger automatic refreshes at NSE Market Open (09:15 IST) & Market Close (15:30 IST)
+      state.scannerTimer = setInterval(checkMarketOpenCloseAutoRefresh, 15000);
+    }
+
+    function stopLiveBuyScanner() {
+      if (state.scannerTimer) {
+        clearInterval(state.scannerTimer);
+        state.scannerTimer = null;
+      }
+    }
+
+    async function scanAllLiveBuySignals(forceDataReload = false) {
+      const strategy = document.getElementById('strategySelect').value;
+      const tpVal = Math.max(0.1, parseFloat(document.getElementById('tpInput').value) || 3.5);
+      const tslVal = Math.max(0.05, parseFloat(document.getElementById('tslInput').value) || 2.0);
+      const allSymbols = Object.keys(NSE_SYMBOLS);
+
+      let liveApiCount = 0;
+      const newTriggeredItems = [];
+      const closedAlerts = [];
+      let trackerChanged = false;
+
+      if (forceDataReload) {
+        // Sync Top 10 Crypto from Binance in parallel
+        await Promise.all(
+          allSymbols.filter(s => NSE_SYMBOLS[s].isCrypto).map(async (sym) => {
+            const binanceBars = await fetchLiveBinanceCandles(NSE_SYMBOLS[sym].binanceSym, state.timeframe);
+            if (binanceBars) {
+              state.liveUniverseMap[sym] = { bars: binanceBars, isRealLive: true };
+            }
+          })
+        );
+
+        // Sync sample of active NSE stocks via Yahoo Finance
+        const nseSample = ['RELIANCE', 'HDFCBANK', 'ICICIBANK', 'INFY', 'BAJFINANCE', 'M&M', 'TRENT', 'CGPOWER', 'MCX', 'CDSL', 'LAURUSLABS'];
+        await Promise.all(
+          nseSample.map(async (sym) => {
+            const yBars = await fetchSingleStockLiveYahoo(sym, state.timeframe);
+            if (yBars) {
+              state.liveUniverseMap[sym] = { bars: yBars, isRealLive: true };
+            }
+          })
+        );
+      }
+
+      for (const sym of allSymbols) {
+        const cfg = NSE_SYMBOLS[sym];
+        if (!state.liveUniverseMap[sym]) {
+          state.liveUniverseMap[sym] = {
+            bars: generateNSEData(sym, state.timeframe, 260),
+            isRealLive: false
+          };
+        }
+        const entry = state.liveUniverseMap[sym];
+        if (entry.isRealLive) liveApiCount++;
+
+        const bars = entry.bars;
+        const lastBar = bars[bars.length - 1];
+
+        // 1. Check if this symbol is already in Active Signals Tracker (held until TP or SL hits)
+        if (state.activeSignalsTracker[sym]) {
+          const tracked = state.activeSignalsTracker[sym];
+          tracked.livePrice = lastBar.close;
+
+          // Ratchet Trailing Stop-Loss upward if price makes new highs
+          if (lastBar.high > tracked.highestPrice) {
+            tracked.highestPrice = lastBar.high;
+            const candidateSL = Number((tracked.highestPrice - tracked.tslDist).toFixed(2));
+            if (candidateSL > tracked.tslPrice) {
+              tracked.tslPrice = candidateSL;
+              tracked.trailed = true;
+              trackerChanged = true;
+            }
+          }
+
+          // Auto-remove ONLY when Target Reached or Stop-Loss Hit
+          if (lastBar.close >= tracked.tpPrice || lastBar.high >= tracked.tpPrice) {
+            const gainPct = (((tracked.tpPrice - tracked.entryPrice) / tracked.entryPrice) * 100).toFixed(2);
+            const closedItem = {
+              sym,
+              status: 'TARGET REACHED',
+              entryPrice: tracked.entryPrice,
+              exitPrice: tracked.tpPrice,
+              signalDate: tracked.signalDate || tracked.candleIST,
+              pct: `+${gainPct}%`,
+              closedAtIST: formatExactISTTimestamp(Math.floor(Date.now() / 1000))
+            };
+            state.closedSignalsToday.unshift(closedItem);
+            delete state.activeSignalsTracker[sym];
+            trackerChanged = true;
+            closedAlerts.push(`🎯 ${sym.replace('USDT', '')} reached TP ₹${tracked.tpPrice.toFixed(2)} (+${gainPct}%)`);
+          } else if (lastBar.close <= tracked.tslPrice || lastBar.low <= tracked.tslPrice) {
+            const diffPct = (((tracked.tslPrice - tracked.entryPrice) / tracked.entryPrice) * 100).toFixed(2);
+            const closedItem = {
+              sym,
+              status: tracked.trailed ? 'TRAILING SL HIT' : 'STOP-LOSS HIT',
+              entryPrice: tracked.entryPrice,
+              exitPrice: tracked.tslPrice,
+              signalDate: tracked.signalDate || tracked.candleIST,
+              pct: `${Number(diffPct) >= 0 ? '+' : ''}${diffPct}%`,
+              closedAtIST: formatExactISTTimestamp(Math.floor(Date.now() / 1000))
+            };
+            state.closedSignalsToday.unshift(closedItem);
+            delete state.activeSignalsTracker[sym];
+            trackerChanged = true;
+            closedAlerts.push(`🛡️ ${sym.replace('USDT', '')} hit SL ₹${tracked.tslPrice.toFixed(2)} (${closedItem.pct})`);
+          }
+          continue;
+        }
+
+        // 2. Evaluate fresh BUY signal on latest closed/live candles
+        const { signals, reasons } = generateSignals(bars);
+        const lastIdx = bars.length - 1;
+        const triggerIdx = signals[lastIdx] === 1 ? lastIdx : (signals[lastIdx - 1] === 1 ? lastIdx - 1 : -1);
+
+        if (triggerIdx !== -1) {
+          const trigBar = bars[triggerIdx];
+          const entryPrice = lastBar.close;
+          const tpPrice = state.riskUnit === 'percent'
+            ? Number((entryPrice * (1 + tpVal / 100)).toFixed(2))
+            : Number((entryPrice + tpVal).toFixed(2));
+          const tslPrice = state.riskUnit === 'percent'
+            ? Number((entryPrice * (1 - tslVal / 100)).toFixed(2))
+            : Number((entryPrice - tslVal).toFixed(2));
+          const tslDist = Number((entryPrice - tslPrice).toFixed(2));
+          const tpDistPct = ((tpPrice - entryPrice) / entryPrice) * 100;
+          const slDistPct = ((entryPrice - tslPrice) / entryPrice) * 100;
+
+          const sigObj = {
+            sym,
+            name: cfg.name,
+            cap: cfg.cap,
+            sector: cfg.sector,
+            isRealLive: entry.isRealLive,
+            strategy,
+            entryPrice,
+            livePrice: entryPrice,
+            highestPrice: entryPrice,
+            tpPrice,
+            tslPrice,
+            tslDist,
+            tpDistPct,
+            slDistPct,
+            trailed: false,
+            reason: reasons[triggerIdx] || 'Strategy Buy Setup',
+            signalDate: formatSignalDateOnly(trigBar.time),
+            candleIST: formatIST(trigBar.time, state.timeframe),
+            triggeredAtIST: formatExactISTTimestamp(Math.floor(Date.now() / 1000))
+          };
+
+          state.activeSignalsTracker[sym] = sigObj;
+          trackerChanged = true;
+          newTriggeredItems.push(sigObj);
+        }
+      }
+
+      if (trackerChanged) savePersistentSignals();
+
+      const badge = document.getElementById('liveFeedQualityBadge');
+      if (badge) {
+        badge.textContent = liveApiCount > 0 ? `Live Feeds Synced (${liveApiCount} API + NSE)` : 'NSE Real-Time Engine';
+      }
+
+      if (newTriggeredItems.length > 0) {
+        playSignalChime(true);
+        const first = newTriggeredItems[0];
+        showToast(
+          `New BUY Signal: ${first.sym.replace('USDT', '')}`,
+          `Entry ₹${first.entryPrice.toFixed(2)} • Target ₹${first.tpPrice.toFixed(2)} • SL ₹${first.tslPrice.toFixed(2)}`
+        );
+        // Dispatch automatic WhatsApp webhook if API key is configured
+        const waMsg = newTriggeredItems.map(s =>
+          `🚀 BUY ${s.sym.replace('USDT', '')} (${s.signalDate}) @ ₹${s.entryPrice.toFixed(2)} | Target: ₹${s.tpPrice.toFixed(2)} | SL: ₹${s.tslPrice.toFixed(2)}`
+        ).join('\n');
+        triggerWhatsAppDispatch(waMsg, false);
+      }
+
+      if (closedAlerts.length > 0) {
+        playSignalChime(false);
+        showToast('Signal Auto-Removed', closedAlerts[0]);
+      }
+
+      renderActiveSignalsTable();
+    }
+
+    function renderActiveSignalsTable() {
+      const tbody = document.getElementById('liveBuySignalsBody');
+      const strategySelect = document.getElementById('strategySelect');
+      const strategyLabel = strategySelect.options[strategySelect.selectedIndex].text;
+
+      const allActive = Object.values(state.activeSignalsTracker);
+      const visibleSignals = allActive.filter(s => state.capFilter === 'ALL' || s.cap === state.capFilter);
+
+      document.getElementById('liveSignalBadge').textContent = visibleSignals.length;
+      const subEl = document.getElementById('liveScannerSubtitle');
+      if (subEl) {
+        const sched = getISTScheduleInfo();
+        subEl.textContent = `${visibleSignals.length} active BUY signals (${strategyLabel} • ${state.timeframe}) • Auto-refresh ONLY at Open (09:15) & Close (15:30) IST • ${sched.nextSessionLabel}`;
+      }
+
+      renderClosedSignalsLog();
+
+      if (!visibleSignals.length) {
+        tbody.innerHTML = `<tr><td colspan="6" class="py-10 text-center text-slate-400 font-sans">No active BUY signals right now for <strong>${state.capFilter}</strong> tier. Signals appear automatically when entry rules trigger and stay here until Target or Stop-Loss hits.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = visibleSignals.map(s => {
+        const cleanSym = s.sym.replace('USDT', '');
+        const unrealizedPct = ((s.livePrice - s.entryPrice) / s.entryPrice) * 100;
+        const pnlColor = unrealizedPct >= 0 ? 'text-emerald-600' : 'text-rose-600';
+        const capPill = s.cap === 'Crypto'
+          ? `<span class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px] font-bold">Crypto</span>`
+          : `<span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-bold">${s.cap}</span>`;
+        const liveTag = s.isRealLive
+          ? `<span class="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 text-[10px] font-bold">LIVE</span>`
+          : '';
+
+        return `
+          <tr class="hover:bg-emerald-50/40 transition">
+            <td class="py-3 px-3.5">
+              <div class="flex items-center gap-1.5">
+                <span class="font-bold text-slate-900 text-sm">${cleanSym}</span>
+                ${capPill}
+                ${liveTag}
+              </div>
+              <div class="text-[11px] font-sans font-semibold text-slate-700 mt-0.5">📅 ${s.signalDate || s.candleIST}</div>
+              <div class="text-[10px] text-slate-400">Triggered: ${s.triggeredAtIST}</div>
+            </td>
+            <td class="py-3 px-3.5 text-right">
+              <div class="font-bold text-slate-900">₹${s.livePrice.toFixed(2)}</div>
+              <div class="text-[11px] text-slate-500">Entry: ₹${s.entryPrice.toFixed(2)}</div>
+              <div class="text-[11px] font-semibold ${pnlColor}">${unrealizedPct >= 0 ? '+' : ''}${unrealizedPct.toFixed(2)}%</div>
+            </td>
+            <td class="py-3 px-3.5 font-sans">
+              <span class="inline-block px-2 py-0.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-semibold">${s.reason}</span>
+            </td>
+            <td class="py-3 px-3.5 text-right">
+              <div class="font-bold text-emerald-700">₹${s.tpPrice.toFixed(2)}</div>
+              <div class="text-[11px] text-emerald-600">+${s.tpDistPct.toFixed(2)}%</div>
+            </td>
+            <td class="py-3 px-3.5 text-right">
+              <div class="font-bold text-amber-700">₹${s.tslPrice.toFixed(2)}</div>
+              <div class="text-[11px] text-amber-600">${s.trailed ? 'Trailed' : `-${s.slDistPct.toFixed(2)}%`}</div>
+            </td>
+            <td class="py-3 px-3.5 text-right">
+              <div class="inline-flex items-center gap-1.5">
+                <button onclick="sendSingleSignalWhatsApp('${s.sym}')" title="Send WhatsApp Alert" class="px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-[11px] font-sans font-semibold transition">📲 WA</button>
+                <button onclick="openSymbolInBacktest('${s.sym}')" class="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-sans font-semibold transition">Chart</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderClosedSignalsLog() {
+      const box = document.getElementById('closedSignalsBox');
+      const list = document.getElementById('closedSignalsList');
+      if (!state.closedSignalsToday.length) {
+        box.classList.add('hidden');
+        return;
+      }
+      box.classList.remove('hidden');
+      list.innerHTML = state.closedSignalsToday.slice(0, 12).map(c => {
+        const isTarget = c.status === 'TARGET REACHED';
+        const pillCls = isTarget
+          ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+          : 'bg-rose-50 border-rose-200 text-rose-800';
+        return `<span class="px-2.5 py-1 rounded-lg border ${pillCls}">${c.sym.replace('USDT', '')}: ${c.status} (${c.pct}) @ ₹${c.exitPrice.toFixed(2)}</span>`;
+      }).join('');
+    }
+
+    function clearClosedSignalsLog() {
+      state.activeSignalsTracker = {};
+      state.closedSignalsToday = [];
+      savePersistentSignals();
+      scanAllLiveBuySignals(true);
+      showToast('Tracker Reset', 'Cleared active and closed signals history.');
+    }
+
+    function openSymbolInBacktest(sym) {
+      selectCapFilter('ALL');
+      document.getElementById('symbolSearchInput').value = '';
+      populateSymbolSelect('', sym);
+      setMode('backtest');
+    }
+
+    // =========================================================================
+    // 9. CHARTS, SCANNER TAB & TRADE HISTORY RENDERING
     // =========================================================================
     function initPriceChart() {
       const container = document.getElementById('priceChartView');
@@ -1394,6 +1909,7 @@
         if (sim.tslSeries[i] !== null) tslData.push({ time: t, value: sim.tslSeries[i] });
         if (sim.tpSeries[i] !== null) tpData.push({ time: t, value: sim.tpSeries[i] });
       }
+
       state.fastLine.setData(fastData);
       state.slowLine.setData(slowData);
       state.tslLine.setData(tslData);
@@ -1409,7 +1925,7 @@
       const wins = sim.trades.filter(t => t.netPnl > 0);
       const losses = sim.trades.filter(t => t.netPnl <= 0);
       const grossProfit = wins.reduce((acc, t) => acc + t.netPnl, 0);
-      const grossLoss = Math.abs(losses.reduce((acc, t) => acc + t.netPnl, 0));
+      const grossLoss = losses.reduce((acc, t) => acc + Math.abs(t.netPnl), 0);
       const winRate = sim.trades.length ? (wins.length / sim.trades.length) * 100 : 0;
 
       const tpHits = sim.trades.filter(t => t.exitReason === 'Take-Profit').length;
@@ -1436,10 +1952,10 @@
       document.getElementById('kpiMaxDrawdown').textContent = `-${maxDD.toFixed(2)}%`;
       document.getElementById('kpiEndingCapital').textContent = `Final: ${formatINR(finalEquity)}`;
 
-      // Update Trade History Breakdown Cards
+      // Update Trade History Gross Profit / Loss / Net Cards
       document.getElementById('summaryWinCountBadge').textContent = `${wins.length} Wins`;
-      document.getElementById('summaryLossCountBadge').textContent = `${losses.length} Losses`;
       document.getElementById('summaryGrossProfit').textContent = `+${formatINR(grossProfit)}`;
+      document.getElementById('summaryLossCountBadge').textContent = `${losses.length} Losses`;
       document.getElementById('summaryGrossLoss').textContent = `-${formatINR(grossLoss)}`;
       document.getElementById('summaryNetPctBadge').textContent = `${returnPct >= 0 ? '+' : ''}${returnPct.toFixed(2)}%`;
       const netResEl = document.getElementById('summaryNetResult');
@@ -1455,8 +1971,10 @@
     function renderYearlyBreakdown(trades) {
       const strip = document.getElementById('yearlyBreakdownStrip');
       if (!strip) return;
-      if (!trades.length) { strip.innerHTML = ''; return; }
-
+      if (!trades.length) {
+        strip.innerHTML = '';
+        return;
+      }
       const byYear = {};
       for (const t of trades) {
         const yr = new Date(t.exitTime * 1000).getUTCFullYear();
@@ -1465,32 +1983,26 @@
         if (t.netPnl > 0) byYear[yr].wins++;
         byYear[yr].pnl += t.netPnl;
       }
-
-      strip.innerHTML = Object.keys(byYear).sort().map(yr => {
-        const d = byYear[yr];
-        const wr = ((d.wins / d.total) * 100).toFixed(0);
-        const pos = d.pnl >= 0;
-        return `
-          <div class="px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200/80 text-[11px] font-mono">
-            <span class="font-bold text-slate-800">${yr}:</span>
-            <span class="text-slate-600">${wr}% Win (${d.wins}/${d.total})</span>
-            <span class="font-semibold ${pos ? 'text-emerald-600' : 'text-rose-600'}">${pos ? '+' : ''}${formatINR(d.pnl)}</span>
-          </div>
-        `;
+      strip.innerHTML = Object.entries(byYear).sort((a, b) => a[0] - b[0]).map(([yr, d]) => {
+        const wr = Math.round((d.wins / d.total) * 100);
+        const col = d.pnl >= 0 ? 'text-emerald-700' : 'text-rose-700';
+        return `<span class="px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200/80 text-[11px] font-mono text-slate-700"><strong>${yr}:</strong> ${wr}% Win (${d.wins}/${d.total}) <span class="${col} font-semibold">${d.pnl >= 0 ? '+' : ''}${formatINR(d.pnl)}</span></span>`;
       }).join('');
     }
 
     function renderEquityCurve() {
       const ctx = document.getElementById('equityCanvas').getContext('2d');
       if (state.equityChart) state.equityChart.destroy();
+      const labels = state.equityCurve.map(p => formatIST(p.time, state.timeframe));
+      const data = state.equityCurve.map(p => p.equity);
 
       state.equityChart = new Chart(ctx, {
         type: 'line',
         data: {
-          labels: state.equityCurve.map(p => formatIST(p.time, state.timeframe)),
+          labels,
           datasets: [{
             label: 'Portfolio Value (₹)',
-            data: state.equityCurve.map(p => p.equity),
+            data,
             borderColor: '#10b981',
             backgroundColor: 'rgba(16, 185, 129, 0.08)',
             borderWidth: 2,
@@ -1522,29 +2034,23 @@
     function renderTopSwingScanner() {
       const tbody = document.getElementById('topScannerBody');
       if (!tbody) return;
-      const initialCap = Math.max(5000, parseFloat(document.getElementById('capitalInput').value) || 100000);
-
-      const candidates = Object.entries(NSE_SYMBOLS).filter(([, info]) =>
-        state.capFilter === 'ALL' || info.cap === state.capFilter
-      );
+      const candidates = Object.entries(NSE_SYMBOLS)
+        .filter(([, info]) => !info.isIndex && (state.capFilter === 'ALL' || info.cap === state.capFilter));
 
       const results = candidates.map(([sym, info]) => {
         const bars = generateNSEData(sym, state.timeframe);
         const sim = executeStrategySimulation(bars, sym);
         const wins = sim.trades.filter(t => t.netPnl > 0).length;
         const winRate = sim.trades.length ? (wins / sim.trades.length) * 100 : 0;
-        const finalEq = sim.equityCurve.length ? sim.equityCurve[sim.equityCurve.length - 1].equity : initialCap;
-        return { sym, info, winRate, trades: sim.trades.length, netPnl: finalEq - initialCap };
-      });
+        const netPnl = sim.trades.reduce((acc, t) => acc + t.netPnl, 0);
+        return { sym, info, winRate, tradesCount: sim.trades.length, netPnl };
+      }).filter(r => r.tradesCount >= 3)
+        .sort((a, b) => (b.winRate - a.winRate) || (b.netPnl - a.netPnl));
 
-      // Rank proven setups (>=5 trades) first by Win Rate & Net Profit
-      results.sort((a, b) => {
-        const aQualified = a.trades >= 5 ? 1 : 0;
-        const bQualified = b.trades >= 5 ? 1 : 0;
-        if (aQualified !== bQualified) return bQualified - aQualified;
-        if (Math.abs(b.winRate - a.winRate) > 1.5) return b.winRate - a.winRate;
-        return b.netPnl - a.netPnl;
-      });
+      if (!results.length) {
+        tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-400 font-sans">Switch Lookback to <strong>6 Years</strong> for multi-cycle statistical rankings.</td></tr>`;
+        return;
+      }
 
       tbody.innerHTML = results.map(r => `
         <tr class="hover:bg-slate-50 transition">
@@ -1554,26 +2060,20 @@
           </td>
           <td class="py-2.5 px-3.5 font-sans text-slate-600">${r.info.cap}</td>
           <td class="py-2.5 px-3.5 text-right font-bold ${r.winRate >= 70 ? 'text-emerald-600' : 'text-slate-700'}">${r.winRate.toFixed(1)}%</td>
-          <td class="py-2.5 px-3.5 text-right">${r.trades}</td>
+          <td class="py-2.5 px-3.5 text-right text-slate-600">${r.tradesCount}</td>
           <td class="py-2.5 px-3.5 text-right font-semibold ${r.netPnl >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${r.netPnl >= 0 ? '+' : ''}${formatINR(r.netPnl)}</td>
-          <td class="py-2.5 px-3.5 text-right font-sans">
-            <button onclick="loadScannedSymbol('${r.sym}')" class="px-2.5 py-1 rounded-lg bg-slate-900 text-white text-[11px] font-semibold hover:bg-slate-700">Load</button>
+          <td class="py-2.5 px-3.5 text-right">
+            <button onclick="openSymbolInBacktest('${r.sym}')" class="px-2.5 py-1 rounded-lg bg-slate-900 text-white text-[11px] font-sans font-semibold hover:bg-slate-800">Load</button>
           </td>
         </tr>
       `).join('');
-    }
-
-    function loadScannedSymbol(sym) {
-      document.getElementById('symbolSelect').value = sym;
-      switchChartTab('price');
-      setMode('backtest');
     }
 
     function renderTradeTable(trades) {
       const tbody = document.getElementById('tradeHistoryBody');
       if (!tbody) return;
       if (!trades.length) {
-        tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-400 font-sans">No trades triggered. Try 6 Years duration or adjust Take-Profit / Trailing SL.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-400 font-sans">No trades triggered in this window. Try switching Lookback to <strong>6 Years</strong> or adjusting Exit Targets.</td></tr>`;
         return;
       }
 
@@ -1583,7 +2083,6 @@
         const sidePill = t.side === 'BUY'
           ? `<span class="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200">BUY</span>`
           : `<span class="px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 font-semibold border border-rose-200">SELL</span>`;
-
         const reasonBadge = t.exitReason === 'Take-Profit'
           ? `<span class="text-emerald-700 font-semibold">Take-Profit</span>`
           : (t.exitReason === 'Trailing SL'
@@ -1604,445 +2103,12 @@
     }
 
     // =========================================================================
-    // 7. LIVE BUY SIGNALS SCANNER (PERSISTENT UNTIL TARGET OR SL HITS)
-    // =========================================================================
-    async function fetchLiveBinanceCrypto(sym, info) {
-      const intervalMap = { '5m': '5m', '15m': '15m', '1H': '1h', 'Daily': '1d' };
-      const binInterval = intervalMap[state.timeframe] || '1d';
-      const url = `https://api.binance.com/api/v3/klines?symbol=${info.binanceSym}&interval=${binInterval}&limit=240`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error('Binance HTTP error');
-      const rows = await res.json();
-      const bars = rows.map(r => ({
-        time: Math.floor(r[0] / 1000),
-        open: Number((parseFloat(r[1]) * state.usdInrRate).toFixed(2)),
-        high: Number((parseFloat(r[2]) * state.usdInrRate).toFixed(2)),
-        low: Number((parseFloat(r[3]) * state.usdInrRate).toFixed(2)),
-        close: Number((parseFloat(r[4]) * state.usdInrRate).toFixed(2))
-      }));
-      return bars.length >= 60 ? bars : null;
-    }
-
-    async function fetchSingleStockLiveYahoo(sym, info) {
-      const ySym = info.yahooSym || `${sym}.NS`;
-      const intervalMap = { '5m': '5m', '15m': '15m', '1H': '60m', 'Daily': '1d' };
-      const rangeMap = { '5m': '5d', '15m': '1mo', '1H': '3mo', 'Daily': '1y' };
-      const target = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ySym)}?interval=${intervalMap[state.timeframe] || '1d'}&range=${rangeMap[state.timeframe] || '1y'}`;
-      const proxies = [
-        `https://corsproxy.io/?${encodeURIComponent(target)}`,
-        `https://api.allorigins.win/raw?url=${encodeURIComponent(target)}`
-      ];
-
-      for (const proxyUrl of proxies) {
-        try {
-          const controller = new AbortController();
-          const timer = setTimeout(() => controller.abort(), 3500);
-          const res = await fetch(proxyUrl, { signal: controller.signal });
-          clearTimeout(timer);
-          if (!res.ok) continue;
-          const data = await res.json();
-          const result = data && data.chart && data.chart.result && data.chart.result[0];
-          if (!result || !result.timestamp || !result.indicators || !result.indicators.quote[0]) continue;
-          const q = result.indicators.quote[0];
-          const bars = [];
-          for (let i = 0; i < result.timestamp.length; i++) {
-            if (q.open[i] == null || q.high[i] == null || q.low[i] == null || q.close[i] == null) continue;
-            bars.push({
-              time: result.timestamp[i],
-              open: Number(q.open[i].toFixed(2)),
-              high: Number(q.high[i].toFixed(2)),
-              low: Number(q.low[i].toFixed(2)),
-              close: Number(q.close[i].toFixed(2))
-            });
-          }
-          if (bars.length >= 50) return bars;
-        } catch (e) {}
-      }
-      return null;
-    }
-
-    async function syncLiveMarketUniverse(forceFetch = false) {
-      const entries = Object.entries(NSE_SYMBOLS);
-      const batch = entries.slice(0, 26);
-
-      await Promise.all(batch.map(async ([sym, info]) => {
-        if (!state.liveUniverseMap[sym] || forceFetch) {
-          let liveBars = null;
-          try {
-            if (info.isCrypto) liveBars = await fetchLiveBinanceCrypto(sym, info);
-            else liveBars = await fetchSingleStockLiveYahoo(sym, info);
-          } catch (e) {}
-
-          if (liveBars) {
-            state.liveUniverseMap[sym] = { bars: liveBars, isRealFeed: true };
-          } else if (!state.liveUniverseMap[sym]) {
-            state.liveUniverseMap[sym] = {
-              bars: generateNSEData(sym, state.timeframe, 260),
-              isRealFeed: false
-            };
-          }
-        }
-      }));
-
-      entries.forEach(([sym, info]) => {
-        if (!state.liveUniverseMap[sym]) {
-          state.liveUniverseMap[sym] = {
-            bars: generateNSEData(sym, state.timeframe, 260),
-            isRealFeed: false
-          };
-        }
-        // Subtle live tick jitter for non-API fallback bars
-        const entry = state.liveUniverseMap[sym];
-        if (!entry.isRealFeed && entry.bars.length) {
-          const last = entry.bars[entry.bars.length - 1];
-          const delta = (Math.random() - 0.495) * info.volatility * 0.45 * last.close;
-          last.close = Math.max(5, Number((last.close + delta).toFixed(2)));
-          last.high = Math.max(last.high, last.close);
-          last.low = Math.min(last.low, last.close);
-        }
-      });
-
-      const realCount = Object.values(state.liveUniverseMap).filter(v => v.isRealFeed).length;
-      const badge = document.getElementById('liveFeedQualityBadge');
-      if (badge) {
-        badge.textContent = realCount > 0 ? `${realCount} Real Live Feeds Active` : 'Real-Time Tick Engine Active';
-      }
-    }
-
-    async function scanAllLiveBuySignals(forceFetch = false) {
-      loadPersistentSignals();
-      await syncLiveMarketUniverse(forceFetch);
-
-      const strategy = document.getElementById('strategySelect').value;
-      const strategyLabel = document.getElementById('strategySelect').selectedOptions[0].textContent;
-      const tpVal = Math.max(0.1, parseFloat(document.getElementById('tpInput').value) || 3.5);
-      const tslVal = Math.max(0.05, parseFloat(document.getElementById('tslInput').value) || 2.0);
-      let trackerChanged = false;
-
-      Object.entries(NSE_SYMBOLS).forEach(([sym, info]) => {
-        const entryObj = state.liveUniverseMap[sym];
-        if (!entryObj || !entryObj.bars || entryObj.bars.length < 55) return;
-
-        const bars = entryObj.bars;
-        const activeLast = bars[bars.length - 1];
-        const prevBar = bars[bars.length - 2];
-
-        // 1. Update existing locked signal & check Target / Stop-Loss auto-removal
-        if (state.activeSignalsTracker[sym]) {
-          const tracked = state.activeSignalsTracker[sym];
-          tracked.livePrice = activeLast.close;
-          tracked.dayChangePct = ((activeLast.close - prevBar.close) / prevBar.close) * 100;
-
-          if (activeLast.close > (tracked.highestPrice || tracked.entryPrice)) {
-            tracked.highestPrice = activeLast.close;
-            const slDist = state.riskUnit === 'percent' ? tracked.entryPrice * (tslVal / 100) : tslVal;
-            const candidateSL = Number((tracked.highestPrice - slDist).toFixed(2));
-            if (candidateSL > tracked.tslPrice) {
-              tracked.tslPrice = candidateSL;
-              tracked.trailed = true;
-            }
-          }
-          trackerChanged = true;
-
-          // Auto-remove ONLY when Target reached or Stop-Loss hit
-          if (activeLast.close >= tracked.tpPrice) {
-            const gainPct = (((tracked.tpPrice - tracked.entryPrice) / tracked.entryPrice) * 100).toFixed(2);
-            const closedItem = {
-              sym,
-              status: 'TARGET REACHED',
-              exitPrice: tracked.tpPrice,
-              entryPrice: tracked.entryPrice,
-              signalDate: tracked.signalDate || tracked.candleIST,
-              pct: `+${gainPct}%`,
-              closedAtIST: formatExactISTTimestamp(Math.floor(Date.now() / 1000))
-            };
-            state.closedSignalsToday.unshift(closedItem);
-            delete state.activeSignalsTracker[sym];
-            notifySignalEvent('TARGET HIT • Auto-Removed', `${sym.replace('USDT', '')} reached TP ₹${tracked.tpPrice.toFixed(2)} (+${gainPct}%)`, closedItem);
-            return;
-          } else if (activeLast.close <= tracked.tslPrice) {
-            const diffPct = (((tracked.tslPrice - tracked.entryPrice) / tracked.entryPrice) * 100).toFixed(2);
-            const closedItem = {
-              sym,
-              status: tracked.trailed ? 'TRAILING SL HIT' : 'STOP-LOSS HIT',
-              exitPrice: tracked.tslPrice,
-              entryPrice: tracked.entryPrice,
-              signalDate: tracked.signalDate || tracked.candleIST,
-              pct: `${Number(diffPct) >= 0 ? '+' : ''}${diffPct}%`,
-              closedAtIST: formatExactISTTimestamp(Math.floor(Date.now() / 1000))
-            };
-            state.closedSignalsToday.unshift(closedItem);
-            delete state.activeSignalsTracker[sym];
-            notifySignalEvent(`${closedItem.status} • Auto-Removed`, `${sym.replace('USDT', '')} hit SL ₹${tracked.tslPrice.toFixed(2)} (${closedItem.pct})`, closedItem);
-            return;
-          }
-        }
-
-        // 2. Scan for new BUY signals to lock into Active Signals Tracker
-        const { signals } = generateSignals(bars);
-        const n = signals.length;
-        const activeBuy = signals[n - 1] === 1 || signals[n - 2] === 1;
-
-        if (activeBuy && !state.activeSignalsTracker[sym]) {
-          const closes = bars.map(b => b.close);
-          const rsi2 = computeRSI(closes, 2);
-          const rsi14 = computeRSI(closes, 14);
-          const curRsi2 = rsi2[n - 1] !== null ? rsi2[n - 1].toFixed(1) : '8.4';
-          const curRsi14 = rsi14[n - 1] !== null ? rsi14[n - 1].toFixed(1) : '34.2';
-
-          let triggerNote = 'Live BUY Setup';
-          if (strategy === 'cum_rsi2') triggerNote = `Cum RSI(2): ${curRsi2} (<10) • >200 SMA`;
-          else if (strategy === 'connors_rsi2') triggerNote = `RSI(2): ${curRsi2} (<15) • >50 SMA`;
-          else if (strategy === 'bb_rsi_snap') triggerNote = `Lower BB Bounce • RSI(14): ${curRsi14}`;
-          else if (strategy === 'ema20_pullback') triggerNote = `20-EMA Bounce • Uptrend`;
-          else if (strategy === 'supertrend_breakout') triggerNote = `Supertrend Bullish Flip`;
-          else if (strategy === 'vwap_bounce') triggerNote = `VWAP Reclaim Breakout`;
-
-          const entryPrice = activeLast.close;
-          const tpDistance = state.riskUnit === 'percent' ? entryPrice * (tpVal / 100) : tpVal;
-          const slDistance = state.riskUnit === 'percent' ? entryPrice * (tslVal / 100) : tslVal;
-          const tpPrice = Number((entryPrice + tpDistance).toFixed(2));
-          const tslPrice = Number((entryPrice - slDistance).toFixed(2));
-          const tpPct = ((tpDistance / entryPrice) * 100).toFixed(2);
-          const slPct = ((slDistance / entryPrice) * 100).toFixed(2);
-          const candleBarTime = signals[n - 1] === 1 ? activeLast.time : prevBar.time;
-          const nowSec = Math.floor(Date.now() / 1000);
-
-          const newSig = {
-            sym,
-            info,
-            entryPrice,
-            livePrice: entryPrice,
-            highestPrice: entryPrice,
-            dayChangePct: ((activeLast.close - prevBar.close) / prevBar.close) * 100,
-            triggerNote,
-            tpPrice,
-            tslPrice,
-            tpDistance: Number(tpDistance.toFixed(2)),
-            slDistance: Number(slDistance.toFixed(2)),
-            tpPct,
-            slPct,
-            trailed: false,
-            signalDate: formatSignalDateOnly(nowSec),
-            candleIST: formatIST(candleBarTime, state.timeframe),
-            triggeredAtIST: formatExactISTTimestamp(nowSec),
-            triggeredUnix: nowSec,
-            isRealFeed: entryObj.isRealFeed,
-            strategyLabel
-          };
-
-          state.activeSignalsTracker[sym] = newSig;
-          trackerChanged = true;
-          if (Object.keys(state.activeSignalsTracker).length <= 15) {
-            triggerWhatsAppAutoWebhook(newSig);
-          }
-        }
-      });
-
-      if (trackerChanged) savePersistentSignals();
-
-      const visibleSignals = Object.values(state.activeSignalsTracker).filter(m =>
-        state.capFilter === 'ALL' || m.info.cap === state.capFilter
-      );
-      visibleSignals.sort((a, b) => (b.triggeredUnix || 0) - (a.triggeredUnix || 0) || a.sym.localeCompare(b.sym));
-
-      document.getElementById('liveSignalBadge').textContent = visibleSignals.length;
-      const subEl = document.getElementById('liveScannerSubtitle');
-      if (subEl) {
-        subEl.textContent = `${visibleSignals.length} active BUY signals held until Target or SL hits (${strategyLabel} • ${state.timeframe}) • Auto-refreshed ${new Date().toLocaleTimeString('en-IN', { hour12: false })} IST`;
-      }
-
-      renderClosedSignalsLog();
-
-      const tbody = document.getElementById('liveBuySignalsBody');
-      if (!tbody) return;
-
-      if (!visibleSignals.length) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="6" class="py-10 text-center text-slate-500 font-sans">
-              No active BUY signals in this filter right now. Click <strong>Refresh Live Scan</strong> or switch Cap Filter to <strong>All</strong>.
-            </td>
-          </tr>
-        `;
-        return;
-      }
-
-      tbody.innerHTML = visibleSignals.map(m => {
-        const pnlFromEntry = ((m.livePrice - m.entryPrice) / m.entryPrice) * 100;
-        const feedTag = m.isRealFeed
-          ? `<span class="ml-1 px-1.5 py-0.5 rounded ${m.info.isCrypto ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-blue-50 text-blue-700 border-blue-200'} border text-[9px] font-bold">${m.info.isCrypto ? 'BINANCE LIVE' : 'NSE LIVE'}</span>`
-          : '';
-        const arrivalDate = m.signalDate || formatSignalDateOnly(m.triggeredUnix || Math.floor(Date.now() / 1000));
-
-        return `
-          <tr class="hover:bg-emerald-50/40 transition">
-            <td class="py-3 px-3.5 font-sans">
-              <div class="flex items-center flex-wrap gap-y-1">
-                <span class="font-bold text-slate-900">${m.sym.replace('USDT', '')}</span>
-                <span class="ml-1.5 px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold">${m.info.cap}</span>
-                ${feedTag}
-              </div>
-              <div class="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-800 text-[11px] font-semibold">
-                <span>📅 ${arrivalDate}</span>
-              </div>
-              <div class="text-[10px] text-slate-400 mt-0.5">Time: <span class="font-mono text-slate-600">${m.triggeredAtIST}</span> • Bar: <span class="font-mono">${m.candleIST}</span></div>
-            </td>
-            <td class="py-3 px-3.5 text-right">
-              <div class="font-bold text-slate-900">Live: ₹${m.livePrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-              <div class="text-[11px] text-slate-500">Entry: ₹${m.entryPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-              <div class="text-[10px] font-semibold ${pnlFromEntry >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${pnlFromEntry >= 0 ? '+' : ''}${pnlFromEntry.toFixed(2)}% from entry</div>
-            </td>
-            <td class="py-3 px-3.5 font-sans">
-              <span class="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 font-semibold text-[11px]">${m.triggerNote}</span>
-            </td>
-            <td class="py-3 px-3.5 text-right">
-              <div class="font-bold text-emerald-700">₹${m.tpPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-              <div class="text-[10px] text-emerald-600">+₹${m.tpDistance} (+${m.tpPct}%)</div>
-            </td>
-            <td class="py-3 px-3.5 text-right">
-              <div class="font-bold text-amber-700">₹${m.tslPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-              <div class="text-[10px] text-amber-600">${m.trailed ? 'Trailed SL' : `-₹${m.slDistance} (-${m.slPct}%)`}</div>
-            </td>
-            <td class="py-3 px-3.5 text-right font-sans">
-              <div class="inline-flex items-center gap-1.5">
-                <button onclick="sendSingleSignalWhatsApp('${m.sym}')" title="Send WhatsApp Alert" class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-semibold transition">WhatsApp</button>
-                <button onclick="inspectSignalInBacktest('${m.sym}')" class="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-700 text-white text-[11px] font-semibold transition">Chart</button>
-              </div>
-            </td>
-          </tr>
-        `;
-      }).join('');
-    }
-
-    function renderClosedSignalsLog() {
-      const box = document.getElementById('closedSignalsBox');
-      const list = document.getElementById('closedSignalsList');
-      if (!box || !list) return;
-      if (!state.closedSignalsToday.length) {
-        box.classList.add('hidden');
-        return;
-      }
-      box.classList.remove('hidden');
-      list.innerHTML = state.closedSignalsToday.slice(0, 12).map(c => {
-        const isTP = c.status === 'TARGET REACHED';
-        return `
-          <span class="px-2.5 py-1 rounded-lg border ${isTP ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-rose-50 border-rose-200 text-rose-800'} text-[11px]">
-            <strong>${c.sym.replace('USDT', '')}</strong> • ${c.status} @ ₹${c.exitPrice.toFixed(2)} (${c.pct}) • ${c.closedAtIST}
-          </span>
-        `;
-      }).join('');
-    }
-
-    function startLiveBuyScanner() {
-      stopLiveBuyScanner();
-      scanAllLiveBuySignals(true);
-      state.scannerTimer = setInterval(() => {
-        if (state.mode === 'signals') scanAllLiveBuySignals(false);
-      }, 4000);
-    }
-
-    function stopLiveBuyScanner() {
-      if (state.scannerTimer) {
-        clearInterval(state.scannerTimer);
-        state.scannerTimer = null;
-      }
-    }
-
-    function inspectSignalInBacktest(sym) {
-      document.getElementById('symbolSelect').value = sym;
-      setMode('backtest');
-    }
-
-    function clearClosedSignalsLog() {
-      state.activeSignalsTracker = {};
-      state.closedSignalsToday = [];
-      savePersistentSignals();
-      scanAllLiveBuySignals(true);
-      showToast('Tracker Reset', 'Cleared saved signal log & rescanned live prices.');
-    }
-
-    // =========================================================================
-    // 8. WHATSAPP ALERT & NOTIFICATION HELPERS
-    // =========================================================================
-    function saveWhatsAppConfig() {
-      try {
-        localStorage.setItem(WA_STORAGE_KEY, JSON.stringify({
-          phone: document.getElementById('waPhoneInput').value.trim(),
-          apiKey: document.getElementById('waApiKeyInput').value.trim()
-        }));
-      } catch (e) {}
-    }
-
-    function loadWhatsAppConfig() {
-      try {
-        const raw = localStorage.getItem(WA_STORAGE_KEY);
-        if (!raw) return;
-        const cfg = JSON.parse(raw);
-        if (cfg.phone) document.getElementById('waPhoneInput').value = cfg.phone;
-        if (cfg.apiKey) document.getElementById('waApiKeyInput').value = cfg.apiKey;
-      } catch (e) {}
-    }
-
-    function formatSignalWhatsAppText(m) {
-      const ticker = m.sym.replace('USDT', '');
-      const arrivalDate = m.signalDate || formatSignalDateOnly(m.triggeredUnix || Math.floor(Date.now() / 1000));
-      return [
-        `🚨 *NSE/CRYPTO BUY SIGNAL*`,
-        `• *Asset:* ${ticker} (${m.info.name})`,
-        `• *Signal Date:* ${arrivalDate}`,
-        `• *Entry Price:* ₹${m.entryPrice.toFixed(2)}`,
-        `• *Target (TP):* ₹${m.tpPrice.toFixed(2)} (+₹${m.tpDistance} / +${m.tpPct}%)`,
-        `• *Trailing SL:* ₹${m.tslPrice.toFixed(2)} (-₹${m.slDistance} / -${m.slPct}%)`,
-        `• *Setup:* ${m.triggerNote}`,
-        `• *Triggered:* ${m.triggeredAtIST}`
-      ].join('\n');
-    }
-
-    function triggerWhatsAppAutoWebhook(m) {
-      const phone = (document.getElementById('waPhoneInput').value || '').replace(/[^0-9]/g, '');
-      const apiKey = (document.getElementById('waApiKeyInput').value || '').trim();
-      if (!phone || !apiKey) return;
-      const text = encodeURIComponent(formatSignalWhatsAppText(m));
-      fetch(`https://api.callmebot.com/whatsapp.php?phone=${phone}&text=${text}&apikey=${encodeURIComponent(apiKey)}`, { mode: 'no-cors' }).catch(() => {});
-    }
-
-    function sendSingleSignalWhatsApp(sym) {
-      const m = state.activeSignalsTracker[sym];
-      if (!m) return;
-      const phone = (document.getElementById('waPhoneInput').value || '').replace(/[^0-9]/g, '');
-      const text = encodeURIComponent(formatSignalWhatsAppText(m));
-      const waUrl = phone ? `https://wa.me/${phone}?text=${text}` : `https://wa.me/?text=${text}`;
-      window.open(waUrl, '_blank', 'noopener,noreferrer');
-    }
-
-    function sendAllActiveSignalsWhatsApp() {
-      const list = Object.values(state.activeSignalsTracker);
-      if (!list.length) {
-        showToast('No Active Signals', 'Wait for a BUY signal before sending to WhatsApp.', true);
-        return;
-      }
-      const phone = (document.getElementById('waPhoneInput').value || '').replace(/[^0-9]/g, '');
-      const summary = list.slice(0, 8).map(m =>
-        `• *${m.sym.replace('USDT', '')}* (${m.signalDate}) — Entry ₹${m.entryPrice.toFixed(2)} | TP ₹${m.tpPrice.toFixed(2)} | SL ₹${m.tslPrice.toFixed(2)}`
-      ).join('\n');
-      const fullText = encodeURIComponent(`📊 *ACTIVE LIVE BUY SIGNALS (${list.length})*\n\n${summary}`);
-      const waUrl = phone ? `https://wa.me/${phone}?text=${fullText}` : `https://wa.me/?text=${fullText}`;
-      window.open(waUrl, '_blank', 'noopener,noreferrer');
-    }
-
-    function notifySignalEvent(title, msg, closedItem) {
-      playSignalChime(closedItem.status === 'TARGET REACHED');
-      showToast(title, msg, closedItem.status !== 'TARGET REACHED');
-    }
-
-    // =========================================================================
-    // 9. SINGLE-TICKER LIVE REPLAY & UI EVENT HANDLERS
+    // 10. SINGLE-TICKER LIVE MARKET REPLAY
     // =========================================================================
     function startLiveMarketTest() {
       stopLiveMarketTest();
       const symbol = document.getElementById('symbolSelect').value;
-      state.liveCandles = generateNSEData(symbol, state.timeframe, 120);
+      state.liveCandles = generateNSEData(symbol, state.timeframe, 220);
       state.livePlaying = true;
       document.getElementById('btnLivePlayPause').textContent = 'Pause';
       document.getElementById('liveSymbolName').textContent = symbol.replace('USDT', '');
@@ -2075,7 +2141,7 @@
       const low = Number(Math.max(2, Math.min(open, close) - Math.abs(Math.random() * cfg.volatility * scale * open)).toFixed(2));
 
       state.liveCandles.push({ time: last.time + tfMins * 60, open, high, low, close });
-      if (state.liveCandles.length > 320) state.liveCandles.shift();
+      if (state.liveCandles.length > 360) state.liveCandles.shift();
 
       const sim = executeStrategySimulation(state.liveCandles);
       renderAllResults(state.liveCandles, sim);
@@ -2090,19 +2156,18 @@
       if (sim.openPosition) {
         const p = sim.openPosition;
         const unrealized = p.side === 'BUY' ? (close - p.entryPrice) * p.qty : (p.entryPrice - close) * p.qty;
+        const pnlColor = unrealized >= 0 ? 'text-emerald-600' : 'text-rose-600';
         posStrip.innerHTML = `
           <div class="flex flex-wrap items-center gap-x-5 gap-y-1">
-            <span>Position: <strong class="text-emerald-700">${p.side} (${p.qty} qty)</strong></span>
+            <span>Position: <strong class="${p.side === 'BUY' ? 'text-emerald-700' : 'text-rose-700'}">${p.side} (${p.qty} qty)</strong></span>
             <span>Entry: <strong class="font-mono text-slate-900">₹${p.entryPrice.toFixed(2)}</strong></span>
             <span>Trailing SL: <strong class="font-mono text-amber-700">₹${p.currentSL.toFixed(2)}</strong></span>
             <span>Target TP: <strong class="font-mono text-emerald-700">₹${p.tpPrice.toFixed(2)}</strong></span>
           </div>
-          <div class="font-mono font-bold ${unrealized >= 0 ? 'text-emerald-600' : 'text-rose-600'}">
-            Unrealized P&L: ${unrealized >= 0 ? '+' : ''}${formatINR(unrealized)}
-          </div>
+          <div class="font-mono font-bold ${pnlColor}">Unrealized P&L: ${unrealized >= 0 ? '+' : ''}${formatINR(unrealized)}</div>
         `;
       } else {
-        posStrip.innerHTML = `<span class="text-slate-500 font-medium">Position: <strong class="text-slate-800">FLAT</strong> — Watching live ${state.timeframe} candles for entry setup...</span>`;
+        posStrip.innerHTML = `<span class="text-slate-500 font-medium">Position: <strong class="text-slate-800">FLAT</strong> — Watching live ${state.timeframe} candles for entry signal...</span>`;
       }
     }
 
@@ -2120,10 +2185,15 @@
       document.getElementById(id).className = 'spd-btn px-2.5 py-1 rounded-lg bg-white text-slate-900 shadow-sm';
       if (state.mode === 'live') {
         stopLiveMarketTest();
-        state.liveTimer = setInterval(() => { if (state.livePlaying) stepLiveTick(); }, state.liveSpeedMs);
+        state.liveTimer = setInterval(() => {
+          if (state.livePlaying) stepLiveTick();
+        }, state.liveSpeedMs);
       }
     }
 
+    // =========================================================================
+    // 11. NAVIGATION, CONTROLS, CSV & INITIALIZATION
+    // =========================================================================
     function setMode(newMode) {
       state.mode = newMode;
       const btnSig = document.getElementById('btnModeSignals');
@@ -2186,28 +2256,12 @@
 
     function selectDuration(dur) {
       state.duration = dur;
-      document.getElementById('durationRangeLabel').textContent = dur === '6Y' ? '6Y Multi-Cycle' : `${dur} Lookback`;
       document.querySelectorAll('.dur-btn').forEach(btn => {
         btn.className = btn.dataset.dur === dur
           ? 'dur-btn py-1 rounded-lg text-[11px] font-semibold bg-white text-slate-900 shadow-sm transition'
           : 'dur-btn py-1 rounded-lg text-[11px] font-semibold text-slate-500 hover:text-slate-900 transition';
       });
-      onSetupChanged(true);
-    }
-
-    function onStrategyChanged() {
-      const strat = document.getElementById('strategySelect').value;
-      document.getElementById('strategyPlainDesc').textContent = STRATEGY_DESCRIPTIONS[strat];
-      const badge = document.getElementById('swingPresetBadge');
-
-      if (SWING_STRATEGIES.has(strat)) {
-        document.getElementById('directionSelect').value = 'long';
-        document.getElementById('autoSquareOffCheck').checked = false;
-        document.getElementById('maxHoldSelect').value = '15';
-        badge.classList.remove('hidden');
-      } else {
-        badge.classList.add('hidden');
-      }
+      document.getElementById('durationRangeLabel').textContent = `${dur} Lookback`;
       triggerRun();
     }
 
@@ -2235,24 +2289,46 @@
         pctBtn.className = 'px-2.5 py-0.5 rounded-md text-slate-500 hover:text-slate-900';
         const sym = document.getElementById('symbolSelect').value;
         const base = (NSE_SYMBOLS[sym] && NSE_SYMBOLS[sym].basePrice) || 1000;
-        const defTp = Math.max(5, Math.round(base * 0.035));
-        const defTsl = Math.max(3, Math.round(base * 0.02));
-        tpSlider.min = 1; tpSlider.max = Math.max(100, Math.round(base * 0.15)); tpSlider.step = 1; tpSlider.value = defTp;
-        tslSlider.min = 1; tslSlider.max = Math.max(50, Math.round(base * 0.08)); tslSlider.step = 1; tslSlider.value = defTsl;
+        const defTp = Math.max(5, Math.round(base * 0.03));
+        const defTsl = Math.max(3, Math.round(base * 0.018));
+        tpSlider.min = 1; tpSlider.max = Math.max(100, Math.round(base * 0.12)); tpSlider.step = 1; tpSlider.value = defTp;
+        tslSlider.min = 1; tslSlider.max = Math.max(50, Math.round(base * 0.06)); tslSlider.step = 1; tslSlider.value = defTsl;
         tpInput.value = defTp; tslInput.value = defTsl;
       }
       triggerRun();
     }
 
+    function onStrategyChanged() {
+      const strat = document.getElementById('strategySelect').value;
+      document.getElementById('strategyPlainDesc').textContent = STRATEGY_DESCRIPTIONS[strat] || '';
+      const badge = document.getElementById('swingPresetBadge');
+
+      if (SWING_STRATEGIES.has(strat)) {
+        document.getElementById('directionSelect').value = 'long';
+        document.getElementById('autoSquareOffCheck').checked = false;
+        document.getElementById('maxHoldSelect').value = '15';
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+      triggerRun();
+    }
+
     function syncInputFromSlider(which) {
-      if (which === 'tp') document.getElementById('tpInput').value = document.getElementById('tpSlider').value;
-      else document.getElementById('tslInput').value = document.getElementById('tslSlider').value;
+      if (which === 'tp') {
+        document.getElementById('tpInput').value = document.getElementById('tpSlider').value;
+      } else {
+        document.getElementById('tslInput').value = document.getElementById('tslSlider').value;
+      }
       triggerRun();
     }
 
     function syncSliderFromInput(which) {
-      if (which === 'tp') document.getElementById('tpSlider').value = document.getElementById('tpInput').value;
-      else document.getElementById('tslSlider').value = document.getElementById('tslInput').value;
+      if (which === 'tp') {
+        document.getElementById('tpSlider').value = document.getElementById('tpInput').value;
+      } else {
+        document.getElementById('tslSlider').value = document.getElementById('tslInput').value;
+      }
       triggerRun();
     }
 
@@ -2299,7 +2375,6 @@
       updateSymbolMeta();
       if (resetData) {
         state.customCandles = null;
-        state.liveUniverseMap = {};
         document.getElementById('dataSourcePill').textContent = 'Live Sync';
       }
       triggerRun();
@@ -2329,16 +2404,14 @@
         renderAllResults(state.candles, sim);
       } catch (err) {
         console.error('Simulation error:', err);
-        showToast('Simulation Error', err.message || 'Could not compute strategy.', true);
+        showToast('Simulation Error', err.message || 'Could not compute strategy', true);
       }
     }
 
-    // =========================================================================
-    // 10. CSV UPLOAD & EXPORT
-    // =========================================================================
     function handleCSVUpload(event) {
       const file = event.target.files[0];
       if (!file) return;
+
       const reader = new FileReader();
       reader.onload = function (e) {
         try {
@@ -2347,6 +2420,7 @@
             showToast('Invalid CSV', 'Please upload a CSV with at least 15 OHLC rows.', true);
             return;
           }
+
           const headers = lines[0].toLowerCase().split(',').map(h => h.trim());
           const idxTime = headers.findIndex(h => h.includes('time') || h.includes('date'));
           const idxOpen = headers.findIndex(h => h.includes('open'));
@@ -2361,11 +2435,15 @@
 
           const parsed = [];
           let fallbackUnix = Math.floor(Date.now() / 1000) - lines.length * 86400;
+
           for (let i = 1; i < lines.length; i++) {
             const cols = lines[i].split(',').map(c => c.trim());
-            const o = parseFloat(cols[idxOpen]), h = parseFloat(cols[idxHigh]);
-            const l = parseFloat(cols[idxLow]), c = parseFloat(cols[idxClose]);
+            const o = parseFloat(cols[idxOpen]);
+            const h = parseFloat(cols[idxHigh]);
+            const l = parseFloat(cols[idxLow]);
+            const c = parseFloat(cols[idxClose]);
             if (isNaN(o) || isNaN(h) || isNaN(l) || isNaN(c)) continue;
+
             let t = fallbackUnix + i * 86400;
             if (idxTime !== -1 && cols[idxTime]) {
               const raw = cols[idxTime];
@@ -2404,10 +2482,10 @@
 
     function exportTradesCSV() {
       if (!state.trades.length) {
-        showToast('No Trades', 'Run a test first to generate trades.', true);
+        showToast('No Trades', 'Run a backtest first to generate trades.', true);
         return;
       }
-      const header = 'Entry_Time_IST,Side,Qty,Entry_Price,Exit_Time_IST,Exit_Price,Exit_Reason,Net_PnL_INR\n';
+      const header = 'Entry_Date_IST,Side,Qty,Entry_Price,Exit_Date_IST,Exit_Price,Exit_Reason,Net_PnL_INR\n';
       const rows = state.trades.map(t => [
         `"${formatIST(t.entryTime, state.timeframe)}"`,
         t.side,
@@ -2431,26 +2509,20 @@
       showToast('CSV Downloaded', `Exported ${state.trades.length} trades.`);
     }
 
-    // =========================================================================
-    // 11. INITIALIZE APPLICATION ON LOAD
-    // =========================================================================
-    function initApp() {
-      try {
-        loadWhatsAppConfig();
-        populateSymbolSelect('', 'RELIANCE');
-        selectTimeframe('Daily');
-        onStrategyChanged();
-        initPriceChart();
-        setMode('signals');
-      } catch (err) {
-        console.error('Initialization error:', err);
-      }
+    function bootApp() {
+      loadPersistentSignals();
+      loadWhatsAppConfig();
+      populateSymbolSelect('', 'RELIANCE');
+      selectTimeframe('Daily');
+      selectDuration('6Y');
+      onStrategyChanged();
+      setMode('signals');
     }
 
-    if (document.readyState === 'complete' || document.readyState === 'interactive') {
-      initApp();
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', bootApp);
     } else {
-      window.addEventListener('DOMContentLoaded', initApp);
+      bootApp();
     }
   </script>
 </body>
