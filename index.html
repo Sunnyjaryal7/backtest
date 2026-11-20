@@ -52,7 +52,7 @@
             <span class="font-bold text-slate-900 text-base tracking-tight">NSE & Crypto Backtester</span>
             <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80">Top 3 (~80%+ Win)</span>
           </div>
-          <p class="text-[11px] text-slate-400 hidden sm:block">Zero Dummy Prices • Once-A-Day IST Auto-Scan • Credit-Safe NSE + 50 Trusted Crypto</p>
+          <p class="text-[11px] text-slate-400 hidden sm:block">Zero Dummy Prices • 2x Daily IST Scan (10:00 AM & 3:00 PM) • Credit-Safe NSE + 50 Trusted Crypto</p>
         </div>
       </div>
 
@@ -261,13 +261,13 @@
             <div class="flex flex-wrap items-center gap-2 mb-1">
               <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">
                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
-                ONCE-A-DAY IST AUTO-SCANNER
+                2X DAILY IST AUTO-SCANNER (10:00 AM & 3:00 PM)
               </span>
               <span id="dailyScanStatusBadge" class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700">Checking Daily Scan Status...</span>
             </div>
             <h2 class="text-base sm:text-lg font-bold text-slate-900">Active Live Buy Signals (Fixed Initial SL → Trails After Target Hit)</h2>
             <p class="text-xs text-slate-500 mt-0.5">
-              Scans once per IST day on open • Subsequent reloads same day use <span class="font-semibold text-emerald-700">0 API credits</span> • Next auto-scan: <span id="nextIstResetLabel" class="font-mono font-semibold text-slate-800">Tomorrow 00:00 IST</span>
+              Auto-scans at <span class="font-semibold text-slate-700">10:00 AM IST</span> &amp; <span class="font-semibold text-slate-700">3:00 PM IST</span> • Repeat reloads use <span class="font-semibold text-emerald-700">0 extra credits</span> • Next window: <span id="nextIstResetLabel" class="font-mono font-semibold text-slate-800">10:00 AM / 3:00 PM IST</span>
             </p>
           </div>
 
@@ -391,7 +391,7 @@
 
           <!-- Tab 1: Candlestick Price Chart -->
           <div id="priceChartView" class="p-4">
-            <div id="tvChartContainer" class="w-full h-[360px] rounded-xl overflow-hidden border border-slate-100 bg-white"></div>
+            <div id="tvChartContainer" class="relative w-full h-[380px] rounded-xl overflow-hidden border border-slate-200/80 bg-white"></div>
           </div>
 
           <!-- Tab 2: Equity Curve -->
@@ -469,125 +469,127 @@
 
   <script>
     // =========================================================================
-    // 1. SAFE DOM HELPER & ASSET UNIVERSE (40 NSE STOCKS + 50 TRUSTED CRYPTO)
+    // 1. SAFE DOM HELPER & ASSET UNIVERSE (NSE STOCKS + 50 TRUSTED CRYPTO)
     // =========================================================================
     const $ = (id) => document.getElementById(id);
 
     const ASSET_UNIVERSE = {
-      // --- TOP 50 TRUSTED CRYPTOCURRENCIES (DIRECT 24/7 BINANCE PUBLIC API) ---
-      BTCUSDT: { name: 'Bitcoin (BTC)', cap: 'Crypto', isCrypto: true, binanceSym: 'BTCUSDT', sector: 'Est. 2009 • Spot ETF Approved • #1 Market Cap' },
-      ETHUSDT: { name: 'Ethereum (ETH)', cap: 'Crypto', isCrypto: true, binanceSym: 'ETHUSDT', sector: 'Est. 2015 • Spot ETF Approved • #1 Smart Contract L1' },
-      BNBUSDT: { name: 'BNB (BNB)', cap: 'Crypto', isCrypto: true, binanceSym: 'BNBUSDT', sector: 'Est. 2017 • Top Exchange Ecosystem • High Liquidity' },
-      SOLUSDT: { name: 'Solana (SOL)', cap: 'Crypto', isCrypto: true, binanceSym: 'SOLUSDT', sector: 'Est. 2020 • High-Throughput L1 • Institutional DeFi' },
-      XRPUSDT: { name: 'Ripple (XRP)', cap: 'Crypto', isCrypto: true, binanceSym: 'XRPUSDT', sector: 'Est. 2012 • Cross-Border Banking Settlement' },
-      ADAUSDT: { name: 'Cardano (ADA)', cap: 'Crypto', isCrypto: true, binanceSym: 'ADAUSDT', sector: 'Est. 2017 • Peer-Reviewed PoS L1 • 100% Uptime' },
-      DOGEUSDT: { name: 'Dogecoin (DOGE)', cap: 'Crypto', isCrypto: true, binanceSym: 'DOGEUSDT', sector: 'Est. 2013 • Top-10 Liquidity • PoW Pioneer' },
-      TRXUSDT: { name: 'TRON (TRX)', cap: 'Crypto', isCrypto: true, binanceSym: 'TRXUSDT', sector: 'Est. 2017 • #1 USDT Stablecoin Settlement Layer' },
-      TONUSDT: { name: 'Toncoin (TON)', cap: 'Crypto', isCrypto: true, binanceSym: 'TONUSDT', sector: 'Est. 2018 • Telegram Integrated Web3 Network' },
-      AVAXUSDT: { name: 'Avalanche (AVAX)', cap: 'Crypto', isCrypto: true, binanceSym: 'AVAXUSDT', sector: 'Est. 2020 • Institutional Subnets • J.P. Morgan Onyx' },
-      LINKUSDT: { name: 'Chainlink (LINK)', cap: 'Crypto', isCrypto: true, binanceSym: 'LINKUSDT', sector: 'Est. 2017 • #1 Decentralized Oracle • SWIFT Partner' },
-      DOTUSDT: { name: 'Polkadot (DOT)', cap: 'Crypto', isCrypto: true, binanceSym: 'DOTUSDT', sector: 'Est. 2020 • Multi-Chain Interoperability Protocol' },
-      LTCUSDT: { name: 'Litecoin (LTC)', cap: 'Crypto', isCrypto: true, binanceSym: 'LTCUSDT', sector: 'Est. 2011 • Silver to Bitcoin • 13+ Years Uptime' },
-      BCHUSDT: { name: 'Bitcoin Cash (BCH)', cap: 'Crypto', isCrypto: true, binanceSym: 'BCHUSDT', sector: 'Est. 2017 • Fast Peer-to-Peer PoW Payments' },
-      UNIUSDT: { name: 'Uniswap (UNI)', cap: 'Crypto', isCrypto: true, binanceSym: 'UNIUSDT', sector: 'Est. 2018 • #1 Decentralized Exchange ($2T+ Vol)' },
-      ATOMUSDT: { name: 'Cosmos (ATOM)', cap: 'Crypto', isCrypto: true, binanceSym: 'ATOMUSDT', sector: 'Est. 2019 • Internet of Blockchains (IBC Standard)' },
-      XLMUSDT: { name: 'Stellar (XLM)', cap: 'Crypto', isCrypto: true, binanceSym: 'XLMUSDT', sector: 'Est. 2014 • MoneyGram & Franklin Templeton Partner' },
-      NEARUSDT: { name: 'NEAR Protocol (NEAR)', cap: 'Crypto', isCrypto: true, binanceSym: 'NEARUSDT', sector: 'Est. 2020 • Sharded AI & Consumer L1' },
-      APTUSDT: { name: 'Aptos (APT)', cap: 'Crypto', isCrypto: true, binanceSym: 'APTUSDT', sector: 'Est. 2022 • a16z/BlackRock BUIDL • Move L1' },
-      FILUSDT: { name: 'Filecoin (FIL)', cap: 'Crypto', isCrypto: true, binanceSym: 'FILUSDT', sector: 'Est. 2017 • #1 Decentralized Cloud Storage' },
-      ICPUSDT: { name: 'Internet Computer (ICP)', cap: 'Crypto', isCrypto: true, binanceSym: 'ICPUSDT', sector: 'Est. 2021 • On-Chain Full-Stack Cloud Compute' },
-      HBARUSDT: { name: 'Hedera (HBAR)', cap: 'Crypto', isCrypto: true, binanceSym: 'HBARUSDT', sector: 'Est. 2019 • Governed by Google, IBM, Boeing, Dell' },
-      VETUSDT: { name: 'VeChain (VET)', cap: 'Crypto', isCrypto: true, binanceSym: 'VETUSDT', sector: 'Est. 2015 • Enterprise Supply Chain & ESG' },
-      ALGOUSDT: { name: 'Algorand (ALGO)', cap: 'Crypto', isCrypto: true, binanceSym: 'ALGOUSDT', sector: 'Est. 2019 • Zero-Fork Institutional L1 • FIFA Partner' },
-      AAVEUSDT: { name: 'Aave (AAVE)', cap: 'Crypto', isCrypto: true, binanceSym: 'AAVEUSDT', sector: 'Est. 2017 • #1 DeFi Money Market • $15B+ TVL' },
-      MKRUSDT: { name: 'Maker (MKR)', cap: 'Crypto', isCrypto: true, binanceSym: 'MKRUSDT', sector: 'Est. 2017 • Pioneer DeFi Protocol & DAI Issuer' },
-      GRTUSDT: { name: 'The Graph (GRT)', cap: 'Crypto', isCrypto: true, binanceSym: 'GRTUSDT', sector: 'Est. 2018 • Google of Blockchains Indexing Protocol' },
-      RENDERUSDT: { name: 'Render (RENDER)', cap: 'Crypto', isCrypto: true, binanceSym: 'RENDERUSDT', sector: 'Est. 2017 • Decentralized GPU Compute for AI/3D' },
-      INJUSDT: { name: 'Injective (INJ)', cap: 'Crypto', isCrypto: true, binanceSym: 'INJUSDT', sector: 'Est. 2018 • Binance-Backed On-Chain Orderbook L1' },
-      OPUSDT: { name: 'Optimism (OP)', cap: 'Crypto', isCrypto: true, binanceSym: 'OPUSDT', sector: 'Est. 2021 • Top Ethereum L2 • Coinbase Base Stack' },
-      ARBUSDT: { name: 'Arbitrum (ARB)', cap: 'Crypto', isCrypto: true, binanceSym: 'ARBUSDT', sector: 'Est. 2021 • #1 Ethereum Layer-2 by DeFi TVL' },
-      STXUSDT: { name: 'Stacks (STX)', cap: 'Crypto', isCrypto: true, binanceSym: 'STXUSDT', sector: 'Est. 2017 • SEC-Qualified Reg A+ • Bitcoin Smart L2' },
-      IMXUSDT: { name: 'Immutable (IMX)', cap: 'Crypto', isCrypto: true, binanceSym: 'IMXUSDT', sector: 'Est. 2018 • #1 Web3 Gaming ZK-Rollup' },
-      LDOUSDT: { name: 'Lido DAO (LDO)', cap: 'Crypto', isCrypto: true, binanceSym: 'LDOUSDT', sector: 'Est. 2020 • #1 Ethereum Liquid Staking ($25B+ TVL)' },
-      ETCUSDT: { name: 'Ethereum Classic (ETC)', cap: 'Crypto', isCrypto: true, binanceSym: 'ETCUSDT', sector: 'Est. 2015 • Original Immutable PoW Ethereum' },
-      XMRUSDT: { name: 'Monero (XMR)', cap: 'Crypto', isCrypto: true, binanceSym: 'XMRUSDT', sector: 'Est. 2014 • Leading Privacy PoW Cryptocurrency' },
-      THETAUSDT: { name: 'Theta Network (THETA)', cap: 'Crypto', isCrypto: true, binanceSym: 'THETAUSDT', sector: 'Est. 2018 • Sony & Samsung Validator Video CDN' },
-      XTZUSDT: { name: 'Tezos (XTZ)', cap: 'Crypto', isCrypto: true, binanceSym: 'XTZUSDT', sector: 'Est. 2018 • Self-Amending Institutional L1' },
-      EGLDUSDT: { name: 'MultiversX (EGLD)', cap: 'Crypto', isCrypto: true, binanceSym: 'EGLDUSDT', sector: 'Est. 2019 • Adaptive State Sharding L1' },
-      FLOWUSDT: { name: 'Flow (FLOW)', cap: 'Crypto', isCrypto: true, binanceSym: 'FLOWUSDT', sector: 'Est. 2020 • NBA Top Shot & Disney Pinnacle L1' },
-      SANDUSDT: { name: 'The Sandbox (SAND)', cap: 'Crypto', isCrypto: true, binanceSym: 'SANDUSDT', sector: 'Est. 2018 • Leading Metaverse Virtual Real Estate' },
-      MANAUSDT: { name: 'Decentraland (MANA)', cap: 'Crypto', isCrypto: true, binanceSym: 'MANAUSDT', sector: 'Est. 2017 • Pioneer Decentralized 3D Metaverse' },
-      AXSUSDT: { name: 'Axie Infinity (AXS)', cap: 'Crypto', isCrypto: true, binanceSym: 'AXSUSDT', sector: 'Est. 2018 • Pioneer Play-to-Earn Web3 Gaming' },
-      CRVUSDT: { name: 'Curve DAO (CRV)', cap: 'Crypto', isCrypto: true, binanceSym: 'CRVUSDT', sector: 'Est. 2020 • Core DeFi Stablecoin Liquidity AMM' },
-      COMPUSDT: { name: 'Compound (COMP)', cap: 'Crypto', isCrypto: true, binanceSym: 'COMPUSDT', sector: 'Est. 2018 • Audited Blue-Chip DeFi Lending' },
-      SNXUSDT: { name: 'Synthetix (SNX)', cap: 'Crypto', isCrypto: true, binanceSym: 'SNXUSDT', sector: 'Est. 2017 • Pioneer Decentralized Derivatives' },
-      CHZUSDT: { name: 'Chiliz (CHZ)', cap: 'Crypto', isCrypto: true, binanceSym: 'CHZUSDT', sector: 'Est. 2018 • FC Barcelona / PSG / UFC Fan Tokens' },
-      QNTUSDT: { name: 'Quant (QNT)', cap: 'Crypto', isCrypto: true, binanceSym: 'QNTUSDT', sector: 'Est. 2018 • Enterprise Overledger Bank Interop' },
-      RUNEUSDT: { name: 'THORChain (RUNE)', cap: 'Crypto', isCrypto: true, binanceSym: 'RUNEUSDT', sector: 'Est. 2018 • Native Cross-Chain BTC/ETH DEX' },
-      SUIUSDT: { name: 'Sui (SUI)', cap: 'Crypto', isCrypto: true, binanceSym: 'SUIUSDT', sector: 'Est. 2023 • Ex-Meta Diem Engineers • High-Speed L1' },
+      // --- TOP 50 TRUSTED CRYPTOCURRENCIES (DIRECT 24/7 BINANCE API) ---
+      BTCUSDT:   { name: 'Bitcoin (BTC)',        cap: 'Crypto', isCrypto: true, binanceSym: 'BTCUSDT',   sector: 'Est. 2009 • Spot ETF Approved • #1 Market Cap' },
+      ETHUSDT:   { name: 'Ethereum (ETH)',       cap: 'Crypto', isCrypto: true, binanceSym: 'ETHUSDT',   sector: 'Est. 2015 • Spot ETF Approved • #1 Smart Contract L1' },
+      BNBUSDT:   { name: 'BNB (BNB)',            cap: 'Crypto', isCrypto: true, binanceSym: 'BNBUSDT',   sector: 'Est. 2017 • Top Exchange Ecosystem • Auto-Burn Tokenomics' },
+      SOLUSDT:   { name: 'Solana (SOL)',         cap: 'Crypto', isCrypto: true, binanceSym: 'SOLUSDT',   sector: 'Est. 2020 • High-Throughput L1 • Institutional DeFi Hub' },
+      XRPUSDT:   { name: 'XRP (XRP)',            cap: 'Crypto', isCrypto: true, binanceSym: 'XRPUSDT',   sector: 'Est. 2012 • Cross-Border Bank Settlement • 12+ Yrs Uptime' },
+      ADAUSDT:   { name: 'Cardano (ADA)',        cap: 'Crypto', isCrypto: true, binanceSym: 'ADAUSDT',   sector: 'Est. 2017 • Peer-Reviewed PoS L1 • Zero Downtime History' },
+      DOGEUSDT:  { name: 'Dogecoin (DOGE)',      cap: 'Crypto', isCrypto: true, binanceSym: 'DOGEUSDT',  sector: 'Est. 2013 • 11+ Yrs PoW Longevity • Deep Global Liquidity' },
+      TRXUSDT:   { name: 'TRON (TRX)',           cap: 'Crypto', isCrypto: true, binanceSym: 'TRXUSDT',   sector: 'Est. 2017 • #1 USDT Settlement Rail • High Daily Active Users' },
+      TONUSDT:   { name: 'Toncoin (TON)',        cap: 'Crypto', isCrypto: true, binanceSym: 'TONUSDT',   sector: 'Est. 2018 • Telegram Ecosystem Integration • Sharded L1' },
+      AVAXUSDT:  { name: 'Avalanche (AVAX)',     cap: 'Crypto', isCrypto: true, binanceSym: 'AVAXUSDT',  sector: 'Est. 2020 • Citi / JPMorgan Subnet Pilots • Fast Finality' },
+      LINKUSDT:  { name: 'Chainlink (LINK)',     cap: 'Crypto', isCrypto: true, binanceSym: 'LINKUSDT',  sector: 'Est. 2017 • SWIFT & DTCC CCIP Partner • #1 Oracle Standard' },
+      DOTUSDT:   { name: 'Polkadot (DOT)',       cap: 'Crypto', isCrypto: true, binanceSym: 'DOTUSDT',   sector: 'Est. 2020 • Web3 Foundation • Multi-Chain Parachain Hub' },
+      LTCUSDT:   { name: 'Litecoin (LTC)',       cap: 'Crypto', isCrypto: true, binanceSym: 'LTCUSDT',   sector: 'Est. 2011 • 13+ Yrs 100% Uptime • Silver to Bitcoin PoW' },
+      BCHUSDT:   { name: 'Bitcoin Cash (BCH)',   cap: 'Crypto', isCrypto: true, binanceSym: 'BCHUSDT',   sector: 'Est. 2017 • Large-Block PoW Payments • Grayscale Trust' },
+      UNIUSDT:   { name: 'Uniswap (UNI)',        cap: 'Crypto', isCrypto: true, binanceSym: 'UNIUSDT',   sector: 'Est. 2018 • #1 Decentralized Exchange • $2T+ Cumulative Vol' },
+      ATOMUSDT:  { name: 'Cosmos (ATOM)',        cap: 'Crypto', isCrypto: true, binanceSym: 'ATOMUSDT',  sector: 'Est. 2019 • IBC Interoperability Standard • Modular SDK' },
+      XLMUSDT:   { name: 'Stellar (XLM)',        cap: 'Crypto', isCrypto: true, binanceSym: 'XLMUSDT',   sector: 'Est. 2014 • MoneyGram & Franklin Templeton Rail • 10+ Yrs' },
+      NEARUSDT:  { name: 'NEAR Protocol (NEAR)', cap: 'Crypto', isCrypto: true, binanceSym: 'NEARUSDT',  sector: 'Est. 2020 • Chain Abstraction & AI L1 • Nightshade Sharding' },
+      APTUSDT:   { name: 'Aptos (APT)',          cap: 'Crypto', isCrypto: true, binanceSym: 'APTUSDT',   sector: 'Est. 2022 • a16z / BlackRock BUIDL • Move Language L1' },
+      FILUSDT:   { name: 'Filecoin (FIL)',       cap: 'Crypto', isCrypto: true, binanceSym: 'FILUSDT',   sector: 'Est. 2017 • #1 Decentralized Storage Network • Grayscale Trust' },
+      ICPUSDT:   { name: 'Internet Computer',    cap: 'Crypto', isCrypto: true, binanceSym: 'ICPUSDT',   sector: 'Est. 2021 • DFINITY Foundation • Full-Stack On-Chain Cloud' },
+      HBARUSDT:  { name: 'Hedera (HBAR)',        cap: 'Crypto', isCrypto: true, binanceSym: 'HBARUSDT',  sector: 'Est. 2019 • Governed by Google, IBM & Boeing • Hashgraph' },
+      VETUSDT:   { name: 'VeChain (VET)',        cap: 'Crypto', isCrypto: true, binanceSym: 'VETUSDT',   sector: 'Est. 2015 • Walmart China & DNV Supply Chain Enterprise L1' },
+      ALGOUSDT:  { name: 'Algorand (ALGO)',      cap: 'Crypto', isCrypto: true, binanceSym: 'ALGOUSDT',  sector: 'Est. 2019 • MIT Silvio Micali • Instant Finality Green L1' },
+      AAVEUSDT:  { name: 'Aave (AAVE)',          cap: 'Crypto', isCrypto: true, binanceSym: 'AAVEUSDT',  sector: 'Est. 2017 • #1 DeFi Money Market • $15B+ TVL Audited' },
+      MKRUSDT:   { name: 'Maker (MKR)',          cap: 'Crypto', isCrypto: true, binanceSym: 'MKRUSDT',   sector: 'Est. 2017 • DAI / USDS Stablecoin Pioneer • RWA Treasury Yield' },
+      GRTUSDT:   { name: 'The Graph (GRT)',      cap: 'Crypto', isCrypto: true, binanceSym: 'GRTUSDT',   sector: 'Est. 2018 • Web3 Indexing Standard • Essential DeFi Infra' },
+      RENDERUSDT:{ name: 'Render (RENDER)',      cap: 'Crypto', isCrypto: true, binanceSym: 'RENDERUSDT',sector: 'Est. 2017 • OTOY Decentralized GPU Compute • AI Leader' },
+      INJUSDT:   { name: 'Injective (INJ)',      cap: 'Crypto', isCrypto: true, binanceSym: 'INJUSDT',   sector: 'Est. 2020 • Binance Labs & Mark Cuban Backed • DeFi L1' },
+      OPUSDT:    { name: 'Optimism (OP)',        cap: 'Crypto', isCrypto: true, binanceSym: 'OPUSDT',    sector: 'Est. 2021 • Coinbase Base OP Stack Foundation • Top ETH L2' },
+      ARBUSDT:   { name: 'Arbitrum (ARB)',       cap: 'Crypto', isCrypto: true, binanceSym: 'ARBUSDT',   sector: 'Est. 2021 • #1 Ethereum L2 by TVL • Robinhood Partner' },
+      STXUSDT:   { name: 'Stacks (STX)',         cap: 'Crypto', isCrypto: true, binanceSym: 'STXUSDT',   sector: 'Est. 2017 • SEC-Qualified Reg A+ • Leading Bitcoin L2' },
+      IMXUSDT:   { name: 'Immutable (IMX)',      cap: 'Crypto', isCrypto: true, binanceSym: 'IMXUSDT',   sector: 'Est. 2018 • #1 Web3 Gaming ZK-Rollup • Ubisoft Partner' },
+      LDOUSDT:   { name: 'Lido DAO (LDO)',       cap: 'Crypto', isCrypto: true, binanceSym: 'LDOUSDT',   sector: 'Est. 2020 • #1 Ethereum Liquid Staking Protocol • $25B+ TVL' },
+      ETCUSDT:   { name: 'Ethereum Classic',     cap: 'Crypto', isCrypto: true, binanceSym: 'ETCUSDT',   sector: 'Est. 2015 • Original Immutable EVM PoW • Grayscale Trust' },
+      THETAUSDT: { name: 'Theta Network',        cap: 'Crypto', isCrypto: true, binanceSym: 'THETAUSDT', sector: 'Est. 2018 • Samsung & Sony Validator Nodes • Video CDN' },
+      XTZUSDT:   { name: 'Tezos (XTZ)',          cap: 'Crypto', isCrypto: true, binanceSym: 'XTZUSDT',   sector: 'Est. 2018 • Self-Amending PoS L1 • Manchester Utd Partner' },
+      EGLDUSDT:  { name: 'MultiversX (EGLD)',    cap: 'Crypto', isCrypto: true, binanceSym: 'EGLDUSDT',  sector: 'Est. 2019 • Adaptive State Sharding L1 • European Fintech' },
+      FLOWUSDT:  { name: 'Flow (FLOW)',          cap: 'Crypto', isCrypto: true, binanceSym: 'FLOWUSDT',  sector: 'Est. 2020 • NBA Top Shot & Disney Pinnacle Consumer L1' },
+      SANDUSDT:  { name: 'The Sandbox (SAND)',   cap: 'Crypto', isCrypto: true, binanceSym: 'SANDUSDT',  sector: 'Est. 2018 • Animoca Brands • Adidas & Gucci Metaverse' },
+      MANAUSDT:  { name: 'Decentraland (MANA)',  cap: 'Crypto', isCrypto: true, binanceSym: 'MANAUSDT',  sector: 'Est. 2017 • Pioneer Virtual Real Estate DAO • Grayscale Trust' },
+      AXSUSDT:   { name: 'Axie Infinity (AXS)',  cap: 'Crypto', isCrypto: true, binanceSym: 'AXSUSDT',   sector: 'Est. 2018 • Sky Mavis Ronin Ecosystem • Pioneer GameFi' },
+      CRVUSDT:   { name: 'Curve DAO (CRV)',      cap: 'Crypto', isCrypto: true, binanceSym: 'CRVUSDT',   sector: 'Est. 2020 • #1 Stablecoin Liquidity AMM • Core DeFi Infra' },
+      COMPUSDT:  { name: 'Compound (COMP)',      cap: 'Crypto', isCrypto: true, binanceSym: 'COMPUSDT',  sector: 'Est. 2018 • DeFi Lending Pioneer • Coinbase & a16z Backed' },
+      SNXUSDT:   { name: 'Synthetix (SNX)',      cap: 'Crypto', isCrypto: true, binanceSym: 'SNXUSDT',   sector: 'Est. 2017 • Pioneer On-Chain Derivatives & Perps Liquidity' },
+      CHZUSDT:   { name: 'Chiliz (CHZ)',         cap: 'Crypto', isCrypto: true, binanceSym: 'CHZUSDT',   sector: 'Est. 2018 • FC Barcelona, PSG & UFC Official Fan Token L1' },
+      QNTUSDT:   { name: 'Quant (QNT)',          cap: 'Crypto', isCrypto: true, binanceSym: 'QNTUSDT',   sector: 'Est. 2018 • Overledger Bank Interoperability • Enterprise DLT' },
+      RUNEUSDT:  { name: 'THORChain (RUNE)',     cap: 'Crypto', isCrypto: true, binanceSym: 'RUNEUSDT',  sector: 'Est. 2018 • Native Cross-Chain BTC/ETH DEX • Non-Custodial' },
+      SUIUSDT:   { name: 'Sui (SUI)',            cap: 'Crypto', isCrypto: true, binanceSym: 'SUIUSDT',   sector: 'Est. 2023 • Mysten Labs (Ex-Meta) • Object-Centric Fast L1' },
+      FETUSDT:   { name: 'Artificial Superintelligence (FET)', cap: 'Crypto', isCrypto: true, binanceSym: 'FETUSDT', sector: 'Est. 2019 • Fetch.ai / Ocean / SingularityNET AI Alliance' },
 
-      // --- TOP 40 NSE INDIAN EQUITIES (LARGE, MID & SMALL CAP) ---
-      RELIANCE: { name: 'Reliance Industries Ltd', cap: 'Large', isCrypto: false, sector: 'Large-Cap • Energy & Telecom' },
-      TCS: { name: 'Tata Consultancy Services', cap: 'Large', isCrypto: false, sector: 'Large-Cap • IT Services' },
-      HDFCBANK: { name: 'HDFC Bank Ltd', cap: 'Large', isCrypto: false, sector: 'Large-Cap • Banking' },
-      ICICIBANK: { name: 'ICICI Bank Ltd', cap: 'Large', isCrypto: false, sector: 'Large-Cap • Banking' },
-      INFY: { name: 'Infosys Ltd', cap: 'Large', isCrypto: false, sector: 'Large-Cap • IT Services' },
-      SBIN: { name: 'State Bank of India', cap: 'Large', isCrypto: false, sector: 'Large-Cap • PSU Banking' },
-      BHARTIARTL: { name: 'Bharti Airtel Ltd', cap: 'Large', isCrypto: false, sector: 'Large-Cap • Telecom' },
-      LT: { name: 'Larsen & Toubro Ltd', cap: 'Large', isCrypto: false, sector: 'Large-Cap • Infrastructure' },
-      ITC: { name: 'ITC Ltd', cap: 'Large', isCrypto: false, sector: 'Large-Cap • FMCG' },
-      AXISBANK: { name: 'Axis Bank Ltd', cap: 'Large', isCrypto: false, sector: 'Large-Cap • Banking' },
-      KOTAKBANK: { name: 'Kotak Mahindra Bank', cap: 'Large', isCrypto: false, sector: 'Large-Cap • Banking' },
-      SUNPHARMA: { name: 'Sun Pharmaceutical', cap: 'Large', isCrypto: false, sector: 'Large-Cap • Pharma' },
-      TITAN: { name: 'Titan Company Ltd', cap: 'Large', isCrypto: false, sector: 'Large-Cap • Consumer' },
-      BAJFINANCE: { name: 'Bajaj Finance Ltd', cap: 'Large', isCrypto: false, sector: 'Large-Cap • NBFC' },
-      TATAMOTORS: { name: 'Tata Motors Ltd', cap: 'Large', isCrypto: false, sector: 'Large-Cap • Automobiles' },
-      M_M: { name: 'Mahindra & Mahindra', cap: 'Large', isCrypto: false, sector: 'Large-Cap • Automobiles' },
-      NTPC: { name: 'NTPC Ltd', cap: 'Large', isCrypto: false, sector: 'Large-Cap • Power' },
-      TRENT: { name: 'Trent Ltd', cap: 'Large', isCrypto: false, sector: 'Large-Cap • Retail' },
-      BEL: { name: 'Bharat Electronics Ltd', cap: 'Large', isCrypto: false, sector: 'Large-Cap • Defence' },
-      HAL: { name: 'Hindustan Aeronautics', cap: 'Large', isCrypto: false, sector: 'Large-Cap • Aerospace & Defence' },
+      // --- NSE LARGE-CAP EQUITIES (TWELVE DATA REAL NSE FEED) ---
+      RELIANCE:   { name: 'Reliance Industries Ltd',     cap: 'Large', sector: 'Large-Cap • Energy & Telecom' },
+      TCS:        { name: 'Tata Consultancy Services',   cap: 'Large', sector: 'Large-Cap • IT Services' },
+      HDFCBANK:   { name: 'HDFC Bank Ltd',               cap: 'Large', sector: 'Large-Cap • Private Banking' },
+      ICICIBANK:  { name: 'ICICI Bank Ltd',              cap: 'Large', sector: 'Large-Cap • Private Banking' },
+      INFY:       { name: 'Infosys Ltd',                 cap: 'Large', sector: 'Large-Cap • IT Services' },
+      SBIN:       { name: 'State Bank of India',         cap: 'Large', sector: 'Large-Cap • PSU Banking' },
+      BHARTIARTL: { name: 'Bharti Airtel Ltd',           cap: 'Large', sector: 'Large-Cap • Telecom' },
+      LT:         { name: 'Larsen & Toubro Ltd',         cap: 'Large', sector: 'Large-Cap • Infrastructure' },
+      ITC:        { name: 'ITC Ltd',                     cap: 'Large', sector: 'Large-Cap • FMCG & Hotels' },
+      AXISBANK:   { name: 'Axis Bank Ltd',               cap: 'Large', sector: 'Large-Cap • Private Banking' },
+      KOTAKBANK:  { name: 'Kotak Mahindra Bank Ltd',     cap: 'Large', sector: 'Large-Cap • Private Banking' },
+      SUNPHARMA:  { name: 'Sun Pharmaceutical Ind.',     cap: 'Large', sector: 'Large-Cap • Pharmaceuticals' },
+      TITAN:      { name: 'Titan Company Ltd',           cap: 'Large', sector: 'Large-Cap • Consumer & Jewellery' },
+      BAJFINANCE: { name: 'Bajaj Finance Ltd',           cap: 'Large', sector: 'Large-Cap • NBFC' },
+      M_M:        { name: 'Mahindra & Mahindra Ltd',     cap: 'Large', sector: 'Large-Cap • Automobiles' },
+      TRENT:      { name: 'Trent Ltd',                   cap: 'Large', sector: 'Large-Cap • Retail' },
+      BEL:        { name: 'Bharat Electronics Ltd',      cap: 'Large', sector: 'Large-Cap • Defence' },
+      HAL:        { name: 'Hindustan Aeronautics Ltd',   cap: 'Large', sector: 'Large-Cap • Aerospace & Defence' },
 
-      PERSISTENT: { name: 'Persistent Systems', cap: 'Mid', isCrypto: false, sector: 'Mid-Cap • IT Engineering' },
-      COFORGE: { name: 'Coforge Ltd', cap: 'Mid', isCrypto: false, sector: 'Mid-Cap • IT Services' },
-      POLYCAB: { name: 'Polycab India Ltd', cap: 'Mid', isCrypto: false, sector: 'Mid-Cap • Cables & Wires' },
-      DIXON: { name: 'Dixon Technologies', cap: 'Mid', isCrypto: false, sector: 'Mid-Cap • Electronics Mfg' },
-      CUMMINSIND: { name: 'Cummins India Ltd', cap: 'Mid', isCrypto: false, sector: 'Mid-Cap • Industrial' },
-      CGPOWER: { name: 'CG Power & Industrial', cap: 'Mid', isCrypto: false, sector: 'Mid-Cap • Capital Goods' },
-      ASTRAL: { name: 'Astral Ltd', cap: 'Mid', isCrypto: false, sector: 'Mid-Cap • Building Materials' },
-      FEDERALBNK: { name: 'Federal Bank Ltd', cap: 'Mid', isCrypto: false, sector: 'Mid-Cap • Banking' },
-      BSE: { name: 'BSE Ltd', cap: 'Mid', isCrypto: false, sector: 'Mid-Cap • Capital Markets' },
-      SUZLON: { name: 'Suzlon Energy Ltd', cap: 'Mid', isCrypto: false, sector: 'Mid-Cap • Renewable Energy' },
+      // --- NSE MID-CAP EQUITIES ---
+      CGPOWER:    { name: 'CG Power & Industrial Sol.',  cap: 'Mid',   sector: 'Mid-Cap • Capital Goods' },
+      CUMMINSIND: { name: 'Cummins India Ltd',           cap: 'Mid',   sector: 'Mid-Cap • Industrial Engines' },
+      COFORGE:    { name: 'Coforge Ltd',                 cap: 'Mid',   sector: 'Mid-Cap • IT Services' },
+      PERSISTENT: { name: 'Persistent Systems Ltd',      cap: 'Mid',   sector: 'Mid-Cap • IT & Cloud' },
+      POLYCAB:    { name: 'Polycab India Ltd',           cap: 'Mid',   sector: 'Mid-Cap • Wires & Cables' },
+      DIXON:      { name: 'Dixon Technologies Ltd',      cap: 'Mid',   sector: 'Mid-Cap • Electronics Mfg' },
+      MAXHEALTH:  { name: 'Max Healthcare Institute',    cap: 'Mid',   sector: 'Mid-Cap • Hospitals' },
+      INDIANHOTL: { name: 'Indian Hotels Co. Ltd',       cap: 'Mid',   sector: 'Mid-Cap • Hospitality' },
+      FEDERALBNK: { name: 'The Federal Bank Ltd',        cap: 'Mid',   sector: 'Mid-Cap • Banking' },
+      LUPIN:      { name: 'Lupin Ltd',                   cap: 'Mid',   sector: 'Mid-Cap • Pharmaceuticals' },
+      AUROPHARMA: { name: 'Aurobindo Pharma Ltd',        cap: 'Mid',   sector: 'Mid-Cap • Pharmaceuticals' },
+      SUPREMEIND: { name: 'Supreme Industries Ltd',      cap: 'Mid',   sector: 'Mid-Cap • Plastic Products' },
 
-      CDSL: { name: 'Central Depository Services', cap: 'Small', isCrypto: false, sector: 'Small-Cap • Capital Markets' },
-      MCX: { name: 'Multi Commodity Exchange', cap: 'Small', isCrypto: false, sector: 'Small-Cap • Exchange' },
-      KPITTECH: { name: 'KPIT Technologies', cap: 'Small', isCrypto: false, sector: 'Small-Cap • Auto Tech' },
-      KEI: { name: 'KEI Industries Ltd', cap: 'Small', isCrypto: false, sector: 'Small-Cap • Cables' },
-      IEX: { name: 'Indian Energy Exchange', cap: 'Small', isCrypto: false, sector: 'Small-Cap • Power Exchange' },
-      ANGELONE: { name: 'Angel One Ltd', cap: 'Small', isCrypto: false, sector: 'Small-Cap • Broking' },
-      KAYNES: { name: 'Kaynes Technology India', cap: 'Small', isCrypto: false, sector: 'Small-Cap • EMS' },
-      TEJASNET: { name: 'Tejas Networks Ltd', cap: 'Small', isCrypto: false, sector: 'Small-Cap • Telecom Gear' },
-      NATCOPHARM: { name: 'Natco Pharma Ltd', cap: 'Small', isCrypto: false, sector: 'Small-Cap • Specialty Pharma' },
-      CYIENT: { name: 'Cyient Ltd', cap: 'Small', isCrypto: false, sector: 'Small-Cap • ER&D Services' }
+      // --- NSE SMALL-CAP EQUITIES ---
+      MCX:        { name: 'Multi Commodity Exchange',    cap: 'Small', sector: 'Small-Cap • Exchange' },
+      CDSL:       { name: 'Central Depository Services', cap: 'Small', sector: 'Small-Cap • Capital Markets' },
+      KPITTECH:   { name: 'KPIT Technologies Ltd',       cap: 'Small', sector: 'Small-Cap • Auto Software' },
+      SUZLON:     { name: 'Suzlon Energy Ltd',           cap: 'Small', sector: 'Small-Cap • Renewable Energy' },
+      IEX:        { name: 'Indian Energy Exchange',      cap: 'Small', sector: 'Small-Cap • Power Exchange' },
+      ANGELONE:   { name: 'Angel One Ltd',               cap: 'Small', sector: 'Small-Cap • Broking' },
+      KAYNES:     { name: 'Kaynes Technology India',     cap: 'Small', sector: 'Small-Cap • EMS Electronics' },
+      KEI:        { name: 'KEI Industries Ltd',          cap: 'Small', sector: 'Small-Cap • Cables & Wires' },
+      NATCOPHARM: { name: 'Natco Pharma Ltd',            cap: 'Small', sector: 'Small-Cap • Specialty Pharma' },
+      BSOFT:      { name: 'Birlasoft Ltd',               cap: 'Small', sector: 'Small-Cap • IT Services' }
     };
 
     const STRATEGY_DESCRIPTIONS = {
       connors_cum_rsi2: {
         badge: '~80–85% Win',
-        html: '<strong>Entry:</strong> Uptrend confirmed (Close &gt; 200 SMA &amp; 50 SMA &gt; 200 SMA), pullback below 5 SMA, and 2-day cumulative RSI(2)[t] + RSI(2)[t-1] &lt; 10.<br/><strong>Exit:</strong> Quick snapback close &gt; 5 SMA (after Target), or Stage 1 Fixed SL → Stage 2 Trailing SL.'
+        html: '<strong>Entry:</strong> Uptrend confirmed (Close &gt; 200 SMA &amp; 50 SMA &gt; 200 SMA), pullback below 5 SMA, and 2-day cumulative RSI(2)[t] + RSI(2)[t-1] &lt; 10.<br/><strong>Exit:</strong> Fixed Initial SL until Target hits (auto-trails after Target), or snapback close &gt; 5 SMA.'
       },
       ibs_rsi2_confluence: {
         badge: '~78–83% Win',
-        html: '<strong>Entry:</strong> Uptrend confirmed (Close &gt; 200 SMA), Internal Bar Strength IBS = (Close - Low)/(High - Low) &lt; 0.20, and RSI(2) &lt; 15.<br/><strong>Exit:</strong> Snapback close &gt; prior bar high (after Target), or Stage 1 Fixed SL → Stage 2 Trailing SL.'
+        html: '<strong>Entry:</strong> Long-term uptrend (Close &gt; 200 SMA) with extreme intraday capitulation: Internal Bar Strength IBS = (Close − Low) / (High − Low) &lt; 0.20 and RSI(2) &lt; 15.<br/><strong>Exit:</strong> Fixed Initial SL until Target hits (auto-trails after Target), or close &gt; prior bar high.'
       },
       bb_rsi2_trend: {
         badge: '~80%+ Win',
-        html: '<strong>Entry:</strong> Uptrend confirmed (Close &gt; 200 SMA), price pierces lower 20-period Bollinger Band (2 SD), and RSI(2) &lt; 10.<br/><strong>Exit:</strong> Mean-reversion snapback above 10 SMA (after Target), or Stage 1 Fixed SL → Stage 2 Trailing SL.'
+        html: '<strong>Entry:</strong> Structural uptrend (Close &gt; 200 SMA) where price pierces below the 20-period Lower Bollinger Band (2 SD) with RSI(2) &lt; 10.<br/><strong>Exit:</strong> Fixed Initial SL until Target hits (auto-trails after Target), or mean-reversion close &gt; 10 SMA.'
       }
     };
 
     const SIGNALS_STORAGE_KEY = 'nse_algolab_persistent_signals_v3_twostage';
-    const LAST_SCAN_IST_KEY = 'nse_algolab_last_scan_date_ist';
+    const LAST_SCAN_SLOT_IST_KEY = 'nse_algolab_last_scan_slot_ist_v2';
     const TD_SETTINGS_KEY = 'nse_algolab_td_settings_v1';
     const TD_CREDITS_KEY = 'nse_algolab_td_credits_v1';
     const NSE_CACHE_24H_KEY = 'nse_algolab_nse_cache_24h_v1';
@@ -613,27 +615,64 @@
       tdSafetyCap: 650,
       tdCreditsUsedToday: 0,
       tdCallTimestamps: [],
+      scheduleWatcherTimer: null,
       currentRequestId: 0,
       replayIndex: 0,
       replayPlaying: false,
       replayTimer: null
     };
 
+    function getISTNowParts() {
+      const now = new Date();
+      const istNow = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+      const dateStr = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+      const hour = istNow.getHours();
+      const minute = istNow.getMinutes();
+      return { istNow, dateStr, hour, minute };
+    }
+
     function getTodayISTDateString() {
-      return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+      return getISTNowParts().dateStr;
+    }
+
+    // Returns the active IST scan slot key:
+    // - Before 10:00 AM IST: returns null (waits until 10:00 AM IST morning window)
+    // - 10:00 AM to 2:59 PM IST: 'YYYY-MM-DD_10AM'
+    // - 3:00 PM IST onwards: 'YYYY-MM-DD_3PM'
+    function getCurrentScheduledISTSlot() {
+      const { dateStr, hour } = getISTNowParts();
+      if (hour >= 15) {
+        return { slotKey: `${dateStr}_3PM`, label: '3:00 PM IST' };
+      }
+      if (hour >= 10) {
+        return { slotKey: `${dateStr}_10AM`, label: '10:00 AM IST' };
+      }
+      return { slotKey: null, label: 'Pre-10:00 AM IST' };
     }
 
     function updateNextIstResetLabel() {
       const el = $('nextIstResetLabel');
       if (!el) return;
-      const now = new Date();
-      const istNow = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
-      const nextMidnight = new Date(istNow);
-      nextMidnight.setHours(24, 0, 0, 0);
-      const diffMs = Math.max(0, nextMidnight - istNow);
+      const { istNow, hour } = getISTNowParts();
+      const target = new Date(istNow);
+      let windowName = '10:00 AM IST';
+
+      if (hour < 10) {
+        target.setHours(10, 0, 0, 0);
+        windowName = 'Today 10:00 AM IST';
+      } else if (hour < 15) {
+        target.setHours(15, 0, 0, 0);
+        windowName = 'Today 3:00 PM IST';
+      } else {
+        target.setDate(target.getDate() + 1);
+        target.setHours(10, 0, 0, 0);
+        windowName = 'Tomorrow 10:00 AM IST';
+      }
+
+      const diffMs = Math.max(0, target - istNow);
       const hrs = Math.floor(diffMs / 3600000);
       const mins = Math.floor((diffMs % 3600000) / 60000);
-      el.textContent = `Tomorrow 00:00 IST (in ${hrs}h ${mins}m)`;
+      el.textContent = `${windowName} (in ${hrs}h ${mins}m)`;
     }
 
     function loadTwelveDataSettings() {
@@ -728,39 +767,40 @@
     }
 
     // =========================================================================
-    // 3. SIDEBAR FILTER, SYMBOL & STRATEGY HANDLERS
+    // 3. SIDEBAR ASSET DROPDOWN & STRATEGY UI CONTROLS
     // =========================================================================
     function populateSymbolSelect(searchQuery = '') {
       const sel = $('symbolSelect');
       if (!sel) return;
       const prevVal = sel.value;
-      const q = searchQuery.trim().toLowerCase();
+      const q = (searchQuery || $('symbolSearchInput')?.value || '').trim().toLowerCase();
 
       const entries = Object.entries(ASSET_UNIVERSE).filter(([sym, meta]) => {
         if (state.capFilter !== 'ALL' && meta.cap !== state.capFilter) return false;
-        if (q && !sym.toLowerCase().includes(q) && !meta.name.toLowerCase().includes(q) && !meta.sector.toLowerCase().includes(q)) {
-          return false;
-        }
-        return true;
+        if (!q) return true;
+        return (
+          sym.toLowerCase().includes(q) ||
+          meta.name.toLowerCase().includes(q) ||
+          meta.sector.toLowerCase().includes(q)
+        );
       });
 
-      const countEl = $('universeCountLabel');
-      if (countEl) countEl.textContent = `(${entries.length})`;
+      const countLbl = $('universeCountLabel');
+      if (countLbl) countLbl.textContent = `(${entries.length})`;
 
-      sel.innerHTML = entries.map(([sym, meta]) => {
-        const cleanSym = sym.replace('USDT', '');
-        return `<option value="${sym}">${cleanSym} — ${meta.name}</option>`;
-      }).join('');
+      sel.innerHTML = entries
+        .map(([sym, meta]) => `<option value="${sym}">${sym.replace('USDT', '')} — ${meta.name}</option>`)
+        .join('');
 
       if (entries.some(([sym]) => sym === prevVal)) {
         sel.value = prevVal;
       } else if (entries.length > 0) {
         sel.value = entries[0][0];
       }
-      updateSymbolMetaBanner();
+      updateSymbolMetaText();
     }
 
-    function updateSymbolMetaBanner() {
+    function updateSymbolMetaText() {
       const sym = $('symbolSelect')?.value || 'BTCUSDT';
       const meta = ASSET_UNIVERSE[sym];
       const el = $('symbolMetaText');
@@ -772,44 +812,39 @@
     function selectCapFilter(cap) {
       state.capFilter = cap;
       document.querySelectorAll('.cap-btn').forEach(btn => {
-        const active = btn.dataset.cap === cap;
-        btn.className = active
+        const isActive = btn.getAttribute('data-cap') === cap;
+        const isCryptoBtn = btn.getAttribute('data-cap') === 'Crypto';
+        btn.className = isActive
           ? 'cap-btn py-1 rounded-lg text-[11px] font-semibold bg-white text-slate-900 shadow-sm transition'
-          : 'cap-btn py-1 rounded-lg text-[11px] font-semibold text-slate-500 hover:text-slate-900 transition';
+          : `cap-btn py-1 rounded-lg text-[11px] font-semibold ${isCryptoBtn ? 'text-amber-700 hover:text-amber-900' : 'text-slate-500 hover:text-slate-900'} transition`;
       });
-      populateSymbolSelect($('symbolSearchInput')?.value || '');
-      if (state.mode === 'signals') {
-        renderActiveSignalsTable();
-      } else {
-        onSetupChanged(false);
-      }
+      populateSymbolSelect();
+      onSetupChanged(false);
     }
 
-    function filterSymbolDropdown(query) {
-      populateSymbolSelect(query);
-    }
-
-    function switchToCryptoMarket() {
-      selectCapFilter('Crypto');
-      showToast('Top 50 Trusted Crypto', 'Filtered to 50 high-cap, battle-tested coins synced live via Binance.');
+    function filterSymbolDropdown(val) {
+      populateSymbolSelect(val);
     }
 
     function toggleCryptoCurrency() {
-      state.cryptoCurrency = state.cryptoCurrency === 'INR' ? 'USD' : 'INR';
+      state.cryptoCurrency = state.cryptoCurrency === 'INR' ? 'USDT' : 'INR';
       const btn = $('cryptoCurrencyToggleBtn');
       if (btn) {
         btn.textContent = state.cryptoCurrency === 'INR' ? 'Crypto: ₹ INR' : 'Crypto: $ USDT';
       }
       renderActiveSignalsTable();
-      if (state.mode !== 'signals' && state.candles.length >= 30) {
-        triggerRun();
-      }
+      if (state.mode !== 'signals') triggerRun();
+    }
+
+    function switchToCryptoMarket() {
+      selectCapFilter('Crypto');
+      showToast('Top 50 Trusted Crypto', 'Filtered to 50 high-market-cap battle-tested cryptocurrencies.');
     }
 
     function setTimeframe(tf) {
       state.timeframe = tf;
       document.querySelectorAll('.tf-btn').forEach(btn => {
-        const active = btn.dataset.tf === tf;
+        const active = btn.getAttribute('data-tf') === tf;
         btn.className = active
           ? 'tf-btn py-1.5 rounded-lg text-xs font-semibold bg-white text-slate-900 shadow-sm transition'
           : 'tf-btn py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-900 transition';
@@ -820,7 +855,7 @@
     function setDuration(dur) {
       state.duration = dur;
       document.querySelectorAll('.dur-btn').forEach(btn => {
-        const active = btn.dataset.dur === dur;
+        const active = btn.getAttribute('data-dur') === dur;
         btn.className = active
           ? 'dur-btn py-1.5 rounded-lg text-xs font-semibold bg-white text-slate-900 shadow-sm transition'
           : 'dur-btn py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-900 transition';
@@ -829,8 +864,8 @@
     }
 
     function onStrategyChanged() {
-      const strat = $('strategySelect')?.value || 'connors_cum_rsi2';
-      const info = STRATEGY_DESCRIPTIONS[strat] || STRATEGY_DESCRIPTIONS.connors_cum_rsi2;
+      const stratKey = $('strategySelect')?.value || 'connors_cum_rsi2';
+      const info = STRATEGY_DESCRIPTIONS[stratKey] || STRATEGY_DESCRIPTIONS.connors_cum_rsi2;
       if ($('strategyWinBadge')) $('strategyWinBadge').textContent = info.badge;
       if ($('strategyDescBox')) $('strategyDescBox').innerHTML = info.html;
       if (state.mode !== 'signals') triggerRun();
@@ -853,20 +888,20 @@
       if (state.mode !== 'signals') triggerRun();
     }
 
-    function syncRiskInput(type, val) {
-      const slider = $(type === 'tp' ? 'tpSlider' : 'tslSlider');
+    function syncRiskInput(kind, val) {
+      const slider = $(kind === 'tp' ? 'tpSlider' : 'tslSlider');
       if (slider) slider.value = val;
       if (state.mode !== 'signals') triggerRun();
     }
 
-    function syncRiskSlider(type, val) {
-      const input = $(type === 'tp' ? 'tpInput' : 'tslInput');
+    function syncRiskSlider(kind, val) {
+      const input = $(kind === 'tp' ? 'tpInput' : 'tslInput');
       if (input) input.value = val;
       if (state.mode !== 'signals') triggerRun();
     }
 
     async function onSetupChanged(forceRefresh = false) {
-      updateSymbolMetaBanner();
+      updateSymbolMetaText();
       const sym = $('symbolSelect')?.value || 'BTCUSDT';
       const chartTitle = $('chartTitle');
       if (chartTitle) {
@@ -875,16 +910,16 @@
 
       if (state.mode === 'signals') return;
 
-      const reqId = ++state.activeRequestId;
+      const reqId = ++state.currentRequestId;
       const candles = await fetchRealHistoricalCandles(sym, state.timeframe, state.duration, forceRefresh);
-      if (reqId !== state.activeRequestId) return;
+      if (reqId !== state.currentRequestId) return;
 
       if (!candles || candles.length < 30) {
         state.candles = [];
-        const isNse = !ASSET_UNIVERSE[sym]?.isCrypto;
-        const msg = isNse && !state.tdApiKey
-          ? `Paste your free Twelve Data API key in the top bar to load real ${sym} NSE candles, or select any of the 50 Trusted Crypto assets (24/7 direct Binance API).`
-          : `Could not fetch real candles for ${sym.replace('USDT', '')}. Check your network or API credit cap.`;
+        const meta = ASSET_UNIVERSE[sym];
+        const msg = !meta?.isCrypto && !state.tdApiKey
+          ? 'Paste your free Twelve Data API key in the bar above to load real NSE stock candles, or select any of the 50 Trusted Crypto coins (direct 24/7 Binance API).'
+          : 'Live feed temporarily rate-limited or daily credit cap reached. Wait 60s or retry.';
         clearPriceChartWithNotice(sym, `Live Feed Unavailable for ${sym.replace('USDT', '')}`, msg);
         return;
       }
@@ -898,90 +933,87 @@
     }
 
     // =========================================================================
-    // 4. 100% REAL MARKET DATA FETCHERS (BINANCE + CREDIT-SAFE TWELVE DATA)
+    // 4. REAL LIVE MARKET DATA FETCHERS (BINANCE + TWELVE DATA)
     // =========================================================================
     async function fetchLiveUsdInrRate() {
       try {
         const res = await fetch('https://open.er-api.com/v6/latest/USD', { signal: AbortSignal.timeout(5000) });
         if (res.ok) {
           const data = await res.json();
-          const rate = Number(data?.rates?.INR);
-          if (rate > 60 && rate < 130) {
-            liveUsdToInr = rate;
-            return rate;
+          if (data?.rates?.INR && data.rates.INR > 50) {
+            liveUsdToInr = Number(data.rates.INR.toFixed(2));
           }
         }
       } catch (e) {}
       return liveUsdToInr;
     }
 
-    async function fetchBinanceKlines(binanceSym, timeframe, duration) {
+    async function fetchBinanceKlines(binanceSym, timeframe = 'Daily', duration = '6Y') {
       const intervalMap = { '5m': '5m', '15m': '15m', '1H': '1h', 'Daily': '1d' };
       const interval = intervalMap[timeframe] || '1d';
-      const limit = timeframe === 'Daily'
-        ? (duration === '1Y' ? 365 : 1000)
-        : 500;
+      const limit = timeframe === 'Daily' ? (duration === '1Y' ? 365 : 1000) : 500;
+      const url = `https://api.binance.com/api/v3/klines?symbol=${encodeURIComponent(binanceSym)}&interval=${interval}&limit=${limit}`;
 
-      const endpoints = [
-        `https://api.binance.com/api/v3/klines?symbol=${binanceSym}&interval=${interval}&limit=${limit}`,
-        `https://data-api.binance.vision/api/v3/klines?symbol=${binanceSym}&interval=${interval}&limit=${limit}`
-      ];
+      try {
+        const res = await fetch(url, { signal: AbortSignal.timeout(7000) });
+        if (!res.ok) return null;
+        const raw = await res.json();
+        if (!Array.isArray(raw) || raw.length < 30) return null;
 
-      for (const url of endpoints) {
-        try {
-          const res = await fetch(url, { signal: AbortSignal.timeout(6500) });
-          if (!res.ok) continue;
-          const rows = await res.json();
-          if (!Array.isArray(rows) || rows.length < 30) continue;
-
-          return rows.map(r => ({
-            time: Math.floor(Number(r[0]) / 1000),
-            open: parseFloat(r[1]),
-            high: parseFloat(r[2]),
-            low: parseFloat(r[3]),
-            close: parseFloat(r[4]),
-            volume: parseFloat(r[5]) || 0
-          })).filter(c => c.time > 0 && c.close > 0);
-        } catch (e) {}
+        return raw
+          .map(k => ({
+            time: Math.floor(k[0] / 1000),
+            open: parseFloat(k[1]),
+            high: parseFloat(k[2]),
+            low: parseFloat(k[3]),
+            close: parseFloat(k[4]),
+            volume: parseFloat(k[5]) || 0
+          }))
+          .filter(c => c.time > 0 && c.close > 0);
+      } catch (e) {
+        return null;
       }
-      return null;
+    }
+
+    function getTwelveDataSymbol(sym) {
+      if (sym === 'M_M') return 'M&M:NSE';
+      return `${sym}:NSE`;
     }
 
     async function waitForTwelveDataRateSlot() {
+      if (!Array.isArray(state.tdCallTimestamps)) state.tdCallTimestamps = [];
       while (true) {
         const now = Date.now();
-        state.tdCallTimestamps = state.tdCallTimestamps.filter(t => now - t < 61000);
+        state.tdCallTimestamps = state.tdCallTimestamps.filter(ts => now - ts < 61000);
         if (state.tdCallTimestamps.length < 6) {
           state.tdCallTimestamps.push(now);
           return;
         }
         const waitMs = 61000 - (now - state.tdCallTimestamps[0]) + 250;
-        await new Promise(r => setTimeout(r, Math.max(500, waitMs)));
+        await new Promise(r => setTimeout(r, Math.max(400, waitMs)));
       }
     }
 
-    async function fetchTwelveDataNSECandles(sym, timeframe, duration) {
+    async function fetchTwelveDataNSECandles(sym, timeframe = 'Daily', duration = '6Y') {
       if (!state.tdApiKey) return null;
       if (state.tdCreditsUsedToday >= state.tdSafetyCap) return null;
 
       await waitForTwelveDataRateSlot();
       const intervalMap = { '5m': '5min', '15m': '15min', '1H': '1h', 'Daily': '1day' };
       const interval = intervalMap[timeframe] || '1day';
-      const outputsize = timeframe === 'Daily'
-        ? (duration === '1Y' ? 300 : (duration === '3Y' ? 800 : 1500))
-        : 350;
-      const tdSymbol = sym === 'M_M' ? 'M%26M:NSE' : `${encodeURIComponent(sym)}:NSE`;
-      const url = `https://api.twelvedata.com/time_series?symbol=${tdSymbol}&interval=${interval}&outputsize=${outputsize}&apikey=${encodeURIComponent(state.tdApiKey)}`;
+      const outputsize = timeframe === 'Daily' ? (duration === '1Y' ? 280 : (duration === '3Y' ? 760 : 1500)) : 320;
+      const url = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(getTwelveDataSymbol(sym))}&interval=${interval}&outputsize=${outputsize}&apikey=${encodeURIComponent(state.tdApiKey)}`;
 
       try {
         recordTwelveDataCredit(1);
-        const res = await fetch(url, { signal: AbortSignal.timeout(8500) });
+        const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
         if (!res.ok) return null;
         const data = await res.json();
         if (!data || data.status === 'error' || !Array.isArray(data.values) || data.values.length < 30) {
           return null;
         }
-        const maxTs = Math.floor(Date.now() / 1000) + 86400;
+
+        const maxValidTs = Math.floor(Date.now() / 1000) + 86400;
         const candles = data.values
           .slice()
           .reverse()
@@ -991,14 +1023,14 @@
               : `${v.datetime}T09:15:00+05:30`;
             return {
               time: Math.floor(new Date(iso).getTime() / 1000),
-              open: parseFloat(v.open),
-              high: parseFloat(v.high),
-              low: parseFloat(v.low),
-              close: parseFloat(v.close),
+              open: Number(parseFloat(v.open).toFixed(2)),
+              high: Number(parseFloat(v.high).toFixed(2)),
+              low: Number(parseFloat(v.low).toFixed(2)),
+              close: Number(parseFloat(v.close).toFixed(2)),
               volume: parseFloat(v.volume) || 0
             };
           })
-          .filter(c => c.time > 0 && c.time <= maxTs && c.close > 0);
+          .filter(c => c.time > 0 && c.time <= maxValidTs && c.close > 0);
 
         return candles.length >= 30 ? candles : null;
       } catch (e) {
@@ -1009,35 +1041,32 @@
     async function fetchRealHistoricalCandles(sym, timeframe = 'Daily', duration = '6Y', forceRefresh = false) {
       const meta = ASSET_UNIVERSE[sym];
       if (!meta) return null;
-
       const cacheKey = `${sym}_${timeframe}_${duration}`;
-      if (!forceRefresh && state.memoryCandleCache[cacheKey]?.length >= 30) {
-        return state.memoryCandleCache[cacheKey];
-      }
 
-      if (meta.isCrypto) {
-        const candles = await fetchBinanceKlines(meta.binanceSym || sym, timeframe, duration);
-        if (candles && candles.length >= 30) {
-          state.memoryCandleCache[cacheKey] = candles;
-          return candles;
-        }
-        return null;
-      }
-
-      // NSE Equity: Check 24-hour localStorage cache first to preserve free Twelve Data credits
       if (!forceRefresh) {
-        const cached24h = getCachedNseCandles24h(cacheKey);
-        if (cached24h) {
-          state.memoryCandleCache[cacheKey] = cached24h;
-          return cached24h;
+        if (state.memoryCandleCache[cacheKey]?.length >= 30) {
+          return state.memoryCandleCache[cacheKey];
+        }
+        if (!meta.isCrypto) {
+          const stored24h = getCachedNseCandles24h(cacheKey);
+          if (stored24h) {
+            state.memoryCandleCache[cacheKey] = stored24h;
+            return stored24h;
+          }
         }
       }
 
-      const nseCandles = await fetchTwelveDataNSECandles(sym, timeframe, duration);
-      if (nseCandles && nseCandles.length >= 30) {
-        state.memoryCandleCache[cacheKey] = nseCandles;
-        setCachedNseCandles24h(cacheKey, nseCandles);
-        return nseCandles;
+      let candles = null;
+      if (meta.isCrypto) {
+        candles = await fetchBinanceKlines(meta.binanceSym || sym, timeframe, duration);
+      } else {
+        candles = await fetchTwelveDataNSECandles(sym, timeframe, duration);
+      }
+
+      if (candles && candles.length >= 30) {
+        state.memoryCandleCache[cacheKey] = candles;
+        if (!meta.isCrypto) setCachedNseCandles24h(cacheKey, candles);
+        return candles;
       }
       return null;
     }
@@ -1050,7 +1079,7 @@
     }
 
     // =========================================================================
-    // 5. TECHNICAL INDICATORS & TOP 3 HIGH-WIN-RATE (~80%+) SIGNAL GENERATORS
+    // 5. TECHNICAL INDICATORS & TOP 3 (~80%+ WIN) MEAN-REVERSION STRATEGIES
     // =========================================================================
     function calcSMA(closes, period) {
       const out = new Array(closes.length).fill(null);
@@ -1075,195 +1104,158 @@
       }
       let avgGain = gainSum / period;
       let avgLoss = lossSum / period;
-      out[period] = avgLoss === 0 ? 100 : 100 - (100 / (1 + avgGain / avgLoss));
+      out[period] = avgLoss === 0 ? 100 : 100 - 100 / (1 + avgGain / avgLoss);
 
       for (let i = period + 1; i < closes.length; i++) {
         const diff = closes[i] - closes[i - 1];
         const gain = diff > 0 ? diff : 0;
         const loss = diff < 0 ? -diff : 0;
-        avgGain = ((avgGain * (period - 1)) + gain) / period;
-        avgLoss = ((avgLoss * (period - 1)) + loss) / period;
-        out[i] = avgLoss === 0 ? 100 : 100 - (100 / (1 + avgGain / avgLoss));
+        avgGain = (avgGain * (period - 1) + gain) / period;
+        avgLoss = (avgLoss * (period - 1) + loss) / period;
+        out[i] = avgLoss === 0 ? 100 : 100 - 100 / (1 + avgGain / avgLoss);
       }
       return out;
     }
 
-    function calcBollingerLower(closes, period = 20, mult = 2) {
+    function calcLowerBollingerBand(closes, period = 20, mult = 2) {
       const sma = calcSMA(closes, period);
       const lower = new Array(closes.length).fill(null);
       for (let i = period - 1; i < closes.length; i++) {
-        let variance = 0;
+        let sqSum = 0;
         for (let j = i - period + 1; j <= i; j++) {
           const d = closes[j] - sma[i];
-          variance += d * d;
+          sqSum += d * d;
         }
-        const std = Math.sqrt(variance / period);
+        const std = Math.sqrt(sqSum / period);
         lower[i] = sma[i] - mult * std;
       }
       return lower;
     }
 
     function generateSignals(candles) {
-      const n = candles.length;
+      const strat = $('strategySelect')?.value || 'connors_cum_rsi2';
       const closes = candles.map(c => c.close);
       const sma5 = calcSMA(closes, 5);
       const sma10 = calcSMA(closes, 10);
       const sma50 = calcSMA(closes, 50);
       const sma200 = calcSMA(closes, 200);
       const rsi2 = calcWilderRSI(closes, 2);
-      const bbLower20 = calcBollingerLower(closes, 20, 2);
+      const bbLower = calcLowerBollingerBand(closes, 20, 2);
 
-      const strategy = $('strategySelect')?.value || 'connors_cum_rsi2';
-      const signals = new Array(n).fill(0);
-      const exitSignals = new Array(n).fill(false);
-      const reasons = new Array(n).fill('');
+      const signals = new Array(candles.length).fill(0);
+      const reasons = new Array(candles.length).fill('');
 
-      for (let i = 200; i < n; i++) {
-        const c = closes[i];
-        const uptrend200 = sma200[i] !== null && c > sma200[i];
+      for (let i = 200; i < candles.length; i++) {
+        const c = candles[i];
+        const prev = candles[i - 1];
+        if (sma200[i] == null || rsi2[i] == null || rsi2[i - 1] == null) continue;
 
-        if (strategy === 'connors_cum_rsi2') {
-          const strongUptrend = uptrend200 && sma50[i] !== null && sma50[i] > sma200[i];
-          const cumRsi = (rsi2[i] !== null && rsi2[i - 1] !== null) ? (rsi2[i] + rsi2[i - 1]) : 99;
-          if (strongUptrend && sma5[i] !== null && c < sma5[i] && cumRsi < 10) {
+        if (strat === 'connors_cum_rsi2') {
+          const cumRsi2 = rsi2[i] + rsi2[i - 1];
+          if (
+            c.close > sma200[i] &&
+            sma50[i] > sma200[i] &&
+            c.close < sma5[i] &&
+            cumRsi2 < 10
+          ) {
             signals[i] = 1;
-            reasons[i] = `Cum RSI(2): ${cumRsi.toFixed(1)} (<10) • >200 SMA`;
+            reasons[i] = `Connors Cum RSI(2): ${cumRsi2.toFixed(1)} (<10) • >200 SMA`;
+          } else if (c.close > sma5[i]) {
+            signals[i] = -1;
+            reasons[i] = 'Snapback Close > 5 SMA';
           }
-          if (sma5[i] !== null && c > sma5[i]) {
-            exitSignals[i] = true;
-          }
-        } else if (strategy === 'ibs_rsi2_confluence') {
-          const range = candles[i].high - candles[i].low;
-          const ibs = range > 0 ? (c - candles[i].low) / range : 0.5;
-          if (uptrend200 && ibs < 0.20 && rsi2[i] !== null && rsi2[i] < 15) {
+        } else if (strat === 'ibs_rsi2_confluence') {
+          const range = c.high - c.low;
+          const ibs = range > 0 ? (c.close - c.low) / range : 0.5;
+          if (c.close > sma200[i] && ibs < 0.20 && rsi2[i] < 15) {
             signals[i] = 1;
-            reasons[i] = `IBS ${ibs.toFixed(2)} (<0.20) + RSI(2) ${rsi2[i].toFixed(1)}`;
+            reasons[i] = `IBS ${ibs.toFixed(2)} (<0.20) + RSI(2) ${rsi2[i].toFixed(1)} (<15)`;
+          } else if (c.close > prev.high) {
+            signals[i] = -1;
+            reasons[i] = 'Snapback Close > Prior High';
           }
-          if (i > 0 && c > candles[i - 1].high) {
-            exitSignals[i] = true;
-          }
-        } else if (strategy === 'bb_rsi2_trend') {
-          if (uptrend200 && bbLower20[i] !== null && c < bbLower20[i] && rsi2[i] !== null && rsi2[i] < 10) {
+        } else if (strat === 'bb_rsi2_trend') {
+          if (
+            c.close > sma200[i] &&
+            bbLower[i] != null &&
+            c.close < bbLower[i] &&
+            rsi2[i] < 10
+          ) {
             signals[i] = 1;
-            reasons[i] = `BB Lower Pierce + RSI(2) ${rsi2[i].toFixed(1)}`;
-          }
-          if (sma10[i] !== null && c > sma10[i]) {
-            exitSignals[i] = true;
+            reasons[i] = `Lower BB Pierce + RSI(2) ${rsi2[i].toFixed(1)} (<10)`;
+          } else if (sma10[i] != null && c.close > sma10[i]) {
+            signals[i] = -1;
+            reasons[i] = 'Mean-Reversion Close > 10 SMA';
           }
         }
       }
 
-      return { signals, exitSignals, reasons, sma50, sma200 };
+      return { signals, reasons, sma50, sma200 };
     }
 
     // =========================================================================
-    // 6. BACKTEST SIMULATION ENGINE (STAGE 1 FIXED SL -> STAGE 2 TRAILING SL)
+    // 6. TWO-STAGE SIMULATION ENGINE (FIXED INITIAL SL -> TRAILS AFTER TARGET)
     // =========================================================================
     function executeStrategySimulation(candles, overrideSym = null) {
-      const tpVal = parseFloat($('tpInput')?.value) || 5.5;
-      const slVal = parseFloat($('tslInput')?.value) || 2.5;
-      const capital = parseFloat($('capitalInput')?.value) || 100000;
-      const maxHold = parseInt($('maxHoldSelect')?.value || '15', 10);
-      const includeTaxes = $('includeTaxesCheck')?.checked ?? true;
-      const intradayExit = $('intradayExitCheck')?.checked ?? false;
       const sym = overrideSym || $('symbolSelect')?.value || 'BTCUSDT';
-
       const isCrypto = Boolean(ASSET_UNIVERSE[sym]?.isCrypto);
       const priceScale = isCrypto ? liveUsdToInr : 1;
 
-      const { signals, exitSignals, sma50, sma200 } = generateSignals(candles);
+      const startCapital = Math.max(1000, parseFloat($('capitalInput')?.value) || 100000);
+      const tpVal = parseFloat($('tpInput')?.value) || 5.5;
+      const slVal = parseFloat($('tslInput')?.value) || 2.5;
+      const maxHoldBars = parseInt($('maxHoldSelect')?.value || '15', 10);
+      const includeTaxes = $('includeTaxesCheck')?.checked ?? true;
 
-      let equity = capital;
-      let peakEquity = capital;
-      let maxDrawdownPct = 0;
-      let pos = null;
+      const { signals, reasons, sma50, sma200 } = generateSignals(candles);
       const trades = [];
       const markers = [];
       const equityCurve = [];
+
+      let equity = startCapital;
+      let peakEquity = startCapital;
+      let maxDrawdownPct = 0;
+      let pos = null;
 
       for (let i = 0; i < candles.length; i++) {
         const bar = candles[i];
 
         if (pos) {
-          const barsHeld = i - pos.entryIndex;
+          pos.barsHeld++;
+          if (bar.high > pos.highestPrice) {
+            pos.highestPrice = bar.high;
+          }
+
+          // Stage 2: Once Target Price is reached, unlock trailing SL to lock profits
+          if (!pos.targetHit && bar.high >= pos.targetPrice) {
+            pos.targetHit = true;
+            pos.activeSl = Math.max(pos.entryPrice * 1.002, pos.highestPrice - pos.trailDist);
+          } else if (pos.targetHit) {
+            const trailedSl = pos.highestPrice - pos.trailDist;
+            if (trailedSl > pos.activeSl) {
+              pos.activeSl = trailedSl;
+            }
+          }
+
           let exitPrice = null;
           let exitReason = '';
 
-          let isEodIntraday = false;
-          if (intradayExit && state.timeframe !== 'Daily') {
-            const istHourMin = new Date(bar.time * 1000).toLocaleTimeString('en-GB', {
-              timeZone: 'Asia/Kolkata',
-              hour: '2-digit',
-              minute: '2-digit'
-            });
-            if (istHourMin >= '15:15') isEodIntraday = true;
-          }
-
-          // Stage 1: Before Target Hit -> Stop-Loss remains strictly FIXED at initialStopPrice
-          if (!pos.targetHit) {
-            if (bar.low <= pos.stopPrice) {
-              exitPrice = pos.stopPrice;
-              exitReason = 'Initial Fixed SL';
-            } else if (bar.high >= pos.tpPrice) {
-              // Target reached! Transition into Stage 2 Trailing Mode instead of exiting immediately
-              pos.targetHit = true;
-              pos.highest = bar.high;
-              const lockedTrail = Math.max(
-                pos.tpPrice - pos.trailDist,
-                pos.highest - pos.trailDist,
-                pos.entryPrice
-              );
-              if (lockedTrail > pos.stopPrice) {
-                pos.stopPrice = lockedTrail;
-              }
-              markers.push({
-                time: bar.time,
-                position: 'aboveBar',
-                color: '#d97706',
-                shape: 'circle',
-                text: 'TARGET HIT • TRAIL'
-              });
-            }
-          } else {
-            // Stage 2: Target Hit -> Trailing Stop-Loss actively rises with new highs
-            if (bar.high > pos.highest) {
-              pos.highest = bar.high;
-              const newTrail = pos.highest - pos.trailDist;
-              if (newTrail > pos.stopPrice) {
-                pos.stopPrice = newTrail;
-              }
-            }
-            if (bar.low <= pos.stopPrice) {
-              exitPrice = pos.stopPrice;
-              exitReason = 'Trailed Profit SL';
-            }
-          }
-
-          // Secondary mean-reversion / time-based exits if not stopped out
-          if (exitPrice === null) {
-            if (exitSignals[i] && bar.close > pos.entryPrice && pos.targetHit) {
-              exitPrice = bar.close;
-              exitReason = 'Mean-Rev Snapback';
-            } else if (isEodIntraday) {
-              exitPrice = bar.close;
-              exitReason = '15:15 Square-Off';
-            } else if (maxHold > 0 && barsHeld >= maxHold) {
-              exitPrice = bar.close;
-              exitReason = `${maxHold}-Bar Exit`;
-            }
+          if (bar.low <= pos.activeSl) {
+            exitPrice = pos.activeSl;
+            exitReason = pos.targetHit ? 'Trailed Profit SL' : 'Fixed Initial SL';
+          } else if (signals[i] === -1) {
+            exitPrice = bar.close;
+            exitReason = reasons[i] || 'Mean-Reversion Exit';
+          } else if (maxHoldBars > 0 && pos.barsHeld >= maxHoldBars) {
+            exitPrice = bar.close;
+            exitReason = `Max Hold (${maxHoldBars} Bars)`;
           }
 
           if (exitPrice !== null) {
-            const rawDiff = exitPrice - pos.entryPrice;
-            const grossPnl = rawDiff * pos.qty * priceScale;
-            const turnover = (pos.entryPrice + exitPrice) * pos.qty * priceScale;
-            const charges = includeTaxes ? turnover * 0.0012 : 0;
-            const netPnl = grossPnl - charges;
-
+            const rawReturn = (exitPrice - pos.entryPrice) / pos.entryPrice;
+            const feePct = includeTaxes ? 0.0018 : 0;
+            const netPnl = pos.allocated * (rawReturn - feePct);
             equity += netPnl;
-            if (equity > peakEquity) peakEquity = equity;
-            const dd = peakEquity > 0 ? ((peakEquity - equity) / peakEquity) * 100 : 0;
-            if (dd > maxDrawdownPct) maxDrawdownPct = dd;
 
             trades.push({
               num: trades.length + 1,
@@ -1280,31 +1272,29 @@
               time: bar.time,
               position: 'aboveBar',
               color: netPnl >= 0 ? '#059669' : '#e11d48',
-              shape: 'circle',
-              text: exitReason
+              shape: 'arrowDown',
+              text: netPnl >= 0 ? 'EXIT +' : 'SL'
             });
+
             pos = null;
           }
-        }
-
-        if (!pos && i < candles.length - 1 && signals[i] === 1) {
+        } else if (signals[i] === 1 && i < candles.length - 1) {
           const entryPrice = bar.close;
-          const tpDist = state.riskUnit === 'percent' ? entryPrice * (tpVal / 100) : (tpVal / priceScale);
-          const initialSlDist = state.riskUnit === 'percent' ? entryPrice * (slVal / 100) : (slVal / priceScale);
-          const qty = equity / (entryPrice * priceScale);
+          const targetDist = state.riskUnit === 'percent' ? entryPrice * (tpVal / 100) : (tpVal / priceScale);
+          const slDist = state.riskUnit === 'percent' ? entryPrice * (slVal / 100) : (slVal / priceScale);
 
           pos = {
-            side: 'LONG',
-            entryIndex: i,
             entryTime: bar.time,
             entryPrice,
-            highest: entryPrice,
-            tpPrice: entryPrice + tpDist,
-            stopPrice: entryPrice - initialSlDist,
-            trailDist: initialSlDist,
+            highestPrice: entryPrice,
+            targetPrice: entryPrice + targetDist,
+            activeSl: entryPrice - slDist,
+            trailDist: slDist,
             targetHit: false,
-            qty
+            allocated: equity,
+            barsHeld: 0
           };
+
           markers.push({
             time: bar.time,
             position: 'belowBar',
@@ -1314,13 +1304,17 @@
           });
         }
 
+        if (equity > peakEquity) peakEquity = equity;
+        const dd = peakEquity > 0 ? ((peakEquity - equity) / peakEquity) * 100 : 0;
+        if (dd > maxDrawdownPct) maxDrawdownPct = dd;
+
         equityCurve.push({ time: bar.time, equity });
       }
 
       const wins = trades.filter(t => t.netPnl > 0).length;
       const losses = trades.length - wins;
-      const netProfit = equity - capital;
-      const returnPct = capital > 0 ? (netProfit / capital) * 100 : 0;
+      const netProfit = equity - startCapital;
+      const returnPct = (netProfit / startCapital) * 100;
       const winRate = trades.length > 0 ? (wins / trades.length) * 100 : 0;
 
       return {
@@ -1329,41 +1323,43 @@
         equityCurve,
         sma50,
         sma200,
+        wins,
+        losses,
         netProfit,
         returnPct,
         winRate,
-        wins,
-        losses,
         maxDrawdownPct,
         finalCapital: equity
       };
     }
 
     // =========================================================================
-    // 7. FORMATTERS, SIGNAL SANITIZER & WHATSAPP / AUDIO ALERTS
+    // 7. FORMATTING, WHATSAPP ALERTS & PERSISTENT SIGNAL STORAGE
     // =========================================================================
     function formatINR(val) {
-      const sign = val > 0 ? '+' : (val < 0 ? '-' : '');
-      return `${sign}₹${Math.abs(val).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      const sign = val >= 0 ? '+' : '-';
+      const abs = Math.abs(val);
+      return `${sign}₹${abs.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     }
 
     function formatAssetPrice(rawPrice, sym) {
       const isCrypto = Boolean(ASSET_UNIVERSE[sym]?.isCrypto);
       if (isCrypto) {
-        if (state.cryptoCurrency === 'USD') {
-          const dec = rawPrice < 1 ? 4 : 2;
-          return `$${rawPrice.toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec })}`;
+        if (state.cryptoCurrency === 'INR') {
+          const inrVal = rawPrice * liveUsdToInr;
+          const digits = inrVal >= 100 ? 2 : 4;
+          return `₹${inrVal.toLocaleString('en-IN', { minimumFractionDigits: digits, maximumFractionDigits: digits })}`;
         }
-        const inrVal = rawPrice * liveUsdToInr;
-        return `₹${inrVal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        const digits = rawPrice >= 100 ? 2 : 4;
+        return `$${rawPrice.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits })}`;
       }
       return `₹${rawPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     }
 
     function formatISTDateBadge(unixSec) {
-      return new Date(unixSec * 1000).toLocaleDateString('en-IN', {
+      const d = new Date(unixSec * 1000);
+      return d.toLocaleDateString('en-IN', {
         timeZone: 'Asia/Kolkata',
-        weekday: 'short',
         day: '2-digit',
         month: 'short',
         year: 'numeric'
@@ -1371,107 +1367,74 @@
     }
 
     function formatExactISTTimestamp(unixSec) {
-      return new Date(unixSec * 1000).toLocaleString('en-IN', {
+      const d = new Date(unixSec * 1000);
+      return d.toLocaleTimeString('en-IN', {
         timeZone: 'Asia/Kolkata',
-        day: '2-digit',
-        month: 'short',
         hour: '2-digit',
         minute: '2-digit',
         second: '2-digit',
-        hour12: false
+        hour12: true
       }) + ' IST';
-    }
-
-    function savePersistentSignals() {
-      try {
-        localStorage.setItem(SIGNALS_STORAGE_KEY, JSON.stringify({
-          active: state.activeSignalsTracker,
-          closed: state.closedSignalsToday.slice(0, 50)
-        }));
-      } catch (e) {}
-    }
-
-    function loadPersistentSignals() {
-      try {
-        const raw = localStorage.getItem(SIGNALS_STORAGE_KEY);
-        if (!raw) return;
-        const parsed = JSON.parse(raw);
-        const maxAllowedMs = Date.now() + 86400000;
-
-        if (parsed && typeof parsed.active === 'object') {
-          const cleanActive = {};
-          for (const [sym, item] of Object.entries(parsed.active)) {
-            const validTs = Number(item?.barUnixSec || 0) * 1000 <= maxAllowedMs;
-            if (item && item.isRealFeed === true && ASSET_UNIVERSE[sym] && validTs) {
-              cleanActive[sym] = item;
-            }
-          }
-          state.activeSignalsTracker = cleanActive;
-        }
-        if (parsed && Array.isArray(parsed.closed)) {
-          state.closedSignalsToday = parsed.closed.filter(c =>
-            c && c.isRealFeed === true && ASSET_UNIVERSE[c.sym]
-          );
-        }
-      } catch (e) {}
-    }
-
-    function resetPersistentSignals() {
-      state.activeSignalsTracker = {};
-      state.closedSignalsToday = [];
-      savePersistentSignals();
-      renderActiveSignalsTable();
-      showToast('Tracker Cleared', 'All tracked live signals have been reset.');
-    }
-
-    function loadWhatsAppPrefs() {
-      try {
-        const raw = localStorage.getItem(WA_PREFS_KEY);
-        if (!raw) return;
-        const p = JSON.parse(raw);
-        if ($('whatsappPhoneInput') && p.phone) $('whatsappPhoneInput').value = p.phone;
-        if ($('callmebotKeyInput') && p.apikey) $('callmebotKeyInput').value = p.apikey;
-      } catch (e) {}
-    }
-
-    function saveWhatsAppPrefs() {
-      try {
-        localStorage.setItem(WA_PREFS_KEY, JSON.stringify({
-          phone: $('whatsappPhoneInput')?.value || '',
-          apikey: $('callmebotKeyInput')?.value || ''
-        }));
-      } catch (e) {}
     }
 
     function playAlertChime() {
       if (!$('audioChimeCheck')?.checked) return;
       try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.type = 'sine';
         osc.frequency.setValueAtTime(880, ctx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.16);
         gain.gain.setValueAtTime(0.08, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
         osc.connect(gain);
         gain.connect(ctx.destination);
         osc.start();
-        osc.stop(ctx.currentTime + 0.36);
+        osc.stop(ctx.currentTime + 0.26);
       } catch (e) {}
     }
 
-    function dispatchWhatsAppMessage(text, openBrowser = true) {
-      const rawPhone = ($('whatsappPhoneInput')?.value || '').replace(/[^0-9]/g, '');
+    function loadWhatsAppPrefs() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(WA_PREFS_KEY) || '{}');
+        if ($('whatsappPhoneInput') && saved.phone) $('whatsappPhoneInput').value = saved.phone;
+        if ($('callmebotKeyInput') && saved.apiKey) $('callmebotKeyInput').value = saved.apiKey;
+      } catch (e) {}
+    }
+
+    function saveWhatsAppPrefs() {
+      try {
+        localStorage.setItem(WA_PREFS_KEY, JSON.stringify({
+          phone: ($('whatsappPhoneInput')?.value || '').trim(),
+          apiKey: ($('callmebotKeyInput')?.value || '').trim()
+        }));
+      } catch (e) {}
+    }
+
+    async function dispatchWhatsAppMessage(text, openWebFallback = false) {
+      const phone = ($('whatsappPhoneInput')?.value || '').trim().replace(/[^\d+]/g, '');
       const apiKey = ($('callmebotKeyInput')?.value || '').trim();
-      if (rawPhone && apiKey) {
-        fetch(`https://api.callmebot.com/whatsapp.php?phone=${rawPhone}&text=${encodeURIComponent(text)}&apikey=${encodeURIComponent(apiKey)}`, { mode: 'no-cors' }).catch(() => {});
+      if (!phone) {
+        if (openWebFallback) showToast('WhatsApp Number Missing', 'Enter your WhatsApp number (+91...) in the alert strip first.', true);
+        return;
       }
-      if (openBrowser) {
-        const waUrl = rawPhone
-          ? `https://wa.me/${rawPhone}?text=${encodeURIComponent(text)}`
-          : `https://wa.me/?text=${encodeURIComponent(text)}`;
-        window.open(waUrl, '_blank', 'noopener');
+
+      if (apiKey) {
+        try {
+          const cleanPhone = phone.replace(/^\+/, '');
+          const url = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(cleanPhone)}&text=${encodeURIComponent(text)}&apikey=${encodeURIComponent(apiKey)}`;
+          await fetch(url, { mode: 'no-cors' });
+          if (openWebFallback) showToast('WhatsApp Sent', `Dispatched alert to ${phone} via CallMeBot.`);
+          return;
+        } catch (e) {}
+      }
+
+      if (openWebFallback) {
+        const cleanPhone = phone.replace(/^\+/, '');
+        window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
       }
     }
 
@@ -1479,276 +1442,289 @@
       const s = state.activeSignalsTracker[sym];
       if (!s) return;
       const label = sym.replace('USDT', '');
-      const stageLabel = s.targetHit ? '🎯 Target Hit! Trailing SL Active' : 'Stage 1: Fixed Initial SL';
-      const msg = `🚨 *LIVE BUY SIGNAL: ${label}*\n📌 Status: ${stageLabel}\n📅 Date: ${s.signalDate} (${s.triggeredAtIST})\n💰 Entry: ${formatAssetPrice(s.entryPrice, sym)} | Live: ${formatAssetPrice(s.livePrice, sym)}\n🎯 Target (Trail Trigger): ${formatAssetPrice(s.tpPrice, sym)}\n🛡️ Active SL: ${formatAssetPrice(s.tslPrice, sym)}\n📊 Rule: ${s.reason}`;
+      const stageTxt = s.targetHit ? 'Target Hit (Trailing SL Active)' : 'Stage 1 (Fixed Initial SL)';
+      const msg = `📈 BUY SIGNAL: ${label} (${s.signalDate})\nEntry: ${formatAssetPrice(s.entryPrice, sym)} | Live: ${formatAssetPrice(s.livePrice, sym)}\nTarget (Trail Trigger): ${formatAssetPrice(s.tpPrice, sym)}\nActive Stop-Loss: ${formatAssetPrice(s.activeSl, sym)}\nStatus: ${stageTxt}`;
       dispatchWhatsAppMessage(msg, true);
     }
 
     function sendAllActiveSignalsWhatsApp() {
-      const list = Object.values(state.activeSignalsTracker);
-      if (list.length === 0) {
-        showToast('No Active Signals', 'There are currently no active BUY signals to send.', true);
+      const activeList = Object.values(state.activeSignalsTracker);
+      if (activeList.length === 0) {
+        showToast('No Active Signals', 'There are no active signals to send right now.', true);
         return;
       }
-      const lines = list.map((s, idx) => {
-        const stg = s.targetHit ? 'Trailed SL' : 'Fixed SL';
-        return `${idx + 1}. *${s.sym.replace('USDT', '')}* [${stg}] — Entry: ${formatAssetPrice(s.entryPrice, s.sym)} | Target: ${formatAssetPrice(s.tpPrice, s.sym)} | Active SL: ${formatAssetPrice(s.tslPrice, s.sym)}`;
+      const lines = activeList.map(s => {
+        const label = s.sym.replace('USDT', '');
+        return `• ${label}: Entry ${formatAssetPrice(s.entryPrice, s.sym)} | Target ${formatAssetPrice(s.tpPrice, s.sym)} | SL ${formatAssetPrice(s.activeSl, s.sym)}`;
       });
-      const msg = `📈 *ACTIVE LIVE BUY SIGNALS (${list.length})*\n\n${lines.join('\n')}`;
-      dispatchWhatsAppMessage(msg, true);
+      dispatchWhatsAppMessage(`📊 ACTIVE BUY SIGNALS (${activeList.length}):\n${lines.join('\n')}`, true);
+    }
+
+    function savePersistentSignals() {
+      try {
+        localStorage.setItem(SIGNALS_STORAGE_KEY, JSON.stringify({
+          active: state.activeSignalsTracker,
+          closed: state.closedSignalsToday.slice(0, 30)
+        }));
+      } catch (e) {}
+    }
+
+    function loadPersistentSignals() {
+      try {
+        const raw = JSON.parse(localStorage.getItem(SIGNALS_STORAGE_KEY) || '{}');
+        const active = {};
+        if (raw.active && typeof raw.active === 'object') {
+          for (const [sym, item] of Object.entries(raw.active)) {
+            if (ASSET_UNIVERSE[sym] && item && item.isRealFeed && Number(item.entryPrice) > 0) {
+              active[sym] = item;
+            }
+          }
+        }
+        state.activeSignalsTracker = active;
+        state.closedSignalsToday = Array.isArray(raw.closed) ? raw.closed.slice(0, 30) : [];
+      } catch (e) {
+        state.activeSignalsTracker = {};
+        state.closedSignalsToday = [];
+      }
+    }
+
+    function resetPersistentSignals() {
+      state.activeSignalsTracker = {};
+      state.closedSignalsToday = [];
+      savePersistentSignals();
+      try { localStorage.removeItem(LAST_SCAN_SLOT_IST_KEY); } catch (e) {}
+      renderActiveSignalsTable();
+      showToast('Tracker Reset', 'Cleared active and closed signals from local storage.');
     }
 
     // =========================================================================
-    // 8. ONCE-A-DAY (IST) AUTO-SCANNER & TWO-STAGE SIGNAL MONITOR
+    // 8. 2X DAILY IST AUTO-SCANNER (10:00 AM & 3:00 PM IST)
     // =========================================================================
-    async function runDailyOrManualScan(forceManual = false) {
-      const todayIST = getTodayISTDateString();
-      const lastScanIST = localStorage.getItem(LAST_SCAN_IST_KEY);
-      const badge = $('dailyScanStatusBadge');
+    function hasScannedCurrentISTSlot(slotKey) {
+      if (!slotKey) return true;
+      try {
+        return localStorage.getItem(LAST_SCAN_SLOT_IST_KEY) === slotKey;
+      } catch (e) {
+        return false;
+      }
+    }
 
-      await fetchLiveUsdInrRate();
+    function markScannedCurrentISTSlot(slotKey) {
+      if (!slotKey) return;
+      try {
+        localStorage.setItem(LAST_SCAN_SLOT_IST_KEY, slotKey);
+      } catch (e) {}
+    }
 
-      if (!forceManual && lastScanIST === todayIST) {
-        if (badge) {
-          badge.textContent = `Daily Scan Completed Today (${todayIST} IST) • 0 Credits Used`;
+    function startTwoDailySlotsWatcher() {
+      if (state.scheduleWatcherTimer) clearInterval(state.scheduleWatcherTimer);
+      updateNextIstResetLabel();
+      state.scheduleWatcherTimer = setInterval(async () => {
+        updateNextIstResetLabel();
+        const { slotKey } = getCurrentScheduledISTSlot();
+        if (slotKey && !hasScannedCurrentISTSlot(slotKey)) {
+          await runDailyOrManualScan(false);
         }
-        renderActiveSignalsTable();
-        return;
+      }, 30000);
+    }
+
+    async function runDailyOrManualScan(forceManual = false) {
+      const badge = $('dailyScanStatusBadge');
+      const { slotKey, label } = getCurrentScheduledISTSlot();
+
+      if (!forceManual) {
+        if (!slotKey) {
+          if (badge) badge.textContent = 'Waiting for 10:00 AM IST Morning Window';
+          renderActiveSignalsTable();
+          return;
+        }
+        if (hasScannedCurrentISTSlot(slotKey)) {
+          if (badge) badge.textContent = `Completed (${label}) • 0 Credits Used on Reload`;
+          renderActiveSignalsTable();
+          return;
+        }
       }
 
-      if (badge) badge.textContent = 'Scanning Real Market Feeds (Once-A-Day IST)...';
+      if (badge) badge.textContent = forceManual ? 'Running Manual Live Scan...' : `Scanning ${label} Window...`;
+      await fetchLiveUsdInrRate();
 
-      const cryptoSymbols = Object.keys(ASSET_UNIVERSE).filter(s => ASSET_UNIVERSE[s].isCrypto);
-      const nseSymbols = state.tdApiKey
-        ? Object.keys(ASSET_UNIVERSE).filter(s => !ASSET_UNIVERSE[s].isCrypto)
-        : [];
-      const scanList = [...cryptoSymbols, ...nseSymbols];
+      const symbolsToScan = Object.keys(ASSET_UNIVERSE).filter(sym => {
+        const meta = ASSET_UNIVERSE[sym];
+        if (!meta) return false;
+        if (state.capFilter !== 'ALL' && meta.cap !== state.capFilter) return false;
+        if (!meta.isCrypto) {
+          if (!state.tdApiKey) return false;
+          if (state.tdCreditsUsedToday >= state.tdSafetyCap) return false;
+        }
+        return true;
+      });
 
       const tpVal = parseFloat($('tpInput')?.value) || 5.5;
       const slVal = parseFloat($('tslInput')?.value) || 2.5;
       let syncedCount = 0;
-      let newlyAddedCount = 0;
+      let newSignalsCount = 0;
       let trackerChanged = false;
 
-      await fetchInBatches(scanList, 5, async (sym) => {
-        const candles = await fetchRealHistoricalCandles(sym, 'Daily', '1Y', forceManual);
+      await fetchInBatches(symbolsToScan, 4, async (sym) => {
+        const candles = await fetchRealHistoricalCandles(sym, state.timeframe, '1Y', forceManual);
         if (!candles || candles.length < 30) return;
         syncedCount++;
 
-        const latestBar = candles[candles.length - 1];
-        const livePrice = latestBar.close;
-        const barHigh = Math.max(livePrice, latestBar.high || livePrice);
+        const livePrice = candles[candles.length - 1].close;
 
-        // 1. Two-Stage Stop-Loss Management on existing active signals:
-        //    Stage 1: SL stays strictly FIXED until live/high reaches Target.
-        //    Stage 2: Once Target is hit, suggest & activate Trailing SL to lock profits!
+        // 1. Update existing active signal with two-stage Fixed SL -> Post-Target Trailing SL
         if (state.activeSignalsTracker[sym]) {
           const tracked = state.activeSignalsTracker[sym];
           tracked.livePrice = livePrice;
-          const trailDist = tracked.tslDist || (tracked.entryPrice * (slVal / 100));
+          if (livePrice > (tracked.highestPrice || tracked.entryPrice)) {
+            tracked.highestPrice = livePrice;
+          }
 
-          if (!tracked.targetHit) {
-            // Stage 1: Check if Initial Fixed SL was breached before reaching Target
-            if (livePrice <= tracked.tslPrice) {
-              const diffPct = (((tracked.tslPrice - tracked.entryPrice) / tracked.entryPrice) * 100).toFixed(2);
-              state.closedSignalsToday.unshift({
-                sym,
-                isRealFeed: true,
-                status: 'INITIAL FIXED SL HIT',
-                pct: `${Number(diffPct) >= 0 ? '+' : ''}${diffPct}%`,
-                closedAtIST: formatExactISTTimestamp(Math.floor(Date.now() / 1000))
-              });
-              delete state.activeSignalsTracker[sym];
+          if (!tracked.targetHit && livePrice >= tracked.tpPrice) {
+            tracked.targetHit = true;
+            tracked.activeSl = Math.max(tracked.entryPrice * 1.002, tracked.highestPrice - tracked.trailDist);
+            playAlertChime();
+            const msg = `🎯 TARGET HIT on ${sym.replace('USDT', '')}! Stop-Loss is now trailing at ${formatAssetPrice(tracked.activeSl, sym)} to lock profits.`;
+            showToast('Target Hit! Trailing SL Active', msg);
+            dispatchWhatsAppMessage(msg, false);
+            trackerChanged = true;
+          } else if (tracked.targetHit) {
+            const trailedSl = tracked.highestPrice - tracked.trailDist;
+            if (trailedSl > tracked.activeSl) {
+              tracked.activeSl = trailedSl;
               trackerChanged = true;
-              return;
             }
+          }
 
-            // Stage 1 -> Stage 2 Transition: Target Hit!
-            if (barHigh >= tracked.tpPrice || livePrice >= tracked.tpPrice) {
-              tracked.targetHit = true;
-              tracked.highestPrice = Math.max(tracked.highestPrice || tracked.entryPrice, barHigh, livePrice);
-              const lockedTrailSL = Math.max(
-                tracked.tpPrice - trailDist,
-                tracked.highestPrice - trailDist,
-                tracked.entryPrice
-              );
-              tracked.tslPrice = Math.max(tracked.tslPrice, lockedTrailSL);
-              trackerChanged = true;
-
-              const label = sym.replace('USDT', '');
-              const slFormatted = formatAssetPrice(tracked.tslPrice, sym);
-              playAlertChime();
-              showToast(
-                `🎯 Target Hit on ${label}!`,
-                `Stop-loss is now trailing at ${slFormatted} to lock profits.`
-              );
-              dispatchWhatsAppMessage(
-                `🎯 Target hit on *${label}*! Stop-loss is now trailing at *${slFormatted}* to lock profits (Entry: ${formatAssetPrice(tracked.entryPrice, sym)} | Live: ${formatAssetPrice(livePrice, sym)}).`,
-                false
-              );
-            }
-          } else {
-            // Stage 2: Already in Trailing Mode — raise SL on new highs, remove only when Trailed SL hits
-            if (barHigh > (tracked.highestPrice || tracked.entryPrice)) {
-              tracked.highestPrice = barHigh;
-              const newTsl = tracked.highestPrice - trailDist;
-              if (newTsl > tracked.tslPrice) {
-                tracked.tslPrice = newTsl;
-              }
-            }
-
-            if (livePrice <= tracked.tslPrice) {
-              const diffPct = (((tracked.tslPrice - tracked.entryPrice) / tracked.entryPrice) * 100).toFixed(2);
-              state.closedSignalsToday.unshift({
-                sym,
-                isRealFeed: true,
-                status: 'TRAILED PROFIT SL HIT',
-                pct: `${Number(diffPct) >= 0 ? '+' : ''}${diffPct}%`,
-                closedAtIST: formatExactISTTimestamp(Math.floor(Date.now() / 1000))
-              });
-              delete state.activeSignalsTracker[sym];
-              trackerChanged = true;
-              playAlertChime();
-              return;
-            }
+          if (livePrice <= tracked.activeSl) {
+            const diffPct = (((tracked.activeSl - tracked.entryPrice) / tracked.entryPrice) * 100).toFixed(2);
+            state.closedSignalsToday.unshift({
+              sym,
+              status: tracked.targetHit ? 'TRAILED PROFIT SL HIT' : 'INITIAL SL HIT',
+              pct: `${Number(diffPct) >= 0 ? '+' : ''}${diffPct}%`,
+              closedAtIST: formatExactISTTimestamp(Math.floor(Date.now() / 1000))
+            });
+            delete state.activeSignalsTracker[sym];
+            trackerChanged = true;
+            return;
           }
           trackerChanged = true;
         }
 
-        // 2. Check fresh BUY trigger on latest or prior daily bar (starts in Stage 1: Fixed Initial SL)
+        // 2. Check fresh BUY trigger on latest bar
         const { signals, reasons } = generateSignals(candles);
         const lastIdx = candles.length - 1;
         const prevIdx = candles.length - 2;
-        const triggeredIdx = signals[lastIdx] === 1 ? lastIdx : (signals[prevIdx] === 1 ? prevIdx : -1);
+        const trigIdx = signals[lastIdx] === 1 ? lastIdx : (signals[prevIdx] === 1 ? prevIdx : -1);
 
-        if (triggeredIdx !== -1 && !state.activeSignalsTracker[sym]) {
-          const entryPrice = candles[triggeredIdx].close;
-          const isCrypto = ASSET_UNIVERSE[sym]?.isCrypto;
+        if (trigIdx !== -1 && !state.activeSignalsTracker[sym]) {
+          const entryPrice = candles[trigIdx].close;
+          const isCrypto = Boolean(ASSET_UNIVERSE[sym]?.isCrypto);
           const priceScale = isCrypto ? liveUsdToInr : 1;
           const tpDist = state.riskUnit === 'percent' ? entryPrice * (tpVal / 100) : (tpVal / priceScale);
-          const initialSlDist = state.riskUnit === 'percent' ? entryPrice * (slVal / 100) : (slVal / priceScale);
-          const nowSec = Math.floor(Date.now() / 1000);
+          const slDist = state.riskUnit === 'percent' ? entryPrice * (slVal / 100) : (slVal / priceScale);
 
-          const signalObj = {
+          const sigObj = {
             sym,
             isRealFeed: true,
-            barUnixSec: candles[triggeredIdx].time,
             entryPrice,
             livePrice,
             highestPrice: Math.max(entryPrice, livePrice),
             tpPrice: entryPrice + tpDist,
-            tslPrice: entryPrice - initialSlDist,
-            tslDist: initialSlDist,
+            activeSl: entryPrice - slDist,
+            trailDist: slDist,
             targetHit: false,
-            reason: reasons[triggeredIdx] || 'Top-3 Strategy Buy Trigger',
-            signalDate: formatISTDateBadge(candles[triggeredIdx].time),
-            triggeredAtIST: formatExactISTTimestamp(nowSec)
+            reason: reasons[trigIdx] || 'Top-3 Mean-Reversion Buy',
+            signalDate: formatISTDateBadge(candles[trigIdx].time),
+            triggeredAtIST: formatExactISTTimestamp(Math.floor(Date.now() / 1000))
           };
-          state.activeSignalsTracker[sym] = signalObj;
-          newlyAddedCount++;
+          state.activeSignalsTracker[sym] = sigObj;
+          newSignalsCount++;
           trackerChanged = true;
 
-          const label = sym.replace('USDT', '');
-          const autoMsg = `🚨 NEW BUY SIGNAL: ${label} (${signalObj.signalDate}) | Entry: ${formatAssetPrice(entryPrice, sym)} | Target: ${formatAssetPrice(signalObj.tpPrice, sym)} | Fixed Initial SL: ${formatAssetPrice(signalObj.tslPrice, sym)}`;
-          dispatchWhatsAppMessage(autoMsg, false);
+          const msg = `🚨 NEW BUY SIGNAL: ${sym.replace('USDT', '')} (${sigObj.signalDate}) | Entry: ${formatAssetPrice(entryPrice, sym)} | Target: ${formatAssetPrice(sigObj.tpPrice, sym)} | Initial SL: ${formatAssetPrice(sigObj.activeSl, sym)}`;
+          dispatchWhatsAppMessage(msg, false);
         }
       });
 
-      try { localStorage.setItem(LAST_SCAN_IST_KEY, todayIST); } catch (e) {}
+      if (slotKey) markScannedCurrentISTSlot(slotKey);
       if (trackerChanged) savePersistentSignals();
       renderActiveSignalsTable();
 
       if (badge) {
-        badge.textContent = `Daily Scan Completed (${todayIST} IST) • ${syncedCount} Real Feeds Synced`;
+        badge.textContent = `${syncedCount} Real Feeds Synced (${slotKey ? label : 'Manual'})`;
       }
-
-      if (newlyAddedCount > 0) {
+      if (newSignalsCount > 0) {
         playAlertChime();
-        showToast(`${newlyAddedCount} New Live Buy Signal${newlyAddedCount > 1 ? 's' : ''}!`, 'Locked with Fixed Initial SL; auto-trails once Target is hit.');
+        showToast(`${newSignalsCount} New Buy Signal${newSignalsCount > 1 ? 's' : ''}!`, 'Locked in Active Live Buy Signals until SL hits.');
       } else if (forceManual) {
-        showToast('Manual Scan Complete', `Scanned ${syncedCount} real market feeds. No new BUY triggers found.`);
+        showToast('Live Scan Complete', `Scanned ${syncedCount} real market feeds. No new BUY triggers right now.`);
       }
     }
 
     function renderActiveSignalsTable() {
       const tbody = $('activeSignalsBody');
       const countBadge = $('navSignalsCount');
+      const activeList = Object.values(state.activeSignalsTracker);
+
+      if (countBadge) countBadge.textContent = activeList.length;
+
       const closedStrip = $('closedSignalsStrip');
-      const closedList = $('closedSignalsList');
-
-      const allActive = Object.values(state.activeSignalsTracker);
-      const filteredActive = state.capFilter === 'ALL'
-        ? allActive
-        : allActive.filter(s => ASSET_UNIVERSE[s.sym]?.cap === state.capFilter);
-
-      if (countBadge) countBadge.textContent = allActive.length;
-
-      if (closedStrip && closedList) {
+      const closedListEl = $('closedSignalsList');
+      if (closedStrip && closedListEl) {
         if (state.closedSignalsToday.length > 0) {
           closedStrip.classList.remove('hidden');
-          closedList.innerHTML = state.closedSignalsToday.slice(0, 12).map(c => {
-            const isWin = c.status === 'TARGET REACHED';
-            return `<span class="px-2.5 py-1 rounded-lg text-[11px] font-semibold ${isWin ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'}">${c.sym.replace('USDT', '')} • ${c.status} (${c.pct}) @ ${c.closedAtIST}</span>`;
-          }).join('');
+          closedListEl.innerHTML = state.closedSignalsToday
+            .map(c => `<span class="px-2 py-0.5 rounded-md text-[11px] font-mono font-semibold ${c.pct.startsWith('+') ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">${c.sym.replace('USDT', '')} • ${c.status} (${c.pct}) @ ${c.closedAtIST}</span>`)
+            .join('');
         } else {
           closedStrip.classList.add('hidden');
         }
       }
 
       if (!tbody) return;
-      if (filteredActive.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="py-10 text-center text-slate-400 text-xs">No active BUY signals in this filter right now. Once-a-day IST scan locks qualifying signals with a Fixed Initial SL and switches to Trailing SL once Target is hit.</td></tr>`;
+      if (activeList.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="py-10 text-center text-slate-400 text-xs">No active BUY signals triggered in the current window. Auto-scans run at <strong>10:00 AM IST</strong> &amp; <strong>3:00 PM IST</strong> (or click <strong>Force Scan Now</strong>).</td></tr>`;
         return;
       }
 
-      tbody.innerHTML = filteredActive.map(s => {
+      tbody.innerHTML = activeList.map(s => {
         const meta = ASSET_UNIVERSE[s.sym] || { cap: 'Asset', sector: '' };
-        const pnlPct = ((s.livePrice - s.entryPrice) / s.entryPrice) * 100;
-        const tpPct = ((s.tpPrice - s.entryPrice) / s.entryPrice) * 100;
-        const slPct = ((s.tslPrice - s.entryPrice) / s.entryPrice) * 100;
-        const capBadgeClass = meta.cap === 'Crypto'
-          ? 'bg-amber-50 text-amber-700 border-amber-200'
-          : 'bg-slate-100 text-slate-700 border-slate-200';
-        const isTrailing = Boolean(s.targetHit);
+        const diffPct = (((s.livePrice - s.entryPrice) / s.entryPrice) * 100).toFixed(2);
+        const stageBadge = s.targetHit
+          ? `<span class="inline-block mt-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800">🎯 Target Hit! Trailing SL Active</span>`
+          : `<span class="inline-block mt-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-700">Stage 1: Fixed Initial SL</span>`;
 
         return `
-          <tr class="hover:bg-slate-50/70 transition ${isTrailing ? 'bg-emerald-50/20' : ''}">
+          <tr class="hover:bg-slate-50/70 transition">
             <td class="px-5 py-3.5">
-              <div class="flex items-center gap-2">
-                <span class="font-bold text-slate-900 text-sm">${s.sym.replace('USDT', '')}</span>
-                <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold border ${capBadgeClass}">${meta.cap}</span>
+              <div class="flex items-center gap-1.5">
+                <span class="font-bold text-slate-900">${s.sym.replace('USDT', '')}</span>
+                <span class="px-1.5 py-0.2 rounded text-[10px] font-semibold ${meta.isCrypto ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'}">${meta.cap}</span>
               </div>
-              <div class="text-[11px] text-slate-600 font-medium mt-0.5">📅 ${s.signalDate}</div>
-              <div class="text-[10px] text-slate-400">Triggered: ${s.triggeredAtIST}</div>
+              <div class="text-[11px] text-slate-500 mt-0.5">📅 ${s.signalDate} • ${s.triggeredAtIST}</div>
             </td>
             <td class="px-4 py-3.5 font-mono">
-              <div class="font-bold text-slate-900 text-sm">${formatAssetPrice(s.livePrice, s.sym)}</div>
+              <div class="font-bold text-slate-900">${formatAssetPrice(s.livePrice, s.sym)}</div>
               <div class="text-[11px] text-slate-500">Entry: ${formatAssetPrice(s.entryPrice, s.sym)}</div>
-              <div class="text-[11px] font-semibold ${pnlPct >= 0 ? 'text-emerald-600' : 'text-rose-600'}">(${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%)</div>
+              <div class="text-[11px] font-semibold ${Number(diffPct) >= 0 ? 'text-emerald-600' : 'text-rose-600'}">(${Number(diffPct) >= 0 ? '+' : ''}${diffPct}%)</div>
             </td>
             <td class="px-4 py-3.5">
-              <div class="mb-1">
-                ${isTrailing
-                  ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">🎯 Target Hit! Trailing SL Active</span>`
-                  : `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">Stage 1: Fixed Initial SL</span>`}
-              </div>
               <div class="font-semibold text-slate-800">${s.reason}</div>
-              <div class="text-[11px] text-slate-400 mt-0.5">${meta.sector}</div>
+              ${stageBadge}
             </td>
             <td class="px-4 py-3.5 font-mono">
-              <div class="font-bold text-emerald-700">${formatAssetPrice(s.tpPrice, s.sym)}</div>
-              <div class="text-[11px] text-emerald-600">${isTrailing ? '✓ Target Reached' : `+${tpPct.toFixed(2)}% Trail Trigger`}</div>
+              <div class="font-bold text-emerald-600">${formatAssetPrice(s.tpPrice, s.sym)}</div>
+              <div class="text-[10px] text-slate-400">Trail Activation Target</div>
             </td>
             <td class="px-4 py-3.5 font-mono">
-              <div class="font-bold ${isTrailing ? 'text-emerald-700' : 'text-amber-700'}">${formatAssetPrice(s.tslPrice, s.sym)}</div>
-              <div class="text-[11px] ${isTrailing ? 'text-emerald-600 font-semibold' : 'text-amber-600'}">
-                ${isTrailing ? `Trailed Profit SL (${slPct >= 0 ? '+' : ''}${slPct.toFixed(2)}%)` : `Fixed Initial SL (${slPct.toFixed(2)}%)`}
-              </div>
+              <div class="font-bold ${s.targetHit ? 'text-emerald-700' : 'text-amber-700'}">${formatAssetPrice(s.activeSl, s.sym)}</div>
+              <div class="text-[10px] text-slate-400">${s.targetHit ? 'Profit-Locked Trail' : 'Fixed Stop-Loss'}</div>
             </td>
             <td class="px-5 py-3.5 text-center">
               <div class="inline-flex items-center gap-1.5">
-                <button onclick="sendSingleSignalWhatsApp('${s.sym}')" class="px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-semibold text-[11px] transition">Alert</button>
-                <button onclick="loadSymbolAndBacktest('${s.sym}')" class="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-semibold text-[11px] transition">Chart</button>
+                <button onclick="sendSingleSignalWhatsApp('${s.sym}')" class="px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[11px] font-semibold transition">Alert</button>
+                <button onclick="loadSymbolAndBacktest('${s.sym}')" class="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-semibold transition">Chart</button>
               </div>
             </td>
           </tr>
@@ -1757,7 +1733,7 @@
     }
 
     // =========================================================================
-    // 9. CHARTS (RESIZEOBSERVER + FALLBACK WIDTH), LIVE REPLAY & TABLES
+    // 9. CHARTS (LIGHTWEIGHT CHARTS + BUILT-IN CANVAS FALLBACK), REPLAY & TABLES
     // =========================================================================
     let tvChart = null;
     let tvResizeObserver = null;
@@ -1785,6 +1761,129 @@
       </div>`;
     }
 
+    function renderFallbackCanvasCandlestickChart(container, candles, sim, mult, sym) {
+      const width = Math.max(320, container.clientWidth || container.parentElement?.clientWidth || 760);
+      const height = 380;
+      const dpr = window.devicePixelRatio || 1;
+
+      container.innerHTML = '';
+      const canvas = document.createElement('canvas');
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = '100%';
+      canvas.style.height = `${height}px`;
+      canvas.style.display = 'block';
+      container.appendChild(canvas);
+
+      const ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+
+      const visibleCount = Math.min(candles.length, 160);
+      const startIdx = candles.length - visibleCount;
+      const slice = candles.slice(startIdx);
+
+      let minP = Infinity;
+      let maxP = -Infinity;
+      for (const c of slice) {
+        if (c.low * mult < minP) minP = c.low * mult;
+        if (c.high * mult > maxP) maxP = c.high * mult;
+      }
+      const padRange = (maxP - minP) * 0.08 || maxP * 0.02;
+      minP -= padRange;
+      maxP += padRange;
+
+      const padL = 14;
+      const padR = 72;
+      const padT = 24;
+      const padB = 28;
+      const plotW = width - padL - padR;
+      const plotH = height - padT - padB;
+      const priceToY = (p) => padT + ((maxP - p) / (maxP - minP)) * plotH;
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, width, height);
+      ctx.font = '11px JetBrains Mono, monospace';
+      ctx.textAlign = 'left';
+
+      for (let g = 0; g <= 5; g++) {
+        const y = padT + (plotH * g) / 5;
+        const val = maxP - ((maxP - minP) * g) / 5;
+        ctx.strokeStyle = '#f1f5f9';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(padL, y);
+        ctx.lineTo(width - padR, y);
+        ctx.stroke();
+
+        ctx.fillStyle = '#64748b';
+        ctx.fillText(val >= 1000 ? val.toFixed(0) : val.toFixed(2), width - padR + 6, y + 4);
+      }
+
+      const drawLine = (arr, color) => {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        let started = false;
+        for (let i = 0; i < visibleCount; i++) {
+          const val = arr[startIdx + i];
+          if (val == null) continue;
+          const x = padL + ((i + 0.5) / visibleCount) * plotW;
+          const y = priceToY(val * mult);
+          if (!started) { ctx.moveTo(x, y); started = true; }
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      };
+      drawLine(sim.sma50, '#0ea5e9');
+      drawLine(sim.sma200, '#8b5cf6');
+
+      const step = plotW / visibleCount;
+      const bodyW = Math.max(2, Math.min(9, step * 0.65));
+      for (let i = 0; i < visibleCount; i++) {
+        const c = slice[i];
+        const x = padL + (i + 0.5) * step;
+        const yO = priceToY(c.open * mult);
+        const yC = priceToY(c.close * mult);
+        const yH = priceToY(c.high * mult);
+        const yL = priceToY(c.low * mult);
+        const isUp = c.close >= c.open;
+        ctx.strokeStyle = isUp ? '#10b981' : '#ef4444';
+        ctx.fillStyle = isUp ? '#10b981' : '#ef4444';
+
+        ctx.beginPath();
+        ctx.moveTo(x, yH);
+        ctx.lineTo(x, yL);
+        ctx.stroke();
+
+        const top = Math.min(yO, yC);
+        const h = Math.max(1.5, Math.abs(yC - yO));
+        ctx.fillRect(x - bodyW / 2, top, bodyW, h);
+      }
+
+      const timeToIndex = new Map(slice.map((c, idx) => [c.time, idx]));
+      for (const m of (sim.markers || [])) {
+        const idx = timeToIndex.get(m.time);
+        if (idx === undefined) continue;
+        const c = slice[idx];
+        const x = padL + (idx + 0.5) * step;
+        const isBuy = m.shape === 'arrowUp';
+        const y = isBuy ? priceToY(c.low * mult) + 12 : priceToY(c.high * mult) - 10;
+        ctx.fillStyle = m.color || (isBuy ? '#059669' : '#e11d48');
+        ctx.beginPath();
+        ctx.arc(x, y, 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      const lastBar = slice[slice.length - 1];
+      ctx.fillStyle = '#0f172a';
+      ctx.font = 'bold 11px Inter, sans-serif';
+      ctx.fillText(
+        `${sym.replace('USDT', '')} • Last: ${formatAssetPrice(lastBar.close, sym)}  |  Blue: 50 SMA  |  Purple: 200 SMA`,
+        padL + 4,
+        15
+      );
+    }
+
     function renderPriceChart(candles, sim) {
       const container = $('tvChartContainer');
       if (!container || !candles || candles.length === 0) return;
@@ -1792,68 +1891,86 @@
       destroyPriceChart();
       container.innerHTML = '';
 
-      if (typeof LightweightCharts === 'undefined') {
-        container.innerHTML = `<div class="w-full h-full flex items-center justify-center text-xs text-slate-500">Chart library loading... please click Run Test.</div>`;
-        return;
-      }
-
-      const initialWidth = container.clientWidth || container.parentElement?.clientWidth || 720;
-      tvChart = LightweightCharts.createChart(container, {
-        width: initialWidth,
-        height: 360,
-        layout: { background: { color: '#ffffff' }, textColor: '#475569', fontFamily: 'Inter, sans-serif' },
-        grid: { vertLines: { color: '#f1f5f9' }, horzLines: { color: '#f1f5f9' } },
-        rightPriceScale: { borderColor: '#e2e8f0' },
-        timeScale: { borderColor: '#e2e8f0', timeVisible: state.timeframe !== 'Daily' }
-      });
-
-      const candleSeries = tvChart.addCandlestickSeries({
-        upColor: '#10b981',
-        downColor: '#ef4444',
-        borderVisible: false,
-        wickUpColor: '#10b981',
-        wickDownColor: '#ef4444'
-      });
-
       const sym = $('symbolSelect')?.value || 'BTCUSDT';
       const isCryptoInr = Boolean(ASSET_UNIVERSE[sym]?.isCrypto && state.cryptoCurrency === 'INR');
       const mult = isCryptoInr ? liveUsdToInr : 1;
 
-      candleSeries.setData(candles.map(c => ({
-        time: c.time,
-        open: c.open * mult,
-        high: c.high * mult,
-        low: c.low * mult,
-        close: c.close * mult
-      })));
+      const drawChart = () => {
+        if (!container) return;
+        const width = container.clientWidth || container.parentElement?.clientWidth || 760;
 
-      if (sim.markers && sim.markers.length > 0) {
-        candleSeries.setMarkers(sim.markers);
-      }
+        if (typeof LightweightCharts === 'undefined' || typeof LightweightCharts.createChart !== 'function') {
+          renderFallbackCanvasCandlestickChart(container, candles, sim, mult, sym);
+          return;
+        }
 
-      const sma50Series = tvChart.addLineSeries({ color: '#0ea5e9', lineWidth: 1.5, priceLineVisible: false });
-      const sma200Series = tvChart.addLineSeries({ color: '#8b5cf6', lineWidth: 1.5, priceLineVisible: false });
+        try {
+          tvChart = LightweightCharts.createChart(container, {
+            width,
+            height: 380,
+            layout: { background: { color: '#ffffff' }, textColor: '#475569', fontFamily: 'Inter, sans-serif' },
+            grid: { vertLines: { color: '#f1f5f9' }, horzLines: { color: '#f1f5f9' } },
+            rightPriceScale: { borderColor: '#e2e8f0' },
+            timeScale: { borderColor: '#e2e8f0', timeVisible: state.timeframe !== 'Daily' }
+          });
 
-      const s50Data = [];
-      const s200Data = [];
-      for (let i = 0; i < candles.length; i++) {
-        if (sim.sma50[i] != null) s50Data.push({ time: candles[i].time, value: sim.sma50[i] * mult });
-        if (sim.sma200[i] != null) s200Data.push({ time: candles[i].time, value: sim.sma200[i] * mult });
-      }
-      sma50Series.setData(s50Data);
-      sma200Series.setData(s200Data);
-      tvChart.timeScale().fitContent();
+          const candleSeries = tvChart.addCandlestickSeries({
+            upColor: '#10b981',
+            downColor: '#ef4444',
+            borderVisible: false,
+            wickUpColor: '#10b981',
+            wickDownColor: '#ef4444'
+          });
 
-      if (typeof ResizeObserver !== 'undefined') {
-        tvResizeObserver = new ResizeObserver(entries => {
-          for (const entry of entries) {
-            if (tvChart && entry.contentRect.width > 0) {
-              tvChart.applyOptions({ width: entry.contentRect.width });
-            }
+          candleSeries.setData(candles.map(c => ({
+            time: c.time,
+            open: c.open * mult,
+            high: c.high * mult,
+            low: c.low * mult,
+            close: c.close * mult
+          })));
+
+          if (sim.markers && sim.markers.length > 0) {
+            candleSeries.setMarkers(sim.markers);
           }
-        });
-        tvResizeObserver.observe(container);
-      }
+
+          const sma50Series = tvChart.addLineSeries({ color: '#0ea5e9', lineWidth: 1.5, priceLineVisible: false });
+          const sma200Series = tvChart.addLineSeries({ color: '#8b5cf6', lineWidth: 1.5, priceLineVisible: false });
+
+          const s50Data = [];
+          const s200Data = [];
+          for (let i = 0; i < candles.length; i++) {
+            if (sim.sma50[i] != null) s50Data.push({ time: candles[i].time, value: sim.sma50[i] * mult });
+            if (sim.sma200[i] != null) s200Data.push({ time: candles[i].time, value: sim.sma200[i] * mult });
+          }
+          sma50Series.setData(s50Data);
+          sma200Series.setData(s200Data);
+          tvChart.timeScale().fitContent();
+
+          if (!container.querySelector('canvas')) {
+            destroyPriceChart();
+            renderFallbackCanvasCandlestickChart(container, candles, sim, mult, sym);
+            return;
+          }
+
+          if (typeof ResizeObserver !== 'undefined') {
+            tvResizeObserver = new ResizeObserver(entries => {
+              for (const entry of entries) {
+                if (tvChart && entry.contentRect.width > 0) {
+                  tvChart.applyOptions({ width: entry.contentRect.width });
+                }
+              }
+            });
+            tvResizeObserver.observe(container);
+          }
+        } catch (err) {
+          console.warn('LightweightCharts fallback engaged:', err);
+          destroyPriceChart();
+          renderFallbackCanvasCandlestickChart(container, candles, sim, mult, sym);
+        }
+      };
+
+      requestAnimationFrame(drawChart);
     }
 
     function renderEquityCurve(sim) {
@@ -2141,7 +2258,7 @@
         if (navDot) navDot.classList.add('hidden');
         if (actionLabel) actionLabel.textContent = 'Run Test';
         if (!state.candles || state.candles.length === 0) onSetupChanged(false);
-        else triggerRun();
+        else requestAnimationFrame(() => triggerRun());
       } else {
         if (btnLv) btnLv.className = 'whitespace-nowrap px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-white text-sky-700 shadow-sm flex items-center gap-1.5';
         if (signalsPanel) signalsPanel.classList.add('hidden');
@@ -2151,7 +2268,7 @@
         if (navDot) navDot.classList.remove('hidden');
         if (actionLabel) actionLabel.textContent = 'Replay Live';
         if (!state.candles || state.candles.length === 0) onSetupChanged(false);
-        else restartLiveMarketReplay();
+        else requestAnimationFrame(() => restartLiveMarketReplay());
       }
     }
 
@@ -2233,6 +2350,7 @@
       loadPersistentSignals();
       renderActiveSignalsTable();
       setMode('signals');
+      startTwoDailySlotsWatcher();
       await runDailyOrManualScan(false);
     }
 
