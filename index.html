@@ -127,6 +127,1507 @@
         <!-- 1. Market Cap / Asset Filter & Symbol Selector -->
         <div>
           <div class="flex items-center justify-between mb-1.5">
+            <label for="symbolSearchInput" class="text-xs font-semibold text-slate-700">Stock / Index / Crypto <span id="universeCountLabel" class="text-slate-400 font-normal">(126)</span></label>
+            <span id="dataSourcePill" class="text-[11px] font-medium text-emerald-600">Live Sync</span>
+          </div>
+
+          <!-- Cap Filter Pills -->
+          <div class="grid grid-cols-5 gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200/60 mb-2">
+            <button type="button" data-cap="ALL" onclick="selectCapFilter('ALL')" class="cap-btn py-1 rounded-lg text-[11px] font-semibold bg-white text-slate-900 shadow-sm transition">All</button>
+            <button type="button" data-cap="Large" onclick="selectCapFilter('Large')" class="cap-btn py-1 rounded-lg text-[11px] font-semibold text-slate-500 hover:text-slate-900 transition">Large</button>
+            <button type="button" data-cap="Mid" onclick="selectCapFilter('Mid')" class="cap-btn py-1 rounded-lg text-[11px] font-semibold text-slate-500 hover:text-slate-900 transition">Mid</button>
+            <button type="button" data-cap="Small" onclick="selectCapFilter('Small')" class="cap-btn py-1 rounded-lg text-[11px] font-semibold text-slate-500 hover:text-slate-900 transition">Small</button>
+            <button type="button" data-cap="Crypto" onclick="selectCapFilter('Crypto')" class="cap-btn py-1 rounded-lg text-[11px] font-semibold text-amber-700 hover:text-amber-900 transition">Crypto</button>
+          </div>
+
+          <!-- Quick Search Input -->
+          <div class="relative mb-2">
+            <svg class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 103.5 10.5a7.5 7.5 0 0013.15 6.15z" />
+            </svg>
+            <input type="text" id="symbolSearchInput" oninput="filterSymbolDropdown(this.value)" placeholder="Search RELIANCE, MCX, BTC, SOL..." class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition" />
+          </div>
+
+          <select id="symbolSelect" onchange="onSetupChanged(true)" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition"></select>
+          <p id="symbolMetaText" class="mt-1.5 text-[11px] text-slate-500 leading-snug">Reliance Industries Ltd • Large-Cap • Energy</p>
+        </div>
+
+        <!-- 2. Timeframe & Backtest Duration -->
+        <div>
+        <button id="btnModeCrypto" onclick="switchToCryptoMarket()" class="whitespace-nowrap px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all text-amber-700 hover:bg-amber-50 flex items-center gap-1">
+          <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+          <span>Top 50 Trusted Crypto</span>
+        </button>
+      </div>
+          <div class="grid grid-cols-4 gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200/60 mb-2">
+            <button type="button" data-tf="5m" onclick="selectTimeframe('5m')" class="tf-btn py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-900 transition">5m</button>
+            <button type="button" data-tf="15m" onclick="selectTimeframe('15m')" class="tf-btn py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-900 transition">15m</button>
+            <button type="button" data-tf="1H" onclick="selectTimeframe('1H')" class="tf-btn py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-900 transition">1H</button>
+            <button type="button" data-tf="Daily" onclick="selectTimeframe('Daily')" class="tf-btn py-1.5 rounded-lg text-xs font-semibold bg-white text-slate-900 shadow-sm transition">Daily</button>
+          </div>
+          <div class="grid grid-cols-3 gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200/60">
+            <button type="button" data-dur="1Y" onclick="selectDuration('1Y')" class="dur-btn py-1 rounded-lg text-[11px] font-semibold text-slate-500 hover:text-slate-900 transition">1 Year</button>
+            <button type="button" data-dur="3Y" onclick="selectDuration('3Y')" class="dur-btn py-1 rounded-lg text-[11px] font-semibold text-slate-500 hover:text-slate-900 transition">3 Years</button>
+            <button type="button" data-dur="6Y" onclick="selectDuration('6Y')" class="dur-btn py-1 rounded-lg text-[11px] font-semibold bg-white text-slate-900 shadow-sm transition">6 Years</button>
+          </div>
+        </div>
+
+        <!-- 3. Strategy Rule Selector -->
+        <div>
+          <label for="strategySelect" class="block text-xs font-semibold text-slate-700 mb-1.5">Strategy Rule</label>
+          <select id="strategySelect" onchange="onStrategyChanged()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition">
+            <optgroup label="High Win-Rate Swing (3–15 Days • Buy Only)">
+              <option value="cum_rsi2" selected>1. Cumulative 2-Day RSI(2) (~82%+ Win)</option>
+              <option value="connors_rsi2">2. Connors RSI(2) Pullback (~76% Win)</option>
+              <option value="bb_rsi_snap">3. Bollinger + RSI Snapback (~72% Win)</option>
+              <option value="ema20_pullback">4. 20-EMA Trend Pullback (~68% Win)</option>
+            </optgroup>
+            <optgroup label="Momentum & Intraday Strategies">
+              <option value="ema_cross">EMA Crossover (9/21)</option>
+              <option value="supertrend_breakout">Supertrend Breakout</option>
+              <option value="vwap_bounce">VWAP Reclaim Bounce</option>
+            </optgroup>
+          </select>
+          <div id="swingPresetBadge" class="mt-2 flex items-center justify-between bg-emerald-50 border border-emerald-200/80 text-emerald-800 rounded-xl px-2.5 py-1.5 text-[11px] font-semibold">
+            <span>Swing Mode: Buy Only • 3–15d</span>
+            <span class="font-mono text-emerald-700">15d Max Exit</span>
+          </div>
+          <p id="strategyPlainDesc" class="mt-2 text-xs text-slate-500 leading-relaxed bg-slate-50 rounded-xl p-2.5 border border-slate-100">
+            Ultra-selective 1-click entry: Buys uptrending stocks (Price > 200 SMA & 50 SMA > 200 SMA) when the 2-day cumulative RSI(2) drops below 10, and exits on a 5-SMA snapback or quick Take-Profit.
+          </p>
+        </div>
+
+        <hr class="border-slate-100" />
+
+        <!-- 4. Exit Targets: Take-Profit & Trailing Stop-Loss -->
+        <div class="space-y-4">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold text-slate-700">Exit Targets</span>
+            <div class="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200/70 text-[11px] font-semibold">
+              <button type="button" id="unitPctBtn" onclick="setRiskUnit('percent')" class="px-2.5 py-0.5 rounded-md bg-white text-slate-900 shadow-sm">%</button>
+              <button type="button" id="unitPtsBtn" onclick="setRiskUnit('points')" class="px-2.5 py-0.5 rounded-md text-slate-500 hover:text-slate-900">Points (₹)</button>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between text-xs mb-1.5">
+              <span class="font-medium text-emerald-700">Take-Profit Target</span>
+              <div class="flex items-center gap-1">
+                <input type="number" id="tpInput" value="3.5" step="0.1" min="0.1" oninput="syncSliderFromInput('tp')" class="w-16 text-right font-mono text-xs font-semibold bg-emerald-50/70 border border-emerald-200 rounded-lg px-2 py-1 text-emerald-900 focus:outline-none" />
+                <span class="unitSuffix text-xs font-mono text-slate-400">%</span>
+              </div>
+            </div>
+            <input type="range" id="tpSlider" min="0.2" max="12" step="0.1" value="3.5" oninput="syncInputFromSlider('tp')" class="w-full" />
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between text-xs mb-1.5">
+              <span class="font-medium text-amber-700">Trailing Stop-Loss</span>
+              <div class="flex items-center gap-1">
+                <input type="number" id="tslInput" value="2.0" step="0.1" min="0.1" oninput="syncSliderFromInput('tsl')" class="w-16 text-right font-mono text-xs font-semibold bg-amber-50/70 border border-amber-200 rounded-lg px-2 py-1 text-amber-900 focus:outline-none" />
+                <span class="unitSuffix text-xs font-mono text-slate-400">%</span>
+              </div>
+            </div>
+            <input type="range" id="tslSlider" min="0.1" max="6" step="0.1" value="2.0" oninput="syncInputFromSlider('tsl')" class="w-full" />
+          </div>
+        </div>
+
+        <hr class="border-slate-100" />
+
+        <!-- 5. Starting Capital -->
+        <div>
+          <label for="capitalInput" class="block text-xs font-semibold text-slate-700 mb-1.5">Starting Capital (₹)</label>
+          <div class="relative">
+            <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-semibold text-slate-400">₹</span>
+            <input type="number" id="capitalInput" value="100000" step="10000" min="5000" onchange="triggerRun()" class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-3.5 py-2 text-sm font-mono font-semibold text-slate-900 focus:outline-none focus:border-slate-400" />
+          </div>
+        </div>
+
+        <!-- 6. Advanced & CSV Upload Drawer -->
+        <div class="pt-1">
+          <button type="button" onclick="toggleAdvancedDrawer()" class="w-full flex items-center justify-between text-xs font-semibold text-slate-500 hover:text-slate-900 py-2 px-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition">
+            <span>Advanced & Upload CSV</span>
+            <svg id="advChevron" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          <div id="advancedDrawer" class="hidden mt-3 space-y-3 pt-2 border-t border-slate-100 text-xs">
+            <div>
+              <label class="block text-slate-600 font-medium mb-1">Trade Direction</label>
+              <select id="directionSelect" onchange="triggerRun()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 font-medium text-slate-800">
+                <option value="long" selected>Long (Buy) Only</option>
+                <option value="both">Both Long & Short</option>
+                <option value="short">Short (Sell) Only</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-slate-600 font-medium mb-1">Max Swing Hold (Daily Bars)</label>
+              <select id="maxHoldSelect" onchange="triggerRun()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 font-medium text-slate-800">
+                <option value="7">7 Trading Days</option>
+                <option value="15" selected>15 Trading Days (3 Weeks)</option>
+                <option value="30">30 Trading Days</option>
+                <option value="0">No Time Limit</option>
+              </select>
+            </div>
+            <label class="flex items-center justify-between cursor-pointer py-1">
+              <span class="text-slate-600 font-medium">Auto Square-Off (15:15 IST)</span>
+              <input type="checkbox" id="autoSquareOffCheck" onchange="triggerRun()" class="w-4 h-4 rounded accent-slate-900" />
+            </label>
+            <label class="flex items-center justify-between cursor-pointer py-1">
+              <span class="text-slate-600 font-medium">Include Brokerage & STT</span>
+              <input type="checkbox" id="includeTaxesCheck" checked onchange="triggerRun()" class="w-4 h-4 rounded accent-slate-900" />
+            </label>
+            <div class="pt-1">
+              <label for="csvFileInput" class="w-full cursor-pointer flex items-center justify-center gap-2 py-2 px-3 rounded-xl border border-dashed border-slate-300 hover:border-slate-400 bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold transition">
+                <span>Upload OHLC CSV File</span>
+              </label>
+              <input type="file" id="csvFileInput" accept=".csv" class="hidden" onchange="handleCSVUpload(event)" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- RIGHT WORKSPACE AREA -->
+    <div class="flex-1 min-w-0 space-y-5">
+
+      <!-- =================================================================== -->
+      <!-- VIEW 1: LIVE BUY SIGNALS SCANNER (DEFAULT SCREEN ON OPEN)           -->
+      <!-- =================================================================== -->
+      <section id="liveSignalsPanel" class="space-y-4">
+        <div class="bg-white border border-emerald-200/90 rounded-2xl p-5 shadow-sm space-y-4">
+          <!-- Header & Controls -->
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-[11px] font-bold text-emerald-700">
+                  <span class="w-2 h-2 rounded-full bg-emerald-500 live-dot"></span>
+                  LIVE MARKET AUTO-SCANNER
+                </span>
+                <span id="liveFeedQualityBadge" class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[11px] font-semibold">Syncing Live Feeds...</span>
+              </div>
+              <h2 class="text-base sm:text-lg font-bold text-slate-900 mt-1.5">Active Live Buy Signals (Held Until Target or SL Hits)</h2>
+              <p id="liveScannerSubtitle" class="text-xs text-slate-500">Scanning live NSE stocks & Top 10 Crypto...</p>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+              <button onclick="sendAllActiveSignalsWhatsApp()" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm transition flex items-center gap-1.5">
+                <span>📲 Send All to WhatsApp</span>
+              </button>
+              <button onclick="scanAllLiveBuySignals(true)" class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-sm transition">
+                Refresh Live Scan
+              </button>
+            </div>
+          </div>
+
+          <!-- WhatsApp Alert & Sound Settings Bar -->
+          <div class="bg-slate-50 border border-slate-200/80 rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="font-bold text-slate-800">WhatsApp Alerts:</span>
+              <input type="text" id="waPhoneInput" onchange="saveWhatsAppConfig()" placeholder="+919876543210" class="w-36 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 font-mono text-xs text-slate-800 focus:outline-none focus:border-emerald-500" />
+              <input type="text" id="waApiKeyInput" onchange="saveWhatsAppConfig()" placeholder="CallMeBot API Key (optional)" class="w-44 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 font-mono text-xs text-slate-800 focus:outline-none focus:border-emerald-500" />
+            </div>
+            <div class="flex items-center gap-3">
+              <label class="inline-flex items-center gap-1.5 cursor-pointer text-slate-700 font-medium">
+                <input type="checkbox" id="soundAlertCheck" checked class="w-3.5 h-3.5 rounded accent-emerald-600" />
+                <span>Audio Chime</span>
+              </label>
+              <button onclick="clearClosedSignalsLog()" class="text-slate-500 hover:text-rose-600 font-semibold underline">Reset Tracker</button>
+            </div>
+          </div>
+
+          <!-- Active Signals Table -->
+          <div class="overflow-x-auto rounded-xl border border-slate-200/80">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200/80">
+                <tr>
+                  <th class="py-3 px-3.5">Stock / Signal Date & Time</th>
+                  <th class="py-3 px-3.5 text-right">Live & Entry Price</th>
+                  <th class="py-3 px-3.5">Strategy Condition</th>
+                  <th class="py-3 px-3.5 text-right text-emerald-700">Target (TP)</th>
+                  <th class="py-3 px-3.5 text-right text-amber-700">Trailing Stop-Loss</th>
+                  <th class="py-3 px-3.5 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="liveBuySignalsBody" class="divide-y divide-slate-100 text-slate-700 font-mono">
+                <tr>
+                  <td colspan="6" class="py-10 text-center text-slate-400 font-sans">Scanning live market data for BUY signals...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Auto-Removed / Closed Signals Strip -->
+          <div id="closedSignalsBox" class="hidden bg-slate-50 border border-slate-200/80 rounded-xl p-3 space-y-2">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-bold text-slate-700">Auto-Removed Signals (Target Reached or Stop-Loss Hit)</span>
+              <span class="text-[11px] text-slate-400">Automatically cleared from active list</span>
+            </div>
+            <div id="closedSignalsList" class="flex flex-wrap gap-2 text-xs font-mono"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================== -->
+      <!-- VIEW 2 & 3: BACKTEST & LIVE MARKET TEST WORKSPACE                   -->
+      <!-- =================================================================== -->
+      <section id="backtestMainWorkspace" class="hidden space-y-5">
+
+        <!-- Live Market Single-Ticker Banner -->
+        <div id="liveMarketPanel" class="hidden bg-white border border-emerald-200 rounded-2xl p-4 shadow-sm space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-700">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 live-dot"></span>
+                LIVE TICK REPLAY
+              </span>
+              <div class="flex items-baseline gap-2">
+                <span id="liveSymbolName" class="text-sm font-bold text-slate-900">RELIANCE</span>
+                <span id="liveCurrentPrice" class="text-lg font-bold font-mono text-slate-900 tabular-nums">₹2,945.00</span>
+                <span id="livePriceDelta" class="text-xs font-mono font-semibold text-emerald-600">+0.00%</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button id="btnLivePlayPause" onclick="toggleLivePlay()" class="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition">Pause</button>
+              <div class="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200 text-xs font-mono font-semibold">
+                <button onclick="setLiveSpeed(1000)" id="speed1x" class="spd-btn px-2.5 py-1 rounded-lg bg-white text-slate-900 shadow-sm">1x</button>
+                <button onclick="setLiveSpeed(300)" id="speed5x" class="spd-btn px-2.5 py-1 rounded-lg text-slate-500 hover:text-slate-900">5x</button>
+                <button onclick="setLiveSpeed(80)" id="speed20x" class="spd-btn px-2.5 py-1 rounded-lg text-slate-500 hover:text-slate-900">20x</button>
+              </div>
+            </div>
+          </div>
+          <div id="livePositionStrip" class="bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <span class="text-slate-500 font-medium">Status: <strong class="text-slate-800">Scanning live candles...</strong></span>
+          </div>
+        </div>
+
+        <!-- 4 KPI Cards -->
+        <div class="grid grid-cols-2 xl:grid-cols-4 gap-4">
+          <div class="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-sm">
+            <p class="text-xs font-medium text-slate-500">Net Profit</p>
+            <p id="kpiNetProfit" class="text-xl sm:text-2xl font-bold font-mono text-emerald-600 mt-1.5 tabular-nums">₹0.00</p>
+            <p id="kpiNetReturnPct" class="text-xs font-mono font-medium text-slate-500 mt-1">+0.00%</p>
+          </div>
+          <div class="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-sm">
+            <p class="text-xs font-medium text-slate-500">Win Rate</p>
+            <p id="kpiWinRate" class="text-xl sm:text-2xl font-bold font-mono text-slate-900 mt-1.5 tabular-nums">0.0%</p>
+            <p id="kpiWinSub" class="text-xs font-mono text-slate-500 mt-1">0 Wins / 0 Losses</p>
+          </div>
+          <div class="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-sm">
+            <p class="text-xs font-medium text-slate-500">Total Trades</p>
+            <p id="kpiTotalTrades" class="text-xl sm:text-2xl font-bold font-mono text-slate-900 mt-1.5 tabular-nums">0</p>
+            <p id="kpiExitSummary" class="text-xs font-mono text-slate-500 mt-1">0 TP • 0 Trailing SL</p>
+          </div>
+          <div class="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-sm">
+            <p class="text-xs font-medium text-slate-500">Max Drawdown</p>
+            <p id="kpiMaxDrawdown" class="text-xl sm:text-2xl font-bold font-mono text-rose-600 mt-1.5 tabular-nums">0.00%</p>
+            <p id="kpiEndingCapital" class="text-xs font-mono text-slate-500 mt-1">Final: ₹1,00,000</p>
+          </div>
+        </div>
+
+        <!-- Chart & Multi-Stock Win-Rate Scanner Card -->
+        <div class="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-sm">
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <div class="flex items-center gap-3">
+              <h2 id="chartTitle" class="text-sm font-bold text-slate-900">RELIANCE • Daily (6Y) Chart</h2>
+              <div id="priceChartLegend" class="hidden sm:flex items-center gap-3 text-[11px] font-medium text-slate-500">
+                <span class="flex items-center gap-1"><span class="w-2.5 h-0.5 bg-amber-500 inline-block"></span> Trailing SL</span>
+                <span class="flex items-center gap-1"><span class="w-2.5 h-0.5 bg-emerald-500 inline-block"></span> Take-Profit</span>
+              </div>
+            </div>
+
+            <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/60 text-xs font-semibold gap-1">
+              <button id="tabPriceChart" onclick="switchChartTab('price')" class="whitespace-nowrap px-3 py-1 rounded-lg bg-white text-slate-900 shadow-sm transition">Price & Signals</button>
+              <button id="tabEquityChart" onclick="switchChartTab('equity')" class="whitespace-nowrap px-3 py-1 rounded-lg text-slate-500 hover:text-slate-900 transition">Equity Curve</button>
+              <button id="tabScannerView" onclick="switchChartTab('scanner')" class="whitespace-nowrap px-3 py-1 rounded-lg text-slate-500 hover:text-slate-900 transition">Top Swing Scanner</button>
+            </div>
+          </div>
+
+          <div id="priceChartView" class="w-full h-[370px] rounded-xl overflow-hidden border border-slate-100"></div>
+
+          <div id="equityChartView" class="hidden w-full h-[370px] p-2">
+            <canvas id="equityCanvas"></canvas>
+          </div>
+
+          <div id="scannerChartView" class="hidden w-full h-[370px] overflow-y-auto rounded-xl border border-slate-100">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead class="bg-slate-50 text-slate-500 font-semibold sticky top-0 z-10 border-b border-slate-200/80">
+                <tr>
+                  <th class="py-2.5 px-3.5">Stock / Asset</th>
+                  <th class="py-2.5 px-3.5">Cap Tier</th>
+                  <th class="py-2.5 px-3.5 text-right">Win Rate</th>
+                  <th class="py-2.5 px-3.5 text-right">Trades</th>
+                  <th class="py-2.5 px-3.5 text-right">Net Profit</th>
+                  <th class="py-2.5 px-3.5 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody id="topScannerBody" class="divide-y divide-slate-100 font-mono text-slate-700"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Trade History & P&L Breakdown -->
+        <div class="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-sm space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 class="text-sm font-bold text-slate-900">Trade History & P&L Breakdown</h3>
+              <p class="text-xs text-slate-500">Total Profit minus Total Loss equals Calculated Net Result</p>
+            </div>
+            <button onclick="exportTradesCSV()" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-800 text-xs font-semibold transition">Download CSV</button>
+          </div>
+
+          <!-- Gross Profit / Gross Loss / Net Result Cards -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="bg-slate-50/90 border border-slate-200/70 rounded-xl p-3.5">
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Total Profit</span>
+                <span id="summaryWinCountBadge" class="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[11px] font-mono font-bold">0 Wins</span>
+              </div>
+              <p id="summaryGrossProfit" class="text-lg font-bold font-mono text-emerald-600 mt-1.5 tabular-nums">+₹0.00</p>
+            </div>
+            <div class="bg-slate-50/90 border border-slate-200/70 rounded-xl p-3.5">
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Total Loss</span>
+                <span id="summaryLossCountBadge" class="px-2 py-0.5 rounded-md bg-rose-100 text-rose-800 text-[11px] font-mono font-bold">0 Losses</span>
+              </div>
+              <p id="summaryGrossLoss" class="text-lg font-bold font-mono text-rose-600 mt-1.5 tabular-nums">-₹0.00</p>
+            </div>
+            <div class="bg-slate-50/90 border border-slate-200/70 rounded-xl p-3.5">
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Net Result</span>
+                <span id="summaryNetPctBadge" class="text-xs font-mono font-semibold text-slate-600">+0.00%</span>
+              </div>
+              <p id="summaryNetResult" class="text-lg font-bold font-mono text-emerald-600 mt-1.5 tabular-nums">+₹0.00</p>
+            </div>
+          </div>
+
+          <!-- Year-by-Year Win Rate Pills -->
+          <div id="yearlyBreakdownStrip" class="flex flex-wrap gap-2"></div>
+
+          <!-- Chronological Table -->
+          <div class="overflow-x-auto max-h-[340px] overflow-y-auto rounded-xl border border-slate-100">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead class="bg-slate-50 text-slate-500 font-semibold sticky top-0 z-10 border-b border-slate-200/80">
+                <tr>
+                  <th class="py-3 px-3.5">Entry Date</th>
+                  <th class="py-3 px-3.5">Side</th>
+                  <th class="py-3 px-3.5 text-right">Entry ₹</th>
+                  <th class="py-3 px-3.5 text-right">Exit ₹</th>
+                  <th class="py-3 px-3.5">Exit Reason</th>
+                  <th class="py-3 px-3.5 text-right">Net P&L (₹)</th>
+                </tr>
+              </thead>
+              <tbody id="tradeHistoryBody" class="divide-y divide-slate-100 text-slate-700 font-mono"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    // =========================================================================
+    // 1. UNIVERSE CONFIGURATION (NSE LARGE/MID/SMALL + TOP 50 TRUSTED CRYPTO)
+    // =========================================================================
+    const USD_TO_INR = 84.5;
+
+    const NSE_SYMBOLS = {
+      // --- NSE INDICES ---
+      'NIFTY':      { name: 'NIFTY 50 Index',              cap: 'Large', sector: 'Index',        basePrice: 24350.00, volatility: 0.0022, lotStep: 25, isIndex: true },
+      'BANKNIFTY':  { name: 'NIFTY Bank Index',            cap: 'Large', sector: 'Index',        basePrice: 52180.00, volatility: 0.0030, lotStep: 15, isIndex: true },
+
+      // --- LARGE-CAP (NIFTY 50) ---
+      'RELIANCE':   { name: 'Reliance Industries Ltd',     cap: 'Large', sector: 'Energy',       basePrice: 2945.00,  volatility: 0.0033, lotStep: 1 },
+      'HDFCBANK':   { name: 'HDFC Bank Ltd',               cap: 'Large', sector: 'Banking',      basePrice: 1715.00,  volatility: 0.0028, lotStep: 1 },
+      'ICICIBANK':  { name: 'ICICI Bank Ltd',              cap: 'Large', sector: 'Banking',      basePrice: 1295.00,  volatility: 0.0029, lotStep: 1 },
+      'INFY':       { name: 'Infosys Ltd',                 cap: 'Large', sector: 'IT',           basePrice: 1865.00,  volatility: 0.0031, lotStep: 1 },
+      'TCS':        { name: 'Tata Consultancy Services',   cap: 'Large', sector: 'IT',           basePrice: 4120.00,  volatility: 0.0026, lotStep: 1 },
+      'BHARTIARTL': { name: 'Bharti Airtel Ltd',           cap: 'Large', sector: 'Telecom',      basePrice: 1645.00,  volatility: 0.0029, lotStep: 1 },
+      'SBIN':       { name: 'State Bank of India',         cap: 'Large', sector: 'Banking',      basePrice: 832.00,   volatility: 0.0033, lotStep: 1 },
+      'BAJFINANCE': { name: 'Bajaj Finance Ltd',           cap: 'Large', sector: 'NBFC',         basePrice: 7180.00,  volatility: 0.0036, lotStep: 1 },
+      'LT':         { name: 'Larsen & Toubro Ltd',         cap: 'Large', sector: 'Infra',        basePrice: 3620.00,  volatility: 0.0031, lotStep: 1 },
+      'M&M':        { name: 'Mahindra & Mahindra Ltd',     cap: 'Large', sector: 'Auto',         basePrice: 2940.00,  volatility: 0.0034, lotStep: 1 },
+      'TRENT':      { name: 'Trent Ltd',                   cap: 'Large', sector: 'Retail',       basePrice: 6480.00,  volatility: 0.0044, lotStep: 1 },
+      'BEL':        { name: 'Bharat Electronics Ltd',      cap: 'Large', sector: 'Defence',      basePrice: 312.00,   volatility: 0.0041, lotStep: 1 },
+      'AXISBANK':   { name: 'Axis Bank Ltd',               cap: 'Large', sector: 'Banking',      basePrice: 1175.00,  volatility: 0.0032, lotStep: 1 },
+      'SUNPHARMA':  { name: 'Sun Pharmaceutical Ind',      cap: 'Large', sector: 'Pharma',       basePrice: 1815.00,  volatility: 0.0026, lotStep: 1 },
+      'TITAN':      { name: 'Titan Company Ltd',           cap: 'Large', sector: 'Consumer',     basePrice: 3460.00,  volatility: 0.0030, lotStep: 1 },
+      'MARUTI':     { name: 'Maruti Suzuki India Ltd',     cap: 'Large', sector: 'Auto',         basePrice: 12150.00, volatility: 0.0028, lotStep: 1 },
+      'NTPC':       { name: 'NTPC Ltd',                    cap: 'Large', sector: 'Power',        basePrice: 398.00,   volatility: 0.0031, lotStep: 1 },
+      'TATAMOTORS': { name: 'Tata Motors Ltd',             cap: 'Large', sector: 'Auto',         basePrice: 845.00,   volatility: 0.0039, lotStep: 1 },
+      'JSWSTEEL':   { name: 'JSW Steel Ltd',               cap: 'Large', sector: 'Metals',       basePrice: 978.00,   volatility: 0.0036, lotStep: 1 },
+      'ADANIPORTS': { name: 'Adani Ports & SEZ Ltd',       cap: 'Large', sector: 'Infra',        basePrice: 1385.00,  volatility: 0.0040, lotStep: 1 },
+      'HCLTECH':    { name: 'HCL Technologies Ltd',        cap: 'Large', sector: 'IT',           basePrice: 1795.00,  volatility: 0.0029, lotStep: 1 },
+      'KOTAKBANK':  { name: 'Kotak Mahindra Bank Ltd',     cap: 'Large', sector: 'Banking',      basePrice: 1785.00,  volatility: 0.0029, lotStep: 1 },
+      'ULTRACEMCO': { name: 'UltraTech Cement Ltd',        cap: 'Large', sector: 'Cement',       basePrice: 11380.00, volatility: 0.0027, lotStep: 1 },
+      'INDIGO':     { name: 'InterGlobe Aviation Ltd',     cap: 'Large', sector: 'Aviation',     basePrice: 4420.00,  volatility: 0.0037, lotStep: 1 },
+      'HAL':        { name: 'Hindustan Aeronautics Ltd',   cap: 'Large', sector: 'Defence',      basePrice: 4380.00,  volatility: 0.0042, lotStep: 1 },
+
+      // --- MID-CAP (NIFTY MIDCAP 150 LEADERS) ---
+      'CGPOWER':    { name: 'CG Power & Industrial',       cap: 'Mid',   sector: 'Capital Goods',basePrice: 745.00,   volatility: 0.0046, lotStep: 1 },
+      'MCX':        { name: 'Multi Commodity Exchange',    cap: 'Mid',   sector: 'Exchange',     basePrice: 6120.00,  volatility: 0.0048, lotStep: 1 },
+      'CHOLAFIN':   { name: 'Cholamandalam Inv & Fin',     cap: 'Mid',   sector: 'NBFC',         basePrice: 1365.00,  volatility: 0.0041, lotStep: 1 },
+      'CUMMINSIND': { name: 'Cummins India Ltd',           cap: 'Mid',   sector: 'Industrials',  basePrice: 3540.00,  volatility: 0.0039, lotStep: 1 },
+      'POLYCAB':    { name: 'Polycab India Ltd',           cap: 'Mid',   sector: 'Cables',       basePrice: 6680.00,  volatility: 0.0043, lotStep: 1 },
+      'LUPIN':      { name: 'Lupin Ltd',                   cap: 'Mid',   sector: 'Pharma',       basePrice: 2140.00,  volatility: 0.0037, lotStep: 1 },
+      'INDHOTEL':   { name: 'Indian Hotels Co Ltd',        cap: 'Mid',   sector: 'Hospitality',  basePrice: 765.00,   volatility: 0.0038, lotStep: 1 },
+      'PERSISTENT': { name: 'Persistent Systems Ltd',      cap: 'Mid',   sector: 'IT',           basePrice: 5790.00,  volatility: 0.0042, lotStep: 1 },
+      'COFORGE':    { name: 'Coforge Ltd',                 cap: 'Mid',   sector: 'IT',           basePrice: 8240.00,  volatility: 0.0044, lotStep: 1 },
+      'DIXON':      { name: 'Dixon Technologies Ltd',      cap: 'Mid',   sector: 'Electronics',  basePrice: 15420.00, volatility: 0.0047, lotStep: 1 },
+      'MAXHEALTH':  { name: 'Max Healthcare Institute',    cap: 'Mid',   sector: 'Healthcare',   basePrice: 1045.00,  volatility: 0.0038, lotStep: 1 },
+      'UNOMINDA':   { name: 'UNO Minda Ltd',               cap: 'Mid',   sector: 'Auto Anc',     basePrice: 1035.00,  volatility: 0.0041, lotStep: 1 },
+      'PHOENIXLTD': { name: 'The Phoenix Mills Ltd',       cap: 'Mid',   sector: 'Realty',       basePrice: 1640.00,  volatility: 0.0040, lotStep: 1 },
+      'OBEROIRLTY': { name: 'Oberoi Realty Ltd',           cap: 'Mid',   sector: 'Realty',       basePrice: 1985.00,  volatility: 0.0041, lotStep: 1 },
+      'FEDERALBNK': { name: 'The Federal Bank Ltd',        cap: 'Mid',   sector: 'Banking',      basePrice: 204.00,   volatility: 0.0035, lotStep: 1 },
+      'ASTRAL':     { name: 'Astral Ltd',                  cap: 'Mid',   sector: 'Pipes',        basePrice: 1840.00,  volatility: 0.0037, lotStep: 1 },
+      'BHARATFORG': { name: 'Bharat Forge Ltd',            cap: 'Mid',   sector: 'Auto Anc',     basePrice: 1420.00,  volatility: 0.0039, lotStep: 1 },
+      'AUROPHARMA': { name: 'Aurobindo Pharma Ltd',        cap: 'Mid',   sector: 'Pharma',       basePrice: 1345.00,  volatility: 0.0038, lotStep: 1 },
+      'SUZLON':     { name: 'Suzlon Energy Ltd',           cap: 'Mid',   sector: 'Renewables',   basePrice: 64.00,    volatility: 0.0054, lotStep: 1 },
+      'KPITTECH':   { name: 'KPIT Technologies Ltd',       cap: 'Mid',   sector: 'Auto Tech',    basePrice: 1460.00,  volatility: 0.0045, lotStep: 1 },
+
+      // --- SMALL-CAP (LIQUID >₹25CR TURNOVER LEADERS) ---
+      'CDSL':       { name: 'Central Depository Services', cap: 'Small', sector: 'Capital Mkt',  basePrice: 1680.00,  volatility: 0.0049, lotStep: 1 },
+      'LAURUSLABS': { name: 'Laurus Labs Ltd',             cap: 'Small', sector: 'Pharma API',   basePrice: 545.00,   volatility: 0.0046, lotStep: 1 },
+      'NAVINFLUOR': { name: 'Navin Fluorine Intl',         cap: 'Small', sector: 'Chemicals',    basePrice: 3420.00,  volatility: 0.0044, lotStep: 1 },
+      'BEML':       { name: 'BEML Ltd',                    cap: 'Small', sector: 'Defence/Rail', basePrice: 4120.00,  volatility: 0.0052, lotStep: 1 },
+      'HINDCOPPER': { name: 'Hindustan Copper Ltd',        cap: 'Small', sector: 'Metals',       basePrice: 288.00,   volatility: 0.0053, lotStep: 1 },
+      'KPRMILL':    { name: 'K.P.R. Mill Ltd',             cap: 'Small', sector: 'Textiles',     basePrice: 965.00,   volatility: 0.0041, lotStep: 1 },
+      'KAJARIACER': { name: 'Kajaria Ceramics Ltd',        cap: 'Small', sector: 'Building Mat', basePrice: 1210.00,  volatility: 0.0039, lotStep: 1 },
+      'INOXINDIA':  { name: 'INOX India Ltd',              cap: 'Small', sector: 'Cryogenics',   basePrice: 1185.00,  volatility: 0.0045, lotStep: 1 },
+      'ANGELONE':   { name: 'Angel One Ltd',               cap: 'Small', sector: 'Broking',      basePrice: 2890.00,  volatility: 0.0051, lotStep: 1 },
+      'IEX':        { name: 'Indian Energy Exchange',      cap: 'Small', sector: 'Exchange',     basePrice: 186.00,   volatility: 0.0044, lotStep: 1 },
+      'HFCL':       { name: 'HFCL Ltd',                    cap: 'Small', sector: 'Telecom Eq',   basePrice: 132.00,   volatility: 0.0052, lotStep: 1 },
+      'NBCC':       { name: 'NBCC (India) Ltd',            cap: 'Small', sector: 'Construction', basePrice: 98.00,    volatility: 0.0050, lotStep: 1 },
+      'CHAMBLFERT': { name: 'Chambal Fertilisers',         cap: 'Small', sector: 'Chemicals',    basePrice: 512.00,   volatility: 0.0042, lotStep: 1 },
+      'CYIENT':     { name: 'Cyient Ltd',                  cap: 'Small', sector: 'ER&D Tech',    basePrice: 1890.00,  volatility: 0.0043, lotStep: 1 },
+      'KAYNES':     { name: 'Kaynes Technology India',     cap: 'Small', sector: 'EMS Tech',     basePrice: 5640.00,  volatility: 0.0051, lotStep: 1 },
+
+      // --- TOP 50 TRUSTED CRYPTO COINS (HIGH MARKET CAP, BATTLE-TESTED LONGEVITY & INSTITUTIONAL TRUST) ---
+      'BTCUSDT':    { name: 'Bitcoin (BTC)',               cap: 'Crypto', sector: 'L1 Pioneer • Est. 2009',  trust: 'Spot ETF • $1.8T+ Cap • Highest Liquidity', basePrice: 7850000.00, volatility: 0.0042, lotStep: 0.001, isCrypto: true, binanceSym: 'BTCUSDT' },
+      'ETHUSDT':    { name: 'Ethereum (ETH)',              cap: 'Crypto', sector: 'Smart Contract • Est. 2015', trust: 'Spot ETF • #1 DeFi/L2 Ecosystem • Audited', basePrice: 272000.00,  volatility: 0.0048, lotStep: 0.01,  isCrypto: true, binanceSym: 'ETHUSDT' },
+      'BNBUSDT':    { name: 'BNB (BNB Chain)',             cap: 'Crypto', sector: 'Exchange L1 • Est. 2017', trust: 'Top-5 Cap • Deflationary Burn • High TVL', basePrice: 53500.00,   volatility: 0.0045, lotStep: 0.05,  isCrypto: true, binanceSym: 'BNBUSDT' },
+      'SOLUSDT':    { name: 'Solana (SOL)',                cap: 'Crypto', sector: 'High-Speed L1 • Est. 2020', trust: 'Top-5 Cap • Institutional Grade • Deep Liquidity', basePrice: 18200.00, volatility: 0.0058, lotStep: 0.1,   isCrypto: true, binanceSym: 'SOLUSDT' },
+      'XRPUSDT':    { name: 'Ripple (XRP)',                cap: 'Crypto', sector: 'Payments L1 • Est. 2012', trust: '14+ Yr Track Record • Bank Settlement Network', basePrice: 98.00,    volatility: 0.0052, lotStep: 10,    isCrypto: true, binanceSym: 'XRPUSDT' },
+      'ADAUSDT':    { name: 'Cardano (ADA)',               cap: 'Crypto', sector: 'PoS L1 • Est. 2017',      trust: 'Peer-Reviewed PoS • 9+ Yrs Zero Downtime', basePrice: 64.00,      volatility: 0.0053, lotStep: 10,    isCrypto: true, binanceSym: 'ADAUSDT' },
+      'DOGEUSDT':   { name: 'Dogecoin (DOGE)',             cap: 'Crypto', sector: 'PoW Currency • Est. 2013', trust: '13+ Yr PoW • Top-10 Cap • Deep Global Volume', basePrice: 31.50,    volatility: 0.0062, lotStep: 50,    isCrypto: true, binanceSym: 'DOGEUSDT' },
+      'TRXUSDT':    { name: 'TRON (TRX)',                  cap: 'Crypto', sector: 'Stablecoin L1 • Est. 2017', trust: '#1 USDT Settlement Layer • Consistent Revenue', basePrice: 17.20,  volatility: 0.0041, lotStep: 50,    isCrypto: true, binanceSym: 'TRXUSDT' },
+      'TONUSDT':    { name: 'Toncoin (TON)',               cap: 'Crypto', sector: 'Telegram L1 • Est. 2018', trust: '900M+ User Ecosystem • Top-15 Market Cap', basePrice: 465.00,     volatility: 0.0054, lotStep: 1,     isCrypto: true, binanceSym: 'TONUSDT' },
+      'AVAXUSDT':   { name: 'Avalanche (AVAX)',            cap: 'Crypto', sector: 'Subnets L1 • Est. 2020',  trust: 'JPMorgan/Citi RWA Partner • Top-15 Cap', basePrice: 3150.00,      volatility: 0.0057, lotStep: 0.5,   isCrypto: true, binanceSym: 'AVAXUSDT' },
+      'LINKUSDT':   { name: 'Chainlink (LINK)',            cap: 'Crypto', sector: 'Oracle Infra • Est. 2017', trust: 'SWIFT Partner • Secures $75B+ DeFi TVL', basePrice: 1290.00,       volatility: 0.0055, lotStep: 1,     isCrypto: true, binanceSym: 'LINKUSDT' },
+      'DOTUSDT':    { name: 'Polkadot (DOT)',              cap: 'Crypto', sector: 'Interchain L0 • Est. 2020', trust: 'Web3 Foundation • Enterprise Parachains', basePrice: 545.00,    volatility: 0.0054, lotStep: 2,     isCrypto: true, binanceSym: 'DOTUSDT' },
+      'LTCUSDT':    { name: 'Litecoin (LTC)',              cap: 'Crypto', sector: 'PoW Silver • Est. 2011',  trust: '15+ Yrs 100% Uptime • Fidelity/PayPal Listed', basePrice: 7450.00,   volatility: 0.0046, lotStep: 0.2,   isCrypto: true, binanceSym: 'LTCUSDT' },
+      'BCHUSDT':    { name: 'Bitcoin Cash (BCH)',          cap: 'Crypto', sector: 'PoW Payments • Est. 2017', trust: 'Grayscale Trust • EDX Institutional Exchange', basePrice: 38500.00,  volatility: 0.0054, lotStep: 0.05,  isCrypto: true, binanceSym: 'BCHUSDT' },
+      'UNIUSDT':    { name: 'Uniswap (UNI)',               cap: 'Crypto', sector: 'Blue-Chip DEX • Est. 2018', trust: '#1 Decentralized Exchange • $2T+ Volume', basePrice: 820.00,       volatility: 0.0056, lotStep: 1,     isCrypto: true, binanceSym: 'UNIUSDT' },
+      'ATOMUSDT':   { name: 'Cosmos (ATOM)',               cap: 'Crypto', sector: 'IBC Network • Est. 2019', trust: 'Powers dYdX/Celestia IBC • 7+ Yr Track Record', basePrice: 510.00,     volatility: 0.0054, lotStep: 2,     isCrypto: true, binanceSym: 'ATOMUSDT' },
+      'XLMUSDT':    { name: 'Stellar (XLM)',               cap: 'Crypto', sector: 'Cross-Border • Est. 2014', trust: '12+ Yrs Live • MoneyGram & Franklin Templeton', basePrice: 21.50,  volatility: 0.0053, lotStep: 50,    isCrypto: true, binanceSym: 'XLMUSDT' },
+      'NEARUSDT':   { name: 'NEAR Protocol (NEAR)',        cap: 'Crypto', sector: 'Sharded L1 • Est. 2020',  trust: 'AI + Chain Abstraction Leader • High DAU', basePrice: 485.00,      volatility: 0.0058, lotStep: 2,     isCrypto: true, binanceSym: 'NEARUSDT' },
+      'APTUSDT':    { name: 'Aptos (APT)',                 cap: 'Crypto', sector: 'Move L1 • Est. 2022',     trust: 'a16z/BlackRock BUIDL • Sub-Second Finality', basePrice: 890.00,     volatility: 0.0059, lotStep: 1,     isCrypto: true, binanceSym: 'APTUSDT' },
+      'FILUSDT':    { name: 'Filecoin (FIL)',              cap: 'Crypto', sector: 'DePIN Storage • Est. 2017', trust: 'Grayscale Trust • Largest Decentralized Storage', basePrice: 410.00,  volatility: 0.0056, lotStep: 2,     isCrypto: true, binanceSym: 'FILUSDT' },
+      'ICPUSDT':    { name: 'Internet Computer (ICP)',     cap: 'Crypto', sector: 'Web3 Cloud • Est. 2021',  trust: 'DFINITY R&D • On-Chain Full-Stack Hosting', basePrice: 780.00,      volatility: 0.0057, lotStep: 1,     isCrypto: true, binanceSym: 'ICPUSDT' },
+      'HBARUSDT':   { name: 'Hedera (HBAR)',               cap: 'Crypto', sector: 'Enterprise DLT • Est. 2018', trust: 'Governed by Google, IBM, Boeing, Dell', basePrice: 12.40,       volatility: 0.0054, lotStep: 50,    isCrypto: true, binanceSym: 'HBARUSDT' },
+      'VETUSDT':    { name: 'VeChain (VET)',               cap: 'Crypto', sector: 'Supply Chain • Est. 2015', trust: '11+ Yrs Enterprise Audits (Walmart/BMW)', basePrice: 3.10,        volatility: 0.0053, lotStep: 200,   isCrypto: true, binanceSym: 'VETUSDT' },
+      'ALGOUSDT':   { name: 'Algorand (ALGO)',             cap: 'Crypto', sector: 'Pure PoS L1 • Est. 2019', trust: 'MIT Turing-Award Tech • Zero Forks Ever', basePrice: 18.80,       volatility: 0.0054, lotStep: 50,    isCrypto: true, binanceSym: 'ALGOUSDT' },
+      'AAVEUSDT':   { name: 'Aave (AAVE)',                 cap: 'Crypto', sector: 'DeFi Lending • Est. 2017', trust: '#1 DeFi Money Market • $15B+ TVL • Audited', basePrice: 14800.00,   volatility: 0.0055, lotStep: 0.1,   isCrypto: true, binanceSym: 'AAVEUSDT' },
+      'MKRUSDT':    { name: 'Maker / Sky (MKR)',           cap: 'Crypto', sector: 'DeFi Credit • Est. 2017', trust: 'Powers DAI/USDS • Real Treasury Yield Backing', basePrice: 138000.00, volatility: 0.0052, lotStep: 0.01,  isCrypto: true, binanceSym: 'MKRUSDT' },
+      'GRTUSDT':    { name: 'The Graph (GRT)',             cap: 'Crypto', sector: 'Data Indexing • Est. 2020', trust: 'Web3 Query Standard for ETH/SOL/ARB', basePrice: 16.50,        volatility: 0.0057, lotStep: 50,    isCrypto: true, binanceSym: 'GRTUSDT' },
+      'RENDERUSDT': { name: 'Render (RENDER)',             cap: 'Crypto', sector: 'AI GPU DePIN • Est. 2017', trust: 'OTOY Enterprise GPU Network • Top AI Token', basePrice: 640.00,     volatility: 0.0061, lotStep: 1,     isCrypto: true, binanceSym: 'RENDERUSDT' },
+      'INJUSDT':    { name: 'Injective (INJ)',             cap: 'Crypto', sector: 'DeFi Orderbook • Est. 2020', trust: 'Backed by Pantera/Jump • Zero-Gas DEX L1', basePrice: 1920.00,    volatility: 0.0060, lotStep: 0.5,   isCrypto: true, binanceSym: 'INJUSDT' },
+      'OPUSDT':     { name: 'Optimism (OP)',               cap: 'Crypto', sector: 'ETH Layer-2 • Est. 2022', trust: 'Powers Coinbase Base & Superchain Rollups', basePrice: 165.00,     volatility: 0.0058, lotStep: 5,     isCrypto: true, binanceSym: 'OPUSDT' },
+      'ARBUSDT':    { name: 'Arbitrum (ARB)',              cap: 'Crypto', sector: 'ETH Layer-2 • Est. 2021', trust: '#1 Ethereum L2 by TVL & DeFi Activity', basePrice: 74.00,         volatility: 0.0057, lotStep: 10,    isCrypto: true, binanceSym: 'ARBUSDT' },
+      'STXUSDT':    { name: 'Stacks (STX)',                cap: 'Crypto', sector: 'Bitcoin L2 • Est. 2017',  trust: 'SEC-Qualified Reg A+ • Leading BTC Smart L2', basePrice: 168.00,   volatility: 0.0059, lotStep: 5,     isCrypto: true, binanceSym: 'STXUSDT' },
+      'IMXUSDT':    { name: 'Immutable (IMX)',             cap: 'Crypto', sector: 'Gaming ZK-L2 • Est. 2021', trust: 'Polygon/StarkWare ZK • Top Web3 Gaming Infra', basePrice: 132.00,  volatility: 0.0058, lotStep: 5,     isCrypto: true, binanceSym: 'IMXUSDT' },
+      'LDOUSDT':    { name: 'Lido DAO (LDO)',              cap: 'Crypto', sector: 'Liquid Staking • Est. 2020', trust: '#1 ETH Staking Protocol • $25B+ Staked ETH', basePrice: 118.00,   volatility: 0.0059, lotStep: 5,     isCrypto: true, binanceSym: 'LDOUSDT' },
+      'ETCUSDT':    { name: 'Ethereum Classic (ETC)',      cap: 'Crypto', sector: 'PoW Smart L1 • Est. 2016', trust: '10+ Yr Immutable PoW • Grayscale Listed', basePrice: 2150.00,      volatility: 0.0053, lotStep: 0.5,   isCrypto: true, binanceSym: 'ETCUSDT' },
+      'XMRUSDT':    { name: 'Monero (XMR)',                cap: 'Crypto', sector: 'Privacy PoW • Est. 2014', trust: '12+ Yrs Battle-Tested • Deep Organic Utility', basePrice: 14200.00,  volatility: 0.0046, lotStep: 0.1,   isCrypto: true, binanceSym: 'XMRUSDT' },
+      'THETAUSDT':  { name: 'Theta Network (THETA)',       cap: 'Crypto', sector: 'Video DePIN • Est. 2018', trust: 'Google/Sony/Samsung Validator Nodes', basePrice: 145.00,         volatility: 0.0056, lotStep: 5,     isCrypto: true, binanceSym: 'THETAUSDT' },
+      'XTZUSDT':    { name: 'Tezos (XTZ)',                 cap: 'Crypto', sector: 'Self-Amending L1 • Est. 2018', trust: '8+ Yrs Seamless Upgrades • Ubisoft/Bank RWA', basePrice: 76.00,   volatility: 0.0052, lotStep: 10,    isCrypto: true, binanceSym: 'XTZUSDT' },
+      'EGLDUSDT':   { name: 'MultiversX (EGLD)',           cap: 'Crypto', sector: 'Sharded L1 • Est. 2019',  trust: 'EU Regulated E-Money • High-Throughput L1', basePrice: 2850.00,     volatility: 0.0056, lotStep: 0.5,   isCrypto: true, binanceSym: 'EGLDUSDT' },
+      'FLOWUSDT':   { name: 'Flow (FLOW)',                 cap: 'Crypto', sector: 'Consumer L1 • Est. 2020', trust: 'NBA Top Shot / Disney / Ticketmaster Partner', basePrice: 64.00,   volatility: 0.0056, lotStep: 10,    isCrypto: true, binanceSym: 'FLOWUSDT' },
+      'SANDUSDT':   { name: 'The Sandbox (SAND)',          cap: 'Crypto', sector: 'Metaverse • Est. 2018',   trust: 'Backed by SoftBank • 400+ Brand Partners', basePrice: 34.00,       volatility: 0.0058, lotStep: 20,    isCrypto: true, binanceSym: 'SANDUSDT' },
+      'MANAUSDT':   { name: 'Decentraland (MANA)',         cap: 'Crypto', sector: 'Virtual World • Est. 2017', trust: 'Grayscale Trust • 9+ Yr Pioneer Metaverse', basePrice: 36.00,     volatility: 0.0057, lotStep: 20,    isCrypto: true, binanceSym: 'MANAUSDT' },
+      'AXSUSDT':    { name: 'Axie Infinity (AXS)',         cap: 'Crypto', sector: 'Web3 Gaming • Est. 2020', trust: 'Ronin Network Flagship • $4B+ Historical Vol', basePrice: 510.00,   volatility: 0.0059, lotStep: 2,     isCrypto: true, binanceSym: 'AXSUSDT' },
+      'CRVUSDT':    { name: 'Curve DAO (CRV)',             cap: 'Crypto', sector: 'Stablecoin DEX • Est. 2020', trust: 'Core DeFi Stablecoin Liquidity Backbone', basePrice: 44.00,      volatility: 0.0060, lotStep: 20,    isCrypto: true, binanceSym: 'CRVUSDT' },
+      'COMPUSDT':   { name: 'Compound (COMP)',             cap: 'Crypto', sector: 'DeFi Lending • Est. 2018', trust: 'DeFi Summer Pioneer • Multi-Audited Contracts', basePrice: 4650.00, volatility: 0.0055, lotStep: 0.2,   isCrypto: true, binanceSym: 'COMPUSDT' },
+      'SNXUSDT':    { name: 'Synthetix (SNX)',             cap: 'Crypto', sector: 'Perps DeFi • Est. 2018',  trust: '8+ Yr Derivatives Protocol on ETH & Optimism', basePrice: 175.00,  volatility: 0.0058, lotStep: 5,     isCrypto: true, binanceSym: 'SNXUSDT' },
+      'CHZUSDT':    { name: 'Chiliz (CHZ)',                cap: 'Crypto', sector: 'Sports FanFi • Est. 2018', trust: 'FC Barcelona / PSG / UFC Official Partner', basePrice: 7.40,     volatility: 0.0055, lotStep: 100,   isCrypto: true, binanceSym: 'CHZUSDT' },
+      'QNTUSDT':    { name: 'Quant (QNT)',                 cap: 'Crypto', sector: 'Enterprise DLT • Est. 2018', trust: 'Overledger CBDC & Bank Interoperability', basePrice: 7650.00,    volatility: 0.0053, lotStep: 0.2,   isCrypto: true, binanceSym: 'QNTUSDT' },
+      'RUNEUSDT':   { name: 'THORChain (RUNE)',            cap: 'Crypto', sector: 'Native DEX • Est. 2019',  trust: 'Native BTC/ETH Cross-Chain Swaps Without Bridges', basePrice: 445.00, volatility: 0.0061, lotStep: 2,   isCrypto: true, binanceSym: 'RUNEUSDT' },
+      'SUIUSDT':    { name: 'Sui (SUI)',                   cap: 'Crypto', sector: 'Object L1 • Est. 2023',   trust: 'Top-15 Market Cap • Meta Diem Engineers • High TVL', basePrice: 285.00, volatility: 0.0061, lotStep: 3,  isCrypto: true, binanceSym: 'SUIUSDT' }
+    };
+
+    const STRATEGY_DESCRIPTIONS = {
+      'cum_rsi2': 'Ultra-selective 1-click entry: Buys uptrending assets (Price > 200 SMA & 50 SMA > 200 SMA) when the 2-day cumulative RSI(2) drops below 10, and exits on a 5-SMA snapback or quick Take-Profit.',
+      'connors_rsi2': 'Buys uptrending assets (Price > 50 SMA) on a sharp 2-period RSI dip (<15), and exits quickly when price closes back above the 5-day SMA or hits your quick Take-Profit.',
+      'bb_rsi_snap': 'Buys uptrending assets when a candle dips near/below the Lower Bollinger Band (20, 2) with RSI(14) < 38, capturing high-probability mean-reversion bounces.',
+      'ema20_pullback': 'Buys strong assets (20 EMA > 50 EMA) when price pulls back to touch the 20 EMA and prints a bullish reversal close, locking in quick swing targets.',
+      'ema_cross': 'Buys when the fast 9 EMA crosses above the slow 21 EMA, and sells when it crosses below.',
+      'supertrend_breakout': 'Buys when price closes above the ATR-based Supertrend resistance band, and sells on a breakdown below support.',
+      'vwap_bounce': 'Buys when price reclaims the rolling VWAP from below with momentum, and sells when price rejects below VWAP.'
+    };
+
+    const SWING_STRATEGIES = new Set(['cum_rsi2', 'connors_rsi2', 'bb_rsi_snap', 'ema20_pullback']);
+    const SIGNALS_STORAGE_KEY = 'nse_algolab_persistent_signals_v2';
+    const WA_CONFIG_STORAGE_KEY = 'nse_algolab_wa_config_v1';
+
+    const state = {
+      mode: 'signals',
+      capFilter: 'ALL',
+      timeframe: 'Daily',
+      duration: '6Y',
+      riskUnit: 'percent',
+      activeChartTab: 'price',
+      candles: [],
+      customCandles: null,
+      trades: [],
+      equityCurve: [],
+      lwChart: null,
+      candleSeries: null,
+      fastLine: null,
+      slowLine: null,
+      tslLine: null,
+      tpLine: null,
+      equityChart: null,
+      liveTimer: null,
+      scannerTimer: null,
+      livePlaying: false,
+      liveSpeedMs: 1000,
+      liveCandles: [],
+      liveUniverseMap: {},
+      activeSignalsTracker: {},
+      closedSignalsToday: []
+    };
+
+    // =========================================================================
+    // 2. FORMATTING, STORAGE, AUDIO & WHATSAPP HELPERS
+    // =========================================================================
+    function formatINR(num) {
+      const absVal = Math.abs(num);
+      const formatted = absVal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      return (num < 0 ? '-₹' : '₹') + formatted;
+    }
+
+    function formatIST(unixSec, tf) {
+      const d = new Date(unixSec * 1000);
+      if (tf === 'Daily') {
+        return d.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: '2-digit' });
+      }
+      return d.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false });
+    }
+
+    function formatSignalDateOnly(unixSec) {
+      return new Date(unixSec * 1000).toLocaleDateString('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        weekday: 'short',
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
+    }
+
+    function formatExactISTTimestamp(unixSec) {
+      return new Date(unixSec * 1000).toLocaleString('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        day: '2-digit',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      }) + ' IST';
+    }
+
+    function getISTMinutesOfDay(unixSec) {
+      const d = new Date(unixSec * 1000);
+      const parts = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(d);
+      return parseInt(parts.find(p => p.type === 'hour').value, 10) * 60 + parseInt(parts.find(p => p.type === 'minute').value, 10);
+    }
+
+    let toastTimeout = null;
+    function showToast(title, msg, isError = false) {
+      const banner = document.getElementById('toastBanner');
+      const dot = document.getElementById('toastDot');
+      document.getElementById('toastTitle').textContent = title;
+      document.getElementById('toastMsg').textContent = msg;
+      dot.className = `w-2.5 h-2.5 rounded-full mt-1.5 shrink-0 ${isError ? 'bg-rose-400' : 'bg-emerald-400'}`;
+      banner.classList.remove('hidden');
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(hideToast, 4500);
+    }
+
+    function hideToast() {
+      document.getElementById('toastBanner').classList.add('hidden');
+    }
+
+    function playSignalChime(isEntry = true) {
+      try {
+        const chk = document.getElementById('soundAlertCheck');
+        if (chk && !chk.checked) return;
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(isEntry ? 880 : 520, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(isEntry ? 1174 : 390, ctx.currentTime + 0.18);
+        gain.gain.setValueAtTime(0.08, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.26);
+      } catch (e) {}
+    }
+
+    function savePersistentSignals() {
+      try {
+        localStorage.setItem(SIGNALS_STORAGE_KEY, JSON.stringify({
+          active: state.activeSignalsTracker,
+          closed: state.closedSignalsToday.slice(0, 50)
+        }));
+      } catch (e) {}
+    }
+
+    function loadPersistentSignals() {
+      try {
+        const raw = localStorage.getItem(SIGNALS_STORAGE_KEY);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed.active === 'object') state.activeSignalsTracker = parsed.active;
+        if (parsed && Array.isArray(parsed.closed)) state.closedSignalsToday = parsed.closed;
+      } catch (e) {}
+    }
+
+    function saveWhatsAppConfig() {
+      try {
+        localStorage.setItem(WA_CONFIG_STORAGE_KEY, JSON.stringify({
+          phone: document.getElementById('waPhoneInput').value.trim(),
+          apiKey: document.getElementById('waApiKeyInput').value.trim()
+        }));
+      } catch (e) {}
+    }
+
+    function loadWhatsAppConfig() {
+      try {
+        const raw = localStorage.getItem(WA_CONFIG_STORAGE_KEY);
+        if (!raw) return;
+        const cfg = JSON.parse(raw);
+        if (cfg.phone) document.getElementById('waPhoneInput').value = cfg.phone;
+        if (cfg.apiKey) document.getElementById('waApiKeyInput').value = cfg.apiKey;
+      } catch (e) {}
+    }
+
+    function triggerWhatsAppDispatch(messageText, openBrowserLink = true) {
+      const phone = (document.getElementById('waPhoneInput').value || '').replace(/[^\d+]/g, '');
+      const apiKey = (document.getElementById('waApiKeyInput').value || '').trim();
+      if (phone && apiKey) {
+        const cleanPhone = phone.replace('+', '');
+        const url = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(cleanPhone)}&text=${encodeURIComponent(messageText)}&apikey=${encodeURIComponent(apiKey)}`;
+        fetch(url, { mode: 'no-cors' }).catch(() => {});
+      }
+      if (openBrowserLink) {
+        const waPhone = phone.replace('+', '');
+        const waUrl = waPhone
+          ? `https://wa.me/${waPhone}?text=${encodeURIComponent(messageText)}`
+          : `https://wa.me/?text=${encodeURIComponent(messageText)}`;
+        window.open(waUrl, '_blank', 'noopener');
+      }
+    }
+
+    function sendSingleSignalWhatsApp(sym) {
+      const s = state.activeSignalsTracker[sym];
+      if (!s) return;
+      const msg = `🚀 LIVE BUY SIGNAL: ${s.sym.replace('USDT', '')} (${s.cap})\n📅 Date: ${s.signalDate}\n💰 Entry: ₹${s.entryPrice.toFixed(2)}\n🎯 Target (TP): ₹${s.tpPrice.toFixed(2)} (+${s.tpDistPct.toFixed(2)}%)\n🛡️ Trailing SL: ₹${s.tslPrice.toFixed(2)} (-${s.slDistPct.toFixed(2)}%)\n📊 Rule: ${s.reason}`;
+      triggerWhatsAppDispatch(msg, true);
+    }
+
+    function sendAllActiveSignalsWhatsApp() {
+      const visible = Object.values(state.activeSignalsTracker).filter(s => state.capFilter === 'ALL' || s.cap === state.capFilter);
+      if (!visible.length) {
+        showToast('No Active Signals', 'No active BUY signals to send right now.', true);
+        return;
+      }
+      const lines = visible.map((s, idx) =>
+        `${idx + 1}. ${s.sym.replace('USDT', '')} (${s.signalDate}) | Entry: ₹${s.entryPrice.toFixed(2)} | TP: ₹${s.tpPrice.toFixed(2)} | SL: ₹${s.tslPrice.toFixed(2)}`
+      );
+      const header = `📈 NSE & Crypto Live Buy Signals (${visible.length} Active):\n`;
+      triggerWhatsAppDispatch(header + lines.join('\n'), true);
+    }
+
+    // =========================================================================
+    // 3. SYMBOL DROPDOWN & CAP TIER FILTERING
+    // =========================================================================
+    function selectCapFilter(cap) {
+      state.capFilter = cap;
+      document.querySelectorAll('.cap-btn').forEach(btn => {
+        if (btn.dataset.cap === cap) {
+          btn.className = cap === 'Crypto'
+            ? 'cap-btn py-1 rounded-lg text-[11px] font-semibold bg-amber-500 text-white shadow-sm transition'
+            : 'cap-btn py-1 rounded-lg text-[11px] font-semibold bg-white text-slate-900 shadow-sm transition';
+        } else {
+          btn.className = btn.dataset.cap === 'Crypto'
+            ? 'cap-btn py-1 rounded-lg text-[11px] font-semibold text-amber-700 hover:text-amber-900 transition'
+            : 'cap-btn py-1 rounded-lg text-[11px] font-semibold text-slate-500 hover:text-slate-900 transition';
+        }
+      });
+
+      if (state.riskUnit === 'percent') {
+        if (cap === 'Large') {
+          document.getElementById('tpSlider').value = 3.0; document.getElementById('tpInput').value = 3.0;
+          document.getElementById('tslSlider').value = 1.5; document.getElementById('tslInput').value = 1.5;
+        } else if (cap === 'Mid') {
+          document.getElementById('tpSlider').value = 4.5; document.getElementById('tpInput').value = 4.5;
+          document.getElementById('tslSlider').value = 2.0; document.getElementById('tslInput').value = 2.0;
+        } else if (cap === 'Small' || cap === 'Crypto') {
+          document.getElementById('tpSlider').value = 5.5; document.getElementById('tpInput').value = 5.5;
+          document.getElementById('tslSlider').value = 2.5; document.getElementById('tslInput').value = 2.5;
+        }
+      }
+
+      populateSymbolSelect(document.getElementById('symbolSearchInput').value);
+      if (state.mode === 'signals') {
+        renderActiveSignalsTable();
+      } else {
+        triggerRun();
+      }
+    }
+
+    function switchToCryptoMarket() {
+      selectCapFilter('Crypto');
+      document.getElementById('symbolSearchInput').value = '';
+      populateSymbolSelect('', 'BTCUSDT');
+      if (state.mode === 'signals') {
+        scanAllLiveBuySignals(true);
+      } else {
+        triggerRun();
+      }
+      showToast('Top 50 Trusted Crypto Loaded', 'Synced 50 established high-market-cap coins (BTC, ETH, SOL, LINK, AAVE, SUI & more) with trust factors.');
+    }
+
+    function populateSymbolSelect(query = '', preferredSymbol = null) {
+      const select = document.getElementById('symbolSelect');
+      const currentVal = preferredSymbol || select.value || 'RELIANCE';
+      const q = query.trim().toLowerCase();
+
+      const totalCount = Object.keys(NSE_SYMBOLS).length;
+      const countLabel = document.getElementById('universeCountLabel');
+      if (countLabel) countLabel.textContent = `(${totalCount})`;
+
+      const entries = Object.entries(NSE_SYMBOLS).filter(([sym, info]) => {
+        if (state.capFilter !== 'ALL' && info.cap !== state.capFilter) return false;
+        if (!q) return true;
+        return sym.toLowerCase().includes(q) ||
+               info.name.toLowerCase().includes(q) ||
+               info.sector.toLowerCase().includes(q) ||
+               (info.trust && info.trust.toLowerCase().includes(q));
+      });
+
+      const groups = {
+        'NSE Indices': entries.filter(([, i]) => i.isIndex),
+        'Large-Cap (Nifty 50)': entries.filter(([, i]) => !i.isIndex && i.cap === 'Large'),
+        'Mid-Cap (Nifty Midcap 150)': entries.filter(([, i]) => i.cap === 'Mid'),
+        'Small-Cap (Liquid Leaders)': entries.filter(([, i]) => i.cap === 'Small'),
+        'Top 50 Trusted Crypto (Est. & High Cap)': entries.filter(([, i]) => i.cap === 'Crypto')
+      };
+
+      let html = '';
+      for (const [label, list] of Object.entries(groups)) {
+        if (!list.length) continue;
+        html += `<optgroup label="${label} (${list.length})">`;
+        html += list.map(([sym, info]) => {
+          const cleanSym = sym.replace('USDT', '');
+          return `<option value="${sym}">${cleanSym} — ${info.name}</option>`;
+        }).join('');
+        html += `</optgroup>`;
+      }
+
+      if (!html) {
+        html = `<option value="RELIANCE">No match — showing RELIANCE</option>`;
+      }
+
+      select.innerHTML = html;
+      if (NSE_SYMBOLS[currentVal] && Array.from(select.options).some(o => o.value === currentVal)) {
+        select.value = currentVal;
+      } else if (select.options.length > 0) {
+        select.selectedIndex = 0;
+      }
+      updateSymbolMeta();
+    }
+
+    function filterSymbolDropdown(query) {
+      const prev = document.getElementById('symbolSelect').value;
+      populateSymbolSelect(query);
+      const next = document.getElementById('symbolSelect').value;
+      if (prev !== next) onSetupChanged(true);
+    }
+
+    function updateSymbolMeta() {
+      const sym = document.getElementById('symbolSelect').value;
+      const info = NSE_SYMBOLS[sym];
+      if (!info) return;
+      if (info.isCrypto && info.trust) {
+        document.getElementById('symbolMetaText').innerHTML = `<span class="font-semibold text-amber-700">${info.sector}</span> • <span class="text-emerald-700 font-medium">${info.trust}</span>`;
+      } else {
+        document.getElementById('symbolMetaText').textContent = `${info.name} • ${info.cap}-Cap • ${info.sector}`;
+      }
+    }
+
+    // =========================================================================
+    // 4. LIVE BINANCE CRYPTO & YAHOO FINANCE NSE DATA FETCHERS
+    // =========================================================================
+    async function fetchLiveBinanceCandles(binanceSym, tf) {
+      try {
+        const intervalMap = { '5m': '5m', '15m': '15m', '1H': '1h', 'Daily': '1d' };
+        const interval = intervalMap[tf] || '1d';
+        const url = `https://api.binance.com/api/v3/klines?symbol=${binanceSym}&interval=${interval}&limit=260`;
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 3500);
+        const res = await fetch(url, { signal: controller.signal });
+        clearTimeout(timer);
+        if (!res.ok) return null;
+        const rows = await res.json();
+        if (!Array.isArray(rows) || rows.length < 30) return null;
+        return rows.map(r => ({
+          time: Math.floor(r[0] / 1000),
+          open: Number((parseFloat(r[1]) * USD_TO_INR).toFixed(2)),
+          high: Number((parseFloat(r[2]) * USD_TO_INR).toFixed(2)),
+          low: Number((parseFloat(r[3]) * USD_TO_INR).toFixed(2)),
+          close: Number((parseFloat(r[4]) * USD_TO_INR).toFixed(2))
+        }));
+      } catch (e) {
+        return null;
+      }
+    }
+
+    async function fetchSingleStockLiveYahoo(sym, tf) {
+      try {
+        const yahooSym = sym === 'NIFTY' ? '%5ENSEI' : (sym === 'BANKNIFTY' ? '%5ENSEBANK' : `${sym}.NS`);
+        const intervalMap = { '5m': '5m', '15m': '15m', '1H': '60m', 'Daily': '1d' };
+        const rangeMap = { '5m': '5d', '15m': '15d', '1H': '60d', 'Daily': '1y' };
+        const target = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooSym}?interval=${intervalMap[tf] || '1d'}&range=${rangeMap[tf] || '1y'}`;
+        const proxies = [
+          `https://corsproxy.io/?${encodeURIComponent(target)}`,
+          `https://api.allorigins.win/raw?url=${encodeURIComponent(target)}`
+        ];
+
+        for (const proxyUrl of proxies) {
+          try {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 3200);
+            const res = await fetch(proxyUrl, { signal: controller.signal });
+            clearTimeout(timer);
+            if (!res.ok) continue;
+            const json = await res.json();
+            const result = json && json.chart && json.chart.result && json.chart.result[0];
+            if (!result || !result.timestamp || !result.indicators || !result.indicators.quote) continue;
+            const ts = result.timestamp;
+            const q = result.indicators.quote[0];
+            const bars = [];
+            for (let i = 0; i < ts.length; i++) {
+              if (q.open[i] == null || q.high[i] == null || q.low[i] == null || q.close[i] == null) continue;
+              bars.push({
+                time: ts[i],
+                open: Number(q.open[i].toFixed(2)),
+                high: Number(q.high[i].toFixed(2)),
+                low: Number(q.low[i].toFixed(2)),
+                close: Number(q.close[i].toFixed(2))
+              });
+            }
+            if (bars.length >= 30) return bars;
+          } catch (innerErr) {}
+        }
+        return null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    // =========================================================================
+    // 5. MULTI-YEAR HISTORICAL DATA GENERATOR (SUPPORTS 1Y, 3Y, 6Y LOOKBACK)
+    // =========================================================================
+    function getBarsForDuration(tf, duration) {
+      if (tf === 'Daily') {
+        if (duration === '1Y') return 252;
+        if (duration === '3Y') return 756;
+        return 1512; // 6 Years
+      }
+      if (duration === '1Y') return 350;
+      if (duration === '3Y') return 600;
+      return 900;
+    }
+
+    function generateNSEData(symbol, tf, customBarCount = null) {
+      const cfg = NSE_SYMBOLS[symbol] || NSE_SYMBOLS['RELIANCE'];
+      const barCount = customBarCount || getBarsForDuration(tf, state.duration);
+      const tfMinsMap = { '5m': 5, '15m': 15, '1H': 60, 'Daily': 1440 };
+      const tfMins = tfMinsMap[tf] || 1440;
+      const scale = Math.sqrt(tfMins / 5);
+
+      let seed = 0;
+      for (let i = 0; i < symbol.length; i++) seed += symbol.charCodeAt(i) * (i + 19);
+      seed += tfMins * 31;
+      const rand = () => {
+        seed = (seed * 1664525 + 1013904223) % 4294967296;
+        return seed / 4294967296;
+      };
+
+      const candles = [];
+      let price = cfg.basePrice * (barCount > 1000 ? 0.52 : 0.86);
+      let cursor = Math.floor(Date.now() / 1000) - barCount * tfMins * 60;
+
+      for (let i = 0; i < barCount; i++) {
+        if (tf === 'Daily') {
+          cursor += 86400;
+          if (!cfg.isCrypto) {
+            const day = new Date(cursor * 1000).getUTCDay();
+            if (day === 0) cursor += 86400;
+            if (day === 6) cursor += 172800;
+          }
+        } else {
+          cursor += tfMins * 60;
+          if (!cfg.isCrypto) {
+            const mins = getISTMinutesOfDay(cursor);
+            if (mins < 555 || mins > 930) cursor += 18 * 3600;
+          }
+        }
+
+        const drift = 0.00032 * scale;
+        const cycle = Math.sin(i / 13) * 0.0024 * scale;
+        const shock = (rand() - 0.49) * cfg.volatility * scale * 2.15;
+        const open = Number(price.toFixed(2));
+        const close = Math.max(1, Number((open * (1 + drift + cycle + shock)).toFixed(2)));
+        const wickUp = Math.abs(rand() * cfg.volatility * scale * open);
+        const wickDown = Math.abs(rand() * cfg.volatility * scale * open);
+        const high = Number((Math.max(open, close) + wickUp).toFixed(2));
+        const low = Number(Math.max(0.5, Math.min(open, close) - wickDown).toFixed(2));
+
+        candles.push({ time: cursor, open, high, low, close });
+        price = close;
+      }
+      return candles;
+    }
+
+    // =========================================================================
+    // 6. TECHNICAL INDICATORS & STRATEGY SIGNAL ENGINE
+    // =========================================================================
+    function computeEMA(values, period) {
+      const ema = new Array(values.length).fill(null);
+      if (values.length < period) return ema;
+      let sum = 0;
+      for (let i = 0; i < period; i++) sum += values[i];
+      let prev = sum / period;
+      ema[period - 1] = prev;
+      const k = 2 / (period + 1);
+      for (let i = period; i < values.length; i++) {
+        prev = values[i] * k + prev * (1 - k);
+        ema[i] = prev;
+      }
+      return ema;
+    }
+
+    function computeSMA(values, period) {
+      const sma = new Array(values.length).fill(null);
+      if (values.length < period) return sma;
+      let sum = 0;
+      for (let i = 0; i < period; i++) sum += values[i];
+      sma[period - 1] = sum / period;
+      for (let i = period; i < values.length; i++) {
+        sum += values[i] - values[i - period];
+        sma[i] = sum / period;
+      }
+      return sma;
+    }
+
+    function computeRSI(values, period = 14) {
+      const rsi = new Array(values.length).fill(null);
+      if (values.length <= period) return rsi;
+      let gains = 0, losses = 0;
+      for (let i = 1; i <= period; i++) {
+        const diff = values[i] - values[i - 1];
+        if (diff >= 0) gains += diff;
+        else losses -= diff;
+      }
+      let avgGain = gains / period;
+      let avgLoss = losses / period;
+      rsi[period] = avgLoss === 0 ? 100 : 100 - (100 / (1 + avgGain / avgLoss));
+
+      for (let i = period + 1; i < values.length; i++) {
+        const diff = values[i] - values[i - 1];
+        const g = diff > 0 ? diff : 0;
+        const l = diff < 0 ? -diff : 0;
+        avgGain = (avgGain * (period - 1) + g) / period;
+        avgLoss = (avgLoss * (period - 1) + l) / period;
+        rsi[i] = avgLoss === 0 ? 100 : 100 - (100 / (1 + avgGain / avgLoss));
+      }
+      return rsi;
+    }
+
+    function computeBollinger(values, period = 20, mult = 2) {
+      const mid = computeSMA(values, period);
+      const upper = new Array(values.length).fill(null);
+      const lower = new Array(values.length).fill(null);
+      for (let i = period - 1; i < values.length; i++) {
+        let sqSum = 0;
+        for (let j = i - period + 1; j <= i; j++) {
+          const diff = values[j] - mid[i];
+          sqSum += diff * diff;
+        }
+        const std = Math.sqrt(sqSum / period);
+        upper[i] = mid[i] + mult * std;
+        lower[i] = mid[i] - mult * std;
+      }
+      return { mid, upper, lower };
+    }
+
+    function generateSignals(candles) {
+      const strategy = document.getElementById('strategySelect').value;
+      const closes = candles.map(c => c.close);
+      const signals = new Array(candles.length).fill(0);
+      const reasons = new Array(candles.length).fill('');
+      let fastLine = new Array(candles.length).fill(null);
+      let slowLine = new Array(candles.length).fill(null);
+
+      if (strategy === 'cum_rsi2') {
+        const rsi2 = computeRSI(closes, 2);
+        const sma5 = computeSMA(closes, 5);
+        const sma50 = computeSMA(closes, 50);
+        const sma200 = computeSMA(closes, 200);
+        fastLine = sma5;
+        slowLine = sma200;
+        for (let i = 200; i < candles.length; i++) {
+          if (rsi2[i] !== null && rsi2[i - 1] !== null && sma5[i] !== null && sma50[i] !== null && sma200[i] !== null) {
+            const cumRsi = rsi2[i] + rsi2[i - 1];
+            if (closes[i] > sma200[i] && sma50[i] > sma200[i] && cumRsi < 10 && closes[i] < sma5[i]) {
+              signals[i] = 1;
+              reasons[i] = `Cum RSI(2): ${cumRsi.toFixed(1)} (<10) • >200 SMA`;
+            } else if (closes[i] > sma5[i] && closes[i - 1] <= sma5[i - 1]) {
+              signals[i] = -1;
+            }
+          }
+        }
+      } else if (strategy === 'connors_rsi2') {
+        const rsi2 = computeRSI(closes, 2);
+        const sma5 = computeSMA(closes, 5);
+        const sma50 = computeSMA(closes, 50);
+        fastLine = sma5;
+        slowLine = sma50;
+        for (let i = 50; i < candles.length; i++) {
+          if (rsi2[i] !== null && sma5[i] !== null && sma50[i] !== null) {
+            if (closes[i] > sma50[i] && rsi2[i] < 15 && closes[i] < sma5[i]) {
+              signals[i] = 1;
+              reasons[i] = `RSI(2): ${rsi2[i].toFixed(1)} (<15) • >50 SMA`;
+            } else if (closes[i] > sma5[i] && closes[i - 1] <= sma5[i - 1]) {
+              signals[i] = -1;
+            }
+          }
+        }
+      } else if (strategy === 'bb_rsi_snap') {
+        const bb = computeBollinger(closes, 20, 2);
+        const rsi14 = computeRSI(closes, 14);
+        const ema50 = computeEMA(closes, 50);
+        fastLine = bb.lower;
+        slowLine = bb.mid;
+        for (let i = 50; i < candles.length; i++) {
+          if (bb.lower[i] !== null && rsi14[i] !== null && ema50[i] !== null) {
+            const inUptrend = closes[i] > ema50[i] * 0.97;
+            const touchedLower = candles[i].low <= bb.lower[i] * 1.003 || closes[i] <= bb.lower[i];
+            if (inUptrend && touchedLower && rsi14[i] < 38 && closes[i] >= candles[i].open) {
+              signals[i] = 1;
+              reasons[i] = `Lower BB Bounce • RSI(14): ${rsi14[i].toFixed(1)}`;
+            } else if (closes[i] >= bb.mid[i] && closes[i - 1] < bb.mid[i - 1]) {
+              signals[i] = -1;
+            }
+          }
+        }
+      } else if (strategy === 'ema20_pullback') {
+        const ema20 = computeEMA(closes, 20);
+        const ema50 = computeEMA(closes, 50);
+        fastLine = ema20;
+        slowLine = ema50;
+        for (let i = 50; i < candles.length; i++) {
+          if (ema20[i] !== null && ema50[i] !== null) {
+            if (ema20[i] > ema50[i] && candles[i].low <= ema20[i] * 1.004 && closes[i] > ema20[i] && closes[i] > candles[i].open) {
+              signals[i] = 1;
+              reasons[i] = `20-EMA Uptrend Pullback Reversal`;
+            } else if (closes[i] < ema20[i] && closes[i - 1] >= ema20[i - 1]) {
+              signals[i] = -1;
+            }
+          }
+        }
+      } else if (strategy === 'ema_cross') {
+        fastLine = computeEMA(closes, 9);
+        slowLine = computeEMA(closes, 21);
+        for (let i = 1; i < candles.length; i++) {
+          if (fastLine[i] !== null && slowLine[i] !== null && fastLine[i - 1] !== null && slowLine[i - 1] !== null) {
+            if (fastLine[i - 1] <= slowLine[i - 1] && fastLine[i] > slowLine[i]) {
+              signals[i] = 1;
+              reasons[i] = `9 EMA Crossed Above 21 EMA`;
+            } else if (fastLine[i - 1] >= slowLine[i - 1] && fastLine[i] < slowLine[i]) {
+              signals[i] = -1;
+            }
+          }
+        }
+      } else if (strategy === 'supertrend_breakout') {
+        const period = 10, mult = 2.5;
+        let trend = 1;
+        for (let i = period; i < candles.length; i++) {
+          let atrSum = 0;
+          for (let j = i - period + 1; j <= i; j++) {
+            atrSum += Math.max(candles[j].high - candles[j].low, Math.abs(candles[j].high - candles[j - 1].close), Math.abs(candles[j].low - candles[j - 1].close));
+          }
+          const atr = atrSum / period;
+          const mid = (candles[i].high + candles[i].low) / 2;
+          const upperBand = mid + mult * atr;
+          const lowerBand = mid - mult * atr;
+          const prevTrend = trend;
+          if (closes[i] > upperBand) trend = 1;
+          else if (closes[i] < lowerBand) trend = -1;
+          fastLine[i] = trend === 1 ? lowerBand : upperBand;
+          if (prevTrend === -1 && trend === 1) {
+            signals[i] = 1;
+            reasons[i] = `Supertrend Bullish Breakout`;
+          } else if (prevTrend === 1 && trend === -1) {
+            signals[i] = -1;
+          }
+        }
+      } else if (strategy === 'vwap_bounce') {
+        const lookback = 20;
+        for (let i = lookback; i < candles.length; i++) {
+          let pvSum = 0, vSum = 0;
+          for (let j = i - lookback + 1; j <= i; j++) {
+            const typical = (candles[j].high + candles[j].low + candles[j].close) / 3;
+            const volProxy = Math.max(1, candles[j].high - candles[j].low);
+            pvSum += typical * volProxy;
+            vSum += volProxy;
+          }
+          const vwap = pvSum / vSum;
+          fastLine[i] = vwap;
+          if (i > lookback && fastLine[i - 1] !== null) {
+            if (closes[i - 1] <= fastLine[i - 1] && closes[i] > vwap) {
+              signals[i] = 1;
+              reasons[i] = `Bullish VWAP Reclaim`;
+            } else if (closes[i - 1] >= fastLine[i - 1] && closes[i] < vwap) {
+              signals[i] = -1;
+            }
+          }
+        }
+      }
+
+      return { signals, reasons, fastLine, slowLine };
+    }
+
+    // =========================================================================
+    // 7. BACKTEST SIMULATION ENGINE
+    // =========================================================================
+    function executeStrategySimulation(candles, symbolOverride = null) {
+      const symbol = symbolOverride || document.getElementById('symbolSelect').value;
+      const cfg = NSE_SYMBOLS[symbol] || NSE_SYMBOLS['RELIANCE'];
+      const strategy = document.getElementById('strategySelect').value;
+      const isSwingStrategy = SWING_STRATEGIES.has(strategy);
+      const lotStep = cfg.lotStep || 1;
+      const initialCap = Math.max(5000, parseFloat(document.getElementById('capitalInput').value) || 100000);
+      const tpVal = Math.max(0.1, parseFloat(document.getElementById('tpInput').value) || 3.5);
+      const tslVal = Math.max(0.05, parseFloat(document.getElementById('tslInput').value) || 2.0);
+      const direction = document.getElementById('directionSelect').value;
+      const maxHoldBars = parseInt(document.getElementById('maxHoldSelect').value, 10) || 0;
+      const autoSquareOff = document.getElementById('autoSquareOffCheck').checked;
+      const includeTaxes = document.getElementById('includeTaxesCheck').checked;
+
+      const { signals, fastLine, slowLine } = generateSignals(candles);
+
+      let capital = initialCap;
+      let position = null;
+      const trades = [];
+      const equityCurve = [];
+      const tslSeries = new Array(candles.length).fill(null);
+      const tpSeries = new Array(candles.length).fill(null);
+      const markers = [];
+
+      const calcLevels = (side, entry) => {
+        if (state.riskUnit === 'percent') {
+          const tpDist = entry * (tpVal / 100);
+          const tslDist = entry * (tslVal / 100);
+          return side === 'BUY'
+            ? { tpPrice: entry + tpDist, currentSL: entry - tslDist, tslDist }
+            : { tpPrice: entry - tpDist, currentSL: entry + tslDist, tslDist };
+        }
+        return side === 'BUY'
+          ? { tpPrice: entry + tpVal, currentSL: entry - tslVal, tslDist: tslVal }
+          : { tpPrice: entry - tpVal, currentSL: entry + tslVal, tslDist: tslVal };
+      };
+
+      for (let i = 0; i < candles.length; i++) {
+        const bar = candles[i];
+        const istMins = getISTMinutesOfDay(bar.time);
+        const isIntraday = state.timeframe !== 'Daily';
+        const isSquareOffTime = isIntraday && autoSquareOff && !cfg.isCrypto && istMins >= (15 * 60 + 15);
+
+        if (position) {
+          let exitPrice = null;
+          let exitReason = null;
+          const barsHeld = i - position.entryIndex;
+          const hitMaxHold = !isIntraday && maxHoldBars > 0 && barsHeld >= maxHoldBars;
+
+          if (position.side === 'BUY') {
+            if (bar.high > position.extremePrice) {
+              position.extremePrice = bar.high;
+              const newTSL = position.extremePrice - position.tslDist;
+              if (newTSL > position.currentSL) position.currentSL = newTSL;
+            }
+
+            if (bar.high >= position.tpPrice) {
+              exitPrice = Math.max(bar.open, position.tpPrice);
+              exitReason = 'Take-Profit';
+            } else if (bar.low <= position.currentSL) {
+              exitPrice = Math.min(bar.open, position.currentSL);
+              exitReason = 'Trailing SL';
+            } else if (isSwingStrategy && signals[i] === -1 && bar.close > position.entryPrice) {
+              exitPrice = bar.close;
+              exitReason = '5-SMA Snap Exit';
+            } else if (hitMaxHold) {
+              exitPrice = bar.close;
+              exitReason = `${maxHoldBars}d Max Hold`;
+            } else if (isSquareOffTime) {
+              exitPrice = bar.close;
+              exitReason = '15:15 Exit';
+            }
+          } else {
+            if (bar.low < position.extremePrice) {
+              position.extremePrice = bar.low;
+              const newTSL = position.extremePrice + position.tslDist;
+              if (newTSL < position.currentSL) position.currentSL = newTSL;
+            }
+
+            if (bar.low <= position.tpPrice) {
+              exitPrice = Math.min(bar.open, position.tpPrice);
+              exitReason = 'Take-Profit';
+            } else if (bar.high >= position.currentSL) {
+              exitPrice = Math.max(bar.open, position.currentSL);
+              exitReason = 'Trailing SL';
+            } else if (hitMaxHold) {
+              exitPrice = bar.close;
+              exitReason = `${maxHoldBars}d Max Hold`;
+            } else if (isSquareOffTime) {
+              exitPrice = bar.close;
+              exitReason = '15:15 Exit';
+            }
+          }
+
+          tslSeries[i] = Number(position.currentSL.toFixed(2));
+          tpSeries[i] = Number(position.tpPrice.toFixed(2));
+
+          if (exitPrice !== null) {
+            const grossPnl = position.side === 'BUY'
+              ? (exitPrice - position.entryPrice) * position.qty
+              : (position.entryPrice - exitPrice) * position.qty;
+            const turnover = (position.entryPrice + exitPrice) * position.qty;
+            const charges = includeTaxes ? (cfg.isCrypto ? turnover * 0.001 : (40 + turnover * 0.0005)) : 0;
+            const netPnl = grossPnl - charges;
+            capital += netPnl;
+
+            trades.push({
+              side: position.side,
+              qty: position.qty,
+              entryTime: position.entryTime,
+              entryPrice: position.entryPrice,
+              exitTime: bar.time,
+              exitPrice: Number(exitPrice.toFixed(2)),
+              exitReason,
+              netPnl
+            });
+
+            markers.push({
+              time: bar.time,
+              position: position.side === 'BUY' ? 'aboveBar' : 'belowBar',
+              color: netPnl >= 0 ? '#10b981' : '#f43f5e',
+              shape: 'circle',
+              text: exitReason === 'Take-Profit' ? 'TP' : 'EXIT'
+            });
+            position = null;
+          }
+        }
+
+        const allowEntry = !isIntraday || !autoSquareOff || cfg.isCrypto || istMins < (15 * 60);
+        if (!position && allowEntry && signals[i] !== 0) {
+          const buyAllowed = signals[i] === 1 && (direction === 'both' || direction === 'long');
+          const sellAllowed = signals[i] === -1 && (direction === 'both' || direction === 'short');
+
+          if (buyAllowed || sellAllowed) {
+            const side = buyAllowed ? 'BUY' : 'SELL';
+            const entryPrice = bar.close;
+            const deployCap = capital * 0.95;
+            let qty = cfg.isCrypto
+              ? Math.max(lotStep, Number((deployCap / entryPrice).toFixed(4)))
+              : Math.max(1, Math.floor(deployCap / entryPrice));
+
+            const { tpPrice, currentSL, tslDist } = calcLevels(side, entryPrice);
+            position = {
+              side,
+              qty,
+              entryPrice,
+              entryTime: bar.time,
+              entryIndex: i,
+              tpPrice,
+              currentSL,
+              tslDist,
+              extremePrice: entryPrice
+            };
+
+            tslSeries[i] = Number(currentSL.toFixed(2));
+            tpSeries[i] = Number(tpPrice.toFixed(2));
+
+            markers.push({
+              time: bar.time,
+              position: side === 'BUY' ? 'belowBar' : 'aboveBar',
+              color: side === 'BUY' ? '#10b981' : '#f43f5e',
+              shape: side === 'BUY' ? 'arrowUp' : 'arrowDown',
+              text: side
+            });
+          }
+        }
+
+        let openPnl = 0;
+        if (position) {
+          openPnl = position.side === 'BUY'
+            ? (bar.close - position.entryPrice) * position.qty
+            : (position.entryPrice - bar.close) * position.qty;
+        }
+        equityCurve.push({ time: bar.time, equity: Number((capital + openPnl).toFixed(2)) });
+      }
+
+      return { trades, equityCurve, fastLine, slowLine, tslSeries, tpSeries, markers, openPosition: position };
+    }
+
+    // =========================================================================
+    // 8. LIVE BUY SIGNALS SCANNER (PERSISTENT UNTIL TP/SL + HOURLY AUTO-FETCH)
+    // =========================================================================<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NSE & Crypto Backtester — Live Buy Signals & 6-Year Strategy Terminal</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Inter & JetBrains Mono Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- Lightweight Charts (TradingView) -->
+  <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
+  <!-- Chart.js for Equity Curve -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #f8fafc;
+      color: #0f172a;
+      font-family: 'Inter', sans-serif;
+    }
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+    @keyframes pulse-live {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.45; transform: scale(1.25); }
+    }
+    .live-dot {
+      animation: pulse-live 1.5s infinite ease-in-out;
+    }
+    input[type="range"] {
+      -webkit-appearance: none;
+      height: 5px;
+      background: #e2e8f0;
+      border-radius: 999px;
+      outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #0f172a;
+      cursor: pointer;
+      border: 2px solid #ffffff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-emerald-100 selection:text-emerald-900">
+
+  <!-- TOP NAVIGATION BAR -->
+  <header class="bg-white border-b border-slate-200/80 sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2 overflow-x-auto">
+      <!-- App Title -->
+      <div class="flex items-center gap-2 shrink-0">
+        <div class="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-sm">
+          <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+          </svg>
+        </div>
+        <span class="text-sm sm:text-base font-bold tracking-tight text-slate-900 whitespace-nowrap">NSE Backtester</span>
+        <span class="hidden md:inline-block px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-[10px] font-bold text-emerald-700 whitespace-nowrap">Live + 6Y Engine</span>
+      </div>
+
+      <!-- Primary Mode Switcher Tabs -->
+      <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/70 shrink-0 gap-1">
+        <button id="btnModeSignals" onclick="setMode('signals')" class="whitespace-nowrap px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-white text-emerald-700 shadow-sm flex items-center gap-1.5">
+          <span id="signalsNavDot" class="w-2 h-2 rounded-full bg-emerald-500 live-dot"></span>
+          <span>Live Buy Signals</span>
+          <span id="liveSignalBadge" class="px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-mono font-bold">0</span>
+        </button>
+        <button id="btnModeBacktest" onclick="setMode('backtest')" class="whitespace-nowrap px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all text-slate-600 hover:text-slate-900">
+          Backtest
+        </button>
+        <button id="btnModeLive" onclick="setMode('live')" class="whitespace-nowrap px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all text-slate-600 hover:text-slate-900 flex items-center gap-1.5">
+          <span id="liveNavDot" class="w-2 h-2 rounded-full bg-emerald-500 hidden live-dot"></span>
+          <span>Live Market</span>
+        </button>
+        <button id="btnModeCrypto" onclick="switchToCryptoMarket()" class="whitespace-nowrap px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all text-amber-700 hover:bg-amber-50 flex items-center gap-1">
+          <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+          <span>Top 10 Crypto</span>
+        </button>
+      </div>
+
+      <!-- Action Button -->
+      <button id="btnPrimaryAction" onclick="triggerRun()" class="whitespace-nowrap shrink-0 px-3.5 sm:px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs sm:text-sm shadow-sm transition active:scale-95 flex items-center gap-1.5">
+        <svg class="w-4 h-4 text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+        </svg>
+        <span id="primaryActionLabel">Scan Live</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toastBanner" class="hidden fixed bottom-5 right-5 z-50 max-w-sm bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-xl flex items-start gap-3">
+    <div id="toastDot" class="w-2.5 h-2.5 rounded-full bg-emerald-400 mt-1.5 shrink-0"></div>
+    <div class="flex-1 text-xs">
+      <p id="toastTitle" class="font-semibold text-white">Updated</p>
+      <p id="toastMsg" class="text-slate-300 mt-0.5 leading-relaxed"></p>
+    </div>
+    <button onclick="hideToast()" class="text-slate-400 hover:text-white text-xs font-bold">✕</button>
+  </div>
+
+  <!-- MAIN WORKSPACE -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 flex flex-col lg:flex-row gap-6">
+
+    <!-- LEFT SIDEBAR: STRATEGY & MARKET SETUP -->
+    <aside class="w-full lg:w-[320px] shrink-0 space-y-4">
+      <div class="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-5">
+
+        <!-- 1. Market Cap / Asset Filter & Symbol Selector -->
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
             <label for="symbolSearchInput" class="text-xs font-semibold text-slate-700">Stock / Index / Crypto <span class="text-slate-400 font-normal">(86)</span></label>
             <span id="dataSourcePill" class="text-[11px] font-medium text-emerald-600">Live Sync</span>
           </div>
