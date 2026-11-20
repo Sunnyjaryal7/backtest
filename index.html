@@ -19,7 +19,6 @@
     .font-mono {
       font-family: 'JetBrains Mono', monospace;
     }
-    /* Custom subtle scrollbar */
     ::-webkit-scrollbar {
       width: 6px;
       height: 6px;
@@ -51,9 +50,9 @@
         <div>
           <div class="flex items-center gap-2">
             <span class="font-bold text-slate-900 text-base tracking-tight">NSE & Crypto Backtester</span>
-            <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80">100% Real Live Feed</span>
+            <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80">100% Real Market Data</span>
           </div>
-          <p class="text-[11px] text-slate-400 hidden sm:block">Zero Dummy Prices • NSE Large/Mid/Small + Top 50 Trusted Crypto</p>
+          <p class="text-[11px] text-slate-400 hidden sm:block">Zero Dummy Prices • Once-A-Day IST Auto-Scan • Credit-Safe NSE + 50 Trusted Crypto</p>
         </div>
       </div>
 
@@ -77,9 +76,9 @@
         </button>
       </nav>
 
-      <!-- Primary Action Button -->
+      <!-- Primary Action CTA -->
       <div class="flex items-center gap-2">
-        <button onclick="triggerRun()" class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-semibold shadow-sm transition flex items-center gap-2">
+        <button onclick="triggerPrimaryAction()" class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-semibold shadow-sm transition flex items-center gap-2">
           <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
           <span id="primaryActionLabel">Scan Live</span>
         </button>
@@ -93,14 +92,14 @@
     <!-- LEFT SIDEBAR: ASSET UNIVERSE & STRATEGY PARAMETERS -->
     <aside class="lg:col-span-3 bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4 space-y-4">
 
-      <!-- 1. Stock / Index / Crypto Selector -->
+      <!-- 1. Stock / Crypto Selector -->
       <div>
         <div class="flex items-center justify-between mb-1.5">
-          <label class="text-xs font-semibold text-slate-700">Stock / Index / Crypto <span id="universeCountLabel" class="text-slate-400 font-normal">(112)</span></label>
+          <label class="text-xs font-semibold text-slate-700">Stock / Crypto <span id="universeCountLabel" class="text-slate-400 font-normal">(90)</span></label>
           <button id="cryptoCurrencyToggleBtn" onclick="toggleCryptoCurrency()" class="text-[11px] font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-md transition">Crypto: ₹ INR</button>
         </div>
 
-        <!-- Cap Tier Filter Pills -->
+        <!-- Category Filter Pills -->
         <div class="grid grid-cols-5 gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200/60 mb-2">
           <button data-cap="ALL" onclick="selectCapFilter('ALL')" class="cap-btn py-1 rounded-lg text-[11px] font-semibold bg-white text-slate-900 shadow-sm transition">All</button>
           <button data-cap="Large" onclick="selectCapFilter('Large')" class="cap-btn py-1 rounded-lg text-[11px] font-semibold text-slate-500 hover:text-slate-900 transition">Large</button>
@@ -109,14 +108,14 @@
           <button data-cap="Crypto" onclick="selectCapFilter('Crypto')" class="cap-btn py-1 rounded-lg text-[11px] font-semibold text-amber-700 hover:text-amber-900 transition">Crypto</button>
         </div>
 
-        <!-- Search Box -->
+        <!-- Instant Search Box -->
         <input id="symbolSearchInput" type="text" oninput="filterSymbolDropdown(this.value)" placeholder="Search ICICIBANK, MCX, BTC, SOL..." class="w-full px-3 py-1.5 mb-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500" />
 
-        <!-- Asset Dropdown -->
-        <select id="symbolSelect" onchange="onSetupChanged(true)" class="w-full px-3 py-2 text-xs font-semibold text-slate-900 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"></select>
+        <!-- Symbol Dropdown -->
+        <select id="symbolSelect" onchange="onSetupChanged(false)" class="w-full px-3 py-2 text-xs font-semibold text-slate-900 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"></select>
 
-        <!-- Asset Trust / Sector Info -->
-        <p id="symbolMetaText" class="mt-1.5 text-[11px] text-slate-500 leading-relaxed">ICICI Bank Ltd • Large-Cap • Banking</p>
+        <!-- Trust / Sector Subtitle -->
+        <p id="symbolMetaText" class="mt-1.5 text-[11px] text-slate-500 leading-relaxed">Bitcoin • Est. 2009 • Spot ETF Approved • #1 Market Cap</p>
       </div>
 
       <!-- 2. Timeframe & Backtest Duration -->
@@ -135,26 +134,24 @@
         </div>
       </div>
 
-      <!-- 3. Strategy Rule Selector -->
+      <!-- 3. Strategy Rule Selector (5 Swing Strategies) -->
       <div>
         <label class="block text-xs font-semibold text-slate-700 mb-1.5">Strategy Rule</label>
         <select id="strategySelect" onchange="onStrategyChanged()" class="w-full px-3 py-2 text-xs font-semibold text-slate-900 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500">
-          <option value="cum_rsi2">1. Cumulative 2-Day RSI(2) (~82%+ Win)</option>
-          <option value="connors_rsi2">2. Connors RSI(2) Snapback (&lt;10)</option>
-          <option value="bb_rsi_snap">3. Bollinger Band (20,2) + RSI(14) Dip</option>
-          <option value="ema20_pullback">4. 20-EMA Uptrend Pullback Bounce</option>
+          <option value="cum_rsi2">1. Cumulative 2-Day RSI(2)</option>
+          <option value="rsi2_200sma">2. RSI(2) + 200 SMA Pullback</option>
+          <option value="bb_reversion">3. Bollinger Band Mean Reversion</option>
+          <option value="macd_50ema">4. MACD + 50 EMA Trend Pullback</option>
           <option value="ema_cross">5. 9/21 EMA Momentum Crossover</option>
-          <option value="supertrend_breakout">6. Supertrend ATR(10, 2.5) Breakout</option>
-          <option value="vwap_bounce">7. Rolling 20-Bar VWAP Anchor Reclaim</option>
         </select>
 
         <div class="mt-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200/70">
           <div class="flex items-center justify-between text-[11px] font-semibold text-emerald-700 mb-1">
-            <span>Swing Mode: Buy Only • 3–15d Hold</span>
-            <span>Real Feed</span>
+            <span>Swing Engine • Real Bars</span>
+            <span id="strategyBadgeMode">Mean Reversion</span>
           </div>
           <p id="strategyDescBox" class="text-[11px] text-slate-500 leading-relaxed">
-            Ultra-selective 1-click entry: Buys uptrending assets (Price &gt; 200 SMA &amp; 50 SMA &gt; 200 SMA) when the 2-day cumulative RSI(2) drops below 10, and exits on a 5-SMA snapback or quick Take-Profit.
+            Buys uptrending assets (Price &gt; 200 SMA &amp; 50 SMA &gt; 200 SMA) when the 2-day cumulative RSI(2) drops below 10, and exits on a 5-SMA snapback or Take-Profit.
           </p>
         </div>
       </div>
@@ -173,18 +170,18 @@
         <div>
           <div class="flex items-center justify-between text-xs mb-1">
             <span class="font-medium text-emerald-700">Take-Profit Target</span>
-            <input id="tpInput" type="number" step="0.1" value="5.5" oninput="triggerRun()" class="w-16 px-2 py-0.5 text-right font-mono font-semibold text-xs text-emerald-700 bg-emerald-50/60 border border-emerald-200 rounded-lg" />
+            <input id="tpInput" type="number" step="0.1" value="5.5" oninput="syncRiskInput('tp', this.value)" class="w-16 px-2 py-0.5 text-right font-mono font-semibold text-xs text-emerald-700 bg-emerald-50/60 border border-emerald-200 rounded-lg" />
           </div>
-          <input type="range" min="0.5" max="20" step="0.5" value="5.5" oninput="syncRiskSlider('tp', this.value)" class="w-full accent-slate-900 cursor-pointer" />
+          <input id="tpSlider" type="range" min="0.5" max="20" step="0.5" value="5.5" oninput="syncRiskSlider('tp', this.value)" class="w-full accent-slate-900 cursor-pointer" />
         </div>
 
         <!-- Trailing Stop-Loss -->
         <div>
           <div class="flex items-center justify-between text-xs mb-1">
             <span class="font-medium text-amber-700">Trailing Stop-Loss</span>
-            <input id="tslInput" type="number" step="0.1" value="2.5" oninput="triggerRun()" class="w-16 px-2 py-0.5 text-right font-mono font-semibold text-xs text-amber-700 bg-amber-50/60 border border-amber-200 rounded-lg" />
+            <input id="tslInput" type="number" step="0.1" value="2.5" oninput="syncRiskInput('tsl', this.value)" class="w-16 px-2 py-0.5 text-right font-mono font-semibold text-xs text-amber-700 bg-amber-50/60 border border-amber-200 rounded-lg" />
           </div>
-          <input type="range" min="0.5" max="15" step="0.5" value="2.5" oninput="syncRiskSlider('tsl', this.value)" class="w-full accent-slate-900 cursor-pointer" />
+          <input id="tslSlider" type="range" min="0.5" max="15" step="0.5" value="2.5" oninput="syncRiskSlider('tsl', this.value)" class="w-full accent-slate-900 cursor-pointer" />
         </div>
       </div>
 
@@ -199,9 +196,8 @@
           <div>
             <label class="block text-[10px] font-semibold text-slate-500 mb-1">Trade Direction</label>
             <select id="directionSelect" onchange="triggerRun()" class="w-full px-2 py-1.5 text-xs font-medium bg-slate-50 border border-slate-200 rounded-lg">
-              <option value="long" selected>Long (Buy Only)</option>
+              <option value="long" selected>Long Only</option>
               <option value="both">Long & Short</option>
-              <option value="short">Short Only</option>
             </select>
           </div>
           <div>
@@ -218,10 +214,10 @@
         <div class="flex items-center justify-between pt-1 text-[11px] text-slate-600">
           <label class="inline-flex items-center gap-1.5 cursor-pointer">
             <input id="includeTaxesCheck" type="checkbox" checked onchange="triggerRun()" class="rounded text-emerald-600 focus:ring-emerald-500" />
-            <span>Include STT & Brokerage</span>
+            <span>STT & Brokerage</span>
           </label>
           <label class="inline-flex items-center gap-1.5 cursor-pointer">
-            <input id="autoSquareOffCheck" type="checkbox" onchange="triggerRun()" class="rounded text-emerald-600 focus:ring-emerald-500" />
+            <input id="intradayExitCheck" type="checkbox" onchange="triggerRun()" class="rounded text-emerald-600 focus:ring-emerald-500" />
             <span>15:15 Intraday Exit</span>
           </label>
         </div>
@@ -232,41 +228,72 @@
     <section class="lg:col-span-9 space-y-5">
 
       <!-- =================================================================== -->
+      <!-- TWELVE DATA API KEY & CREDIT-SAFE GUARD BAR                         -->
+      <!-- =================================================================== -->
+      <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-3.5 sm:px-5 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex flex-wrap items-center gap-2 flex-1 min-w-[260px]">
+          <span class="text-xs font-bold text-slate-800">NSE Twelve Data API Key:</span>
+          <input id="twelveDataKeyInput" type="password" onchange="saveTwelveDataSettings()" placeholder="Paste Twelve Data API key (optional for NSE)" class="px-3 py-1.5 text-xs font-mono bg-slate-50 border border-slate-200 rounded-xl w-64 focus:outline-none focus:border-emerald-500" />
+          <button onclick="saveTwelveDataSettings(true)" class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition">Save Key</button>
+          <button onclick="clearTwelveDataKey()" class="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-medium transition">Clear</button>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3 text-xs">
+          <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 font-mono">
+            <span>Credits Used Today:</span>
+            <strong id="creditsUsedLabel">0</strong>
+            <span>/</span>
+            <input id="creditCapInput" type="number" min="10" max="800" value="650" onchange="saveTwelveDataSettings()" class="w-12 text-center font-bold bg-white border border-emerald-300 rounded px-1 py-0.2 text-emerald-900" />
+            <span class="text-[10px] text-emerald-600">(Max 800)</span>
+          </div>
+          <button onclick="clear24HrNseCache()" class="text-[11px] font-semibold text-slate-500 hover:text-slate-800 underline">Purge 24h Cache</button>
+        </div>
+      </div>
+
+      <!-- =================================================================== -->
       <!-- PANEL A: LIVE BUY SIGNALS TRACKER (DEFAULT SCREEN ON OPEN)          -->
       <!-- =================================================================== -->
       <div id="liveSignalsPanel" class="bg-white rounded-2xl border border-emerald-200/80 shadow-sm overflow-hidden">
         <!-- Header Bar -->
         <div class="p-4 sm:p-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-emerald-50/60 via-white to-white">
           <div>
-            <div class="flex items-center gap-2 mb-1">
+            <div class="flex flex-wrap items-center gap-2 mb-1">
               <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-ping"></span>
-                LIVE MARKET AUTO-SCANNER
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                ONCE-A-DAY IST AUTO-SCANNER
               </span>
-              <span id="liveFeedCountBadge" class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700">Syncing Real Feeds...</span>
+              <span id="dailyScanStatusBadge" class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700">Checking Daily Scan Status...</span>
             </div>
             <h2 class="text-base sm:text-lg font-bold text-slate-900">Active Live Buy Signals (Held Until Target or SL Hits)</h2>
             <p class="text-xs text-slate-500 mt-0.5">
-              Auto-fetches real market data at the top of every hour • Next scan in <span id="nextScanCountdown" class="font-mono font-semibold text-slate-800">59m 59s</span>
+              Scans once per IST day on open • Subsequent reloads same day use <span class="font-semibold text-emerald-700">0 API credits</span> • Next auto-scan: <span id="nextIstResetLabel" class="font-mono font-semibold text-slate-800">Tomorrow 00:00 IST</span>
             </p>
           </div>
 
           <div class="flex items-center gap-2">
-            <button onclick="sendAllActiveSignalsWhatsApp()" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm transition flex items-center gap-1.5">
-              <span>Send All to WhatsApp</span>
+            <button onclick="sendAllActiveSignalsWhatsApp()" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm transition">
+              Send All to WhatsApp
             </button>
-            <button onclick="scanAllLiveBuySignals(false)" class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-sm transition">
-              Refresh Live Scan
+            <button onclick="runDailyOrManualScan(true)" class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-sm transition">
+              Force Scan Now
             </button>
           </div>
+        </div>
+
+        <!-- NSE Key Notice Banner (Shown if no Twelve Data Key is saved) -->
+        <div id="nseNoKeyNotice" class="hidden px-4 sm:px-5 py-2.5 bg-amber-50/90 border-b border-amber-200/80 flex flex-wrap items-center justify-between gap-2 text-xs text-amber-900">
+          <div>
+            <span class="font-bold">NSE Live Feed Paused (0 Credits Used):</span> Enter your free Twelve Data API key above to scan NSE stocks, or trade all <span class="font-semibold">50 Trusted Crypto assets</span> immediately via direct Binance API.
+          </div>
+          <button onclick="switchToCryptoMarket()" class="px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-semibold transition">Filter 50 Crypto</button>
         </div>
 
         <!-- WhatsApp Alert & Audio Controls Strip -->
         <div class="px-4 sm:px-5 py-3 bg-slate-50/80 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
           <div class="flex flex-wrap items-center gap-2 flex-1">
             <span class="text-xs font-semibold text-slate-700">WhatsApp Alerts:</span>
-            <input id="whatsappPhoneInput" type="text" placeholder="+919876543210" class="px-3 py-1.5 text-xs font-mono bg-white border border-slate-200 rounded-xl w-40 focus:outline-none focus:border-emerald-500" />
-            <input id="callmebotKeyInput" type="text" placeholder="CallMeBot API Key (optional)" class="px-3 py-1.5 text-xs font-mono bg-white border border-slate-200 rounded-xl w-48 focus:outline-none focus:border-emerald-500" />
+            <input id="whatsappPhoneInput" type="text" onchange="saveWhatsAppPrefs()" placeholder="+919876543210" class="px-3 py-1.5 text-xs font-mono bg-white border border-slate-200 rounded-xl w-40 focus:outline-none focus:border-emerald-500" />
+            <input id="callmebotKeyInput" type="password" onchange="saveWhatsAppPrefs()" placeholder="CallMeBot API Key (optional)" class="px-3 py-1.5 text-xs font-mono bg-white border border-slate-200 rounded-xl w-48 focus:outline-none focus:border-emerald-500" />
           </div>
           <div class="flex items-center gap-4 text-xs">
             <label class="inline-flex items-center gap-1.5 font-medium text-slate-700 cursor-pointer">
@@ -290,7 +317,7 @@
           <table class="w-full text-left border-collapse">
             <thead>
               <tr class="border-b border-slate-100 text-[11px] font-semibold text-slate-500 uppercase tracking-wider bg-slate-50/40">
-                <th class="px-5 py-3">Stock / Signal Date & Time</th>
+                <th class="px-5 py-3">Asset / Signal Date & Time</th>
                 <th class="px-4 py-3">Live & Entry Price</th>
                 <th class="px-4 py-3">Strategy Condition</th>
                 <th class="px-4 py-3">Target (TP)</th>
@@ -300,7 +327,7 @@
             </thead>
             <tbody id="activeSignalsBody" class="divide-y divide-slate-100 text-xs">
               <tr>
-                <td colspan="6" class="py-10 text-center text-slate-400 text-xs">Initializing real market feeds...</td>
+                <td colspan="6" class="py-10 text-center text-slate-400 text-xs">Loading real market feeds...</td>
               </tr>
             </tbody>
           </table>
@@ -312,14 +339,18 @@
       <!-- =================================================================== -->
       <div id="backtestMainWorkspace" class="hidden space-y-5">
 
-        <!-- Live Market Banner (Shown only in 'live' mode) -->
+        <!-- Live Market Replay Banner (Shown only in 'live' mode) -->
         <div id="liveMarketPanel" class="hidden bg-sky-50 border border-sky-200 rounded-2xl px-4 py-3 flex flex-wrap items-center justify-between gap-2">
           <div class="flex items-center gap-2 text-xs text-sky-900">
             <span class="w-2 h-2 rounded-full bg-sky-500 animate-ping"></span>
-            <span class="font-bold">Live Market Feed Active:</span>
-            <span>Evaluating latest real market candles against your exit targets.</span>
+            <span class="font-bold">Live Market Step-By-Step Replay:</span>
+            <span id="replayProgressText">Bar 0 / 0</span>
           </div>
-          <button onclick="startLiveMarketTest()" class="px-3 py-1 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold transition">Sync Latest Bar</button>
+          <div class="flex items-center gap-2">
+            <button id="replayPlayPauseBtn" onclick="toggleReplayPlayback()" class="px-3 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition">Pause Replay</button>
+            <button onclick="stepReplayForward()" class="px-3 py-1 rounded-lg bg-white hover:bg-sky-100 text-sky-900 border border-sky-200 text-xs font-semibold transition">Step +1 Bar</button>
+            <button onclick="restartLiveMarketReplay()" class="px-3 py-1 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold transition">Restart Replay</button>
+          </div>
         </div>
 
         <!-- 4 KPI SUMMARY CARDS -->
@@ -349,7 +380,7 @@
         <!-- CHART & SCANNER CARD -->
         <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
           <div class="px-5 py-3.5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
-            <h3 id="chartTitle" class="text-sm font-bold text-slate-900">ICICIBANK • Daily (6Y) Live Chart</h3>
+            <h3 id="chartTitle" class="text-sm font-bold text-slate-900">BTC • Daily (6Y) Real Chart</h3>
             <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200/60 text-xs font-semibold">
               <button id="tabPrice" onclick="switchChartTab('price')" class="whitespace-nowrap px-3 py-1 rounded-lg bg-white text-slate-900 shadow-sm transition">Price & Signals</button>
               <button id="tabEquity" onclick="switchChartTab('equity')" class="whitespace-nowrap px-3 py-1 rounded-lg text-slate-500 hover:text-slate-900 transition">Equity Curve</button>
@@ -359,7 +390,7 @@
 
           <!-- Tab 1: Candlestick Price Chart -->
           <div id="priceChartView" class="p-4">
-            <div id="tvChartContainer" class="w-full h-[360px] rounded-xl overflow-hidden border border-slate-100"></div>
+            <div id="tvChartContainer" class="w-full h-[360px] rounded-xl overflow-hidden border border-slate-100 bg-white"></div>
           </div>
 
           <!-- Tab 2: Equity Curve -->
@@ -372,7 +403,7 @@
           <!-- Tab 3: Multi-Asset Top Swing Scanner -->
           <div id="scannerChartView" class="hidden">
             <div class="px-5 py-2.5 bg-slate-50 border-b border-slate-100 flex flex-wrap items-center justify-between gap-2 text-xs">
-              <span class="font-medium text-slate-600">Ranks assets using real historical OHLCV bars for the active strategy</span>
+              <span class="font-medium text-slate-600">Ranks cached & live assets using real historical OHLCV bars (0 extra credits for cached NSE)</span>
               <label class="inline-flex items-center gap-1.5 font-semibold text-emerald-700 cursor-pointer">
                 <input id="highWinFilterCheck" type="checkbox" checked onchange="renderTopSwingScanner()" class="rounded text-emerald-600" />
                 <span>High-Win Basket (≥70% Win Rate, ≥5 Trades)</span>
@@ -437,124 +468,151 @@
 
   <script>
     // =========================================================================
-    // 1. ASSET UNIVERSE (NSE LARGE/MID/SMALL + 50 TRUSTED CRYPTO COINS)
+    // 0. SAFE DOM HELPER & IST CALENDAR UTILITIES
     // =========================================================================
-    const NSE_SYMBOLS = {
-      // Indices
-      NIFTY: { name: 'Nifty 50 Index', cap: 'Large', sector: 'Benchmark Index', isCrypto: false },
-      BANKNIFTY: { name: 'Nifty Bank Index', cap: 'Large', sector: 'Banking Index', isCrypto: false },
-      // NSE Large-Caps
-      ICICIBANK: { name: 'ICICI Bank Ltd', cap: 'Large', sector: 'Banking', isCrypto: false },
-      RELIANCE: { name: 'Reliance Industries Ltd', cap: 'Large', sector: 'Energy & Telecom', isCrypto: false },
-      HDFCBANK: { name: 'HDFC Bank Ltd', cap: 'Large', sector: 'Banking', isCrypto: false },
-      TCS: { name: 'Tata Consultancy Services', cap: 'Large', sector: 'IT Services', isCrypto: false },
-      INFY: { name: 'Infosys Ltd', cap: 'Large', sector: 'IT Services', isCrypto: false },
-      BHARTIARTL: { name: 'Bharti Airtel Ltd', cap: 'Large', sector: 'Telecom', isCrypto: false },
-      SBIN: { name: 'State Bank of India', cap: 'Large', sector: 'PSU Banking', isCrypto: false },
-      LT: { name: 'Larsen & Toubro Ltd', cap: 'Large', sector: 'Infrastructure', isCrypto: false },
-      BAJFINANCE: { name: 'Bajaj Finance Ltd', cap: 'Large', sector: 'NBFC', isCrypto: false },
-      M_M: { name: 'Mahindra & Mahindra Ltd', cap: 'Large', sector: 'Automobiles', isCrypto: false },
-      SUNPHARMA: { name: 'Sun Pharmaceutical Ind', cap: 'Large', sector: 'Pharma', isCrypto: false },
-      TITAN: { name: 'Titan Company Ltd', cap: 'Large', sector: 'Consumer', isCrypto: false },
-      NTPC: { name: 'NTPC Ltd', cap: 'Large', sector: 'Power', isCrypto: false },
-      AXISBANK: { name: 'Axis Bank Ltd', cap: 'Large', sector: 'Banking', isCrypto: false },
-      TATAMOTORS: { name: 'Tata Motors Ltd', cap: 'Large', sector: 'Automobiles', isCrypto: false },
-      TATASTEEL: { name: 'Tata Steel Ltd', cap: 'Large', sector: 'Metals', isCrypto: false },
-      JSWSTEEL: { name: 'JSW Steel Ltd', cap: 'Large', sector: 'Metals', isCrypto: false },
-      TRENT: { name: 'Trent Ltd', cap: 'Large', sector: 'Retail', isCrypto: false },
-      BEL: { name: 'Bharat Electronics Ltd', cap: 'Large', sector: 'Defence', isCrypto: false },
-      HAL: { name: 'Hindustan Aeronautics Ltd', cap: 'Large', sector: 'Defence', isCrypto: false },
-      // NSE Mid-Caps
-      CGPOWER: { name: 'CG Power & Industrial', cap: 'Mid', sector: 'Capital Goods', isCrypto: false },
-      CUMMINSIND: { name: 'Cummins India Ltd', cap: 'Mid', sector: 'Industrials', isCrypto: false },
-      PERSISTENT: { name: 'Persistent Systems Ltd', cap: 'Mid', sector: 'Mid-Cap IT', isCrypto: false },
-      COFORGE: { name: 'Coforge Ltd', cap: 'Mid', sector: 'Mid-Cap IT', isCrypto: false },
-      POLYCAB: { name: 'Polycab India Ltd', cap: 'Mid', sector: 'Cables & Wires', isCrypto: false },
-      DIXON: { name: 'Dixon Technologies Ltd', cap: 'Mid', sector: 'Electronics Mfg', isCrypto: false },
-      MAXHEALTH: { name: 'Max Healthcare Institute', cap: 'Mid', sector: 'Healthcare', isCrypto: false },
-      INDHOTEL: { name: 'Indian Hotels Co Ltd', cap: 'Mid', sector: 'Hospitality', isCrypto: false },
-      FEDERALBNK: { name: 'Federal Bank Ltd', cap: 'Mid', sector: 'Banking', isCrypto: false },
-      ASTRAL: { name: 'Astral Ltd', cap: 'Mid', sector: 'Building Materials', isCrypto: false },
-      // NSE Small-Caps
-      MCX: { name: 'Multi Commodity Exchange', cap: 'Small', sector: 'Exchange', isCrypto: false },
-      CDSL: { name: 'Central Depository Services', cap: 'Small', sector: 'Capital Markets', isCrypto: false },
-      BSE: { name: 'BSE Ltd', cap: 'Small', sector: 'Exchange', isCrypto: false },
-      KPITTECH: { name: 'KPIT Technologies Ltd', cap: 'Small', sector: 'Auto Tech', isCrypto: false },
-      LAURUSLABS: { name: 'Laurus Labs Ltd', cap: 'Small', sector: 'Pharma API', isCrypto: false },
-      ANGELONE: { name: 'Angel One Ltd', cap: 'Small', sector: 'Broking', isCrypto: false },
-      SUZLON: { name: 'Suzlon Energy Ltd', cap: 'Small', sector: 'Renewables', isCrypto: false },
-      // Top 50 Trusted Crypto Coins (Live Binance Public API)
-      BTCUSDT: { name: 'Bitcoin (BTC)', cap: 'Crypto', sector: 'Layer-1 Pioneer', isCrypto: true, binanceSym: 'BTCUSDT', trust: 'Est. 2009 • Spot ETF Approved • #1 Market Cap' },
-      ETHUSDT: { name: 'Ethereum (ETH)', cap: 'Crypto', sector: 'Smart Contracts', isCrypto: true, binanceSym: 'ETHUSDT', trust: 'Est. 2015 • Spot ETF Approved • #1 DeFi Ecosystem' },
-      BNBUSDT: { name: 'BNB (BNB)', cap: 'Crypto', sector: 'Exchange & L1', isCrypto: true, binanceSym: 'BNBUSDT', trust: 'Est. 2017 • Top-5 Market Cap • High Liquidity' },
-      SOLUSDT: { name: 'Solana (SOL)', cap: 'Crypto', sector: 'High-Speed L1', isCrypto: true, binanceSym: 'SOLUSDT', trust: 'Est. 2020 • Institutional DeFi & Payments L1' },
-      XRPUSDT: { name: 'XRP (XRP)', cap: 'Crypto', sector: 'Cross-Border Pay', isCrypto: true, binanceSym: 'XRPUSDT', trust: 'Est. 2012 • Bank Settlement Network • Top-10 Cap' },
-      ADAUSDT: { name: 'Cardano (ADA)', cap: 'Crypto', sector: 'Peer-Reviewed L1', isCrypto: true, binanceSym: 'ADAUSDT', trust: 'Est. 2017 • Academic Proof-of-Stake L1' },
-      DOGEUSDT: { name: 'Dogecoin (DOGE)', cap: 'Crypto', sector: 'Payments & PoW', isCrypto: true, binanceSym: 'DOGEUSDT', trust: 'Est. 2013 • Top-10 Liquidity • Scrypt PoW' },
-      TRXUSDT: { name: 'TRON (TRX)', cap: 'Crypto', sector: 'Stablecoin Rails', isCrypto: true, binanceSym: 'TRXUSDT', trust: 'Est. 2017 • Leading Global USDT Settlement Rail' },
-      TONUSDT: { name: 'Toncoin (TON)', cap: 'Crypto', sector: 'Social Web3 L1', isCrypto: true, binanceSym: 'TONUSDT', trust: 'Telegram Ecosystem L1 • High Throughput' },
-      AVAXUSDT: { name: 'Avalanche (AVAX)', cap: 'Crypto', sector: 'Subnets L1', isCrypto: true, binanceSym: 'AVAXUSDT', trust: 'Est. 2020 • Institutional RWA & Subnet L1' },
-      LINKUSDT: { name: 'Chainlink (LINK)', cap: 'Crypto', sector: 'Oracle Network', isCrypto: true, binanceSym: 'LINKUSDT', trust: 'Est. 2017 • #1 DeFi Oracle • SWIFT Partner' },
-      DOTUSDT: { name: 'Polkadot (DOT)', cap: 'Crypto', sector: 'Multichain L0', isCrypto: true, binanceSym: 'DOTUSDT', trust: 'Est. 2020 • Cross-Chain Parachain Architecture' },
-      LTCUSDT: { name: 'Litecoin (LTC)', cap: 'Crypto', sector: 'Digital Silver', isCrypto: true, binanceSym: 'LTCUSDT', trust: 'Est. 2011 • 100% Network Uptime • BitPay Top Coin' },
-      BCHUSDT: { name: 'Bitcoin Cash (BCH)', cap: 'Crypto', sector: 'PoW Payments', isCrypto: true, binanceSym: 'BCHUSDT', trust: 'Est. 2017 • SHA-256 PoW • Grayscale Trust' },
-      UNIUSDT: { name: 'Uniswap (UNI)', cap: 'Crypto', sector: 'DEX Blue-Chip', isCrypto: true, binanceSym: 'UNIUSDT', trust: 'Est. 2020 • #1 Decentralized Exchange Protocol' },
-      ATOMUSDT: { name: 'Cosmos (ATOM)', cap: 'Crypto', sector: 'IBC Interop', isCrypto: true, binanceSym: 'ATOMUSDT', trust: 'Est. 2019 • Inter-Blockchain Communication Hub' },
-      XLMUSDT: { name: 'Stellar (XLM)', cap: 'Crypto', sector: 'Remittances', isCrypto: true, binanceSym: 'XLMUSDT', trust: 'Est. 2014 • MoneyGram & Franklin Templeton Partner' },
-      NEARUSDT: { name: 'NEAR Protocol (NEAR)', cap: 'Crypto', sector: 'Sharded AI L1', isCrypto: true, binanceSym: 'NEARUSDT', trust: 'Est. 2020 • Nightshade Sharding • High Developer Activity' },
-      APTUSDT: { name: 'Aptos (APT)', cap: 'Crypto', sector: 'Move L1', isCrypto: true, binanceSym: 'APTUSDT', trust: 'a16z/BlackRock BUIDL • Sub-Second Finality' },
-      FILUSDT: { name: 'Filecoin (FIL)', cap: 'Crypto', sector: 'DePIN Storage', isCrypto: true, binanceSym: 'FILUSDT', trust: 'Est. 2020 • #1 Decentralized Cloud Storage' },
-      ICPUSDT: { name: 'Internet Computer (ICP)', cap: 'Crypto', sector: 'On-Chain Cloud', isCrypto: true, binanceSym: 'ICPUSDT', trust: 'DFINITY Foundation • Full-Stack Web3 Hosting' },
-      HBARUSDT: { name: 'Hedera (HBAR)', cap: 'Crypto', sector: 'Enterprise DLT', isCrypto: true, binanceSym: 'HBARUSDT', trust: 'Google, IBM & Boeing Governed Council' },
-      VETUSDT: { name: 'VeChain (VET)', cap: 'Crypto', sector: 'Supply Chain', isCrypto: true, binanceSym: 'VETUSDT', trust: 'Est. 2015 • Walmart China & BMW Enterprise Track' },
-      ALGOUSDT: { name: 'Algorand (ALGO)', cap: 'Crypto', sector: 'Pure PoS L1', isCrypto: true, binanceSym: 'ALGOUSDT', trust: 'Est. 2019 • MIT Turing Award Founder • Zero Forks' },
-      AAVEUSDT: { name: 'Aave (AAVE)', cap: 'Crypto', sector: 'DeFi Lending', isCrypto: true, binanceSym: 'AAVEUSDT', trust: '#1 DeFi Money Market • $15B+ TVL • Audited' },
-      MKRUSDT: { name: 'Maker (MKR)', cap: 'Crypto', sector: 'RWA & Stablecoin', isCrypto: true, binanceSym: 'MKRUSDT', trust: 'Est. 2017 • US Treasury RWA Pioneer' },
-      GRTUSDT: { name: 'The Graph (GRT)', cap: 'Crypto', sector: 'Web3 Indexing', isCrypto: true, binanceSym: 'GRTUSDT', trust: 'Est. 2020 • Core Query Layer for Ethereum & L2s' },
+    const $ = (id) => document.getElementById(id);
+
+    function getTodayISTDateString() {
+      const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Kolkata',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }).formatToParts(new Date());
+      const y = parts.find(p => p.type === 'year')?.value || '2026';
+      const m = parts.find(p => p.type === 'month')?.value || '01';
+      const d = parts.find(p => p.type === 'day')?.value || '01';
+      return `${y}-${m}-${d}`;
+    }
+
+    // =========================================================================
+    // 1. COMPLETE ASSET UNIVERSE (50 TRUSTED CRYPTO + 40 NSE INDIAN STOCKS)
+    // =========================================================================
+    const ASSET_UNIVERSE = {
+      // --- 50 TRUSTED CRYPTOCURRENCIES (DIRECT BINANCE PUBLIC API) ---
+      BTCUSDT:    { name: 'Bitcoin (BTC)', cap: 'Crypto', sector: 'Layer-1 Pioneer', isCrypto: true, binanceSym: 'BTCUSDT', trust: 'Est. 2009 • Spot ETF Approved • #1 Market Cap' },
+      ETHUSDT:    { name: 'Ethereum (ETH)', cap: 'Crypto', sector: 'Smart Contracts', isCrypto: true, binanceSym: 'ETHUSDT', trust: 'Est. 2015 • Spot ETF Approved • #1 DeFi Ecosystem' },
+      BNBUSDT:    { name: 'BNB (BNB)', cap: 'Crypto', sector: 'Exchange & L1', isCrypto: true, binanceSym: 'BNBUSDT', trust: 'Est. 2017 • Top-5 Market Cap • High Liquidity' },
+      SOLUSDT:    { name: 'Solana (SOL)', cap: 'Crypto', sector: 'High-Speed L1', isCrypto: true, binanceSym: 'SOLUSDT', trust: 'Est. 2020 • Institutional DeFi & Payments L1' },
+      XRPUSDT:    { name: 'XRP (XRP)', cap: 'Crypto', sector: 'Cross-Border Pay', isCrypto: true, binanceSym: 'XRPUSDT', trust: 'Est. 2012 • Bank Settlement Network • Top-10 Cap' },
+      ADAUSDT:    { name: 'Cardano (ADA)', cap: 'Crypto', sector: 'Peer-Reviewed L1', isCrypto: true, binanceSym: 'ADAUSDT', trust: 'Est. 2017 • Academic Proof-of-Stake L1' },
+      DOGEUSDT:   { name: 'Dogecoin (DOGE)', cap: 'Crypto', sector: 'Payments & PoW', isCrypto: true, binanceSym: 'DOGEUSDT', trust: 'Est. 2013 • Top-10 Liquidity • Scrypt PoW' },
+      TRXUSDT:    { name: 'TRON (TRX)', cap: 'Crypto', sector: 'Stablecoin Rails', isCrypto: true, binanceSym: 'TRXUSDT', trust: 'Est. 2017 • Leading Global USDT Settlement Rail' },
+      TONUSDT:    { name: 'Toncoin (TON)', cap: 'Crypto', sector: 'Social Web3 L1', isCrypto: true, binanceSym: 'TONUSDT', trust: 'Est. 2021 • Telegram Ecosystem L1 • High Throughput' },
+      AVAXUSDT:   { name: 'Avalanche (AVAX)', cap: 'Crypto', sector: 'Subnets L1', isCrypto: true, binanceSym: 'AVAXUSDT', trust: 'Est. 2020 • Institutional RWA & Subnet L1' },
+      LINKUSDT:   { name: 'Chainlink (LINK)', cap: 'Crypto', sector: 'Oracle Network', isCrypto: true, binanceSym: 'LINKUSDT', trust: 'Est. 2017 • #1 DeFi Oracle • SWIFT Partner' },
+      DOTUSDT:    { name: 'Polkadot (DOT)', cap: 'Crypto', sector: 'Multichain L0', isCrypto: true, binanceSym: 'DOTUSDT', trust: 'Est. 2020 • Cross-Chain Parachain Architecture' },
+      LTCUSDT:    { name: 'Litecoin (LTC)', cap: 'Crypto', sector: 'Digital Silver', isCrypto: true, binanceSym: 'LTCUSDT', trust: 'Est. 2011 • 100% Network Uptime • BitPay Top Coin' },
+      BCHUSDT:    { name: 'Bitcoin Cash (BCH)', cap: 'Crypto', sector: 'PoW Payments', isCrypto: true, binanceSym: 'BCHUSDT', trust: 'Est. 2017 • SHA-256 PoW • Grayscale Trust' },
+      UNIUSDT:    { name: 'Uniswap (UNI)', cap: 'Crypto', sector: 'DEX Blue-Chip', isCrypto: true, binanceSym: 'UNIUSDT', trust: 'Est. 2020 • #1 Decentralized Exchange Protocol' },
+      ATOMUSDT:   { name: 'Cosmos (ATOM)', cap: 'Crypto', sector: 'IBC Interop', isCrypto: true, binanceSym: 'ATOMUSDT', trust: 'Est. 2019 • Inter-Blockchain Communication Hub' },
+      XLMUSDT:    { name: 'Stellar (XLM)', cap: 'Crypto', sector: 'Remittances', isCrypto: true, binanceSym: 'XLMUSDT', trust: 'Est. 2014 • MoneyGram & Franklin Templeton Partner' },
+      NEARUSDT:   { name: 'NEAR Protocol (NEAR)', cap: 'Crypto', sector: 'Sharded AI L1', isCrypto: true, binanceSym: 'NEARUSDT', trust: 'Est. 2020 • Nightshade Sharding • High Dev Activity' },
+      APTUSDT:    { name: 'Aptos (APT)', cap: 'Crypto', sector: 'Move L1', isCrypto: true, binanceSym: 'APTUSDT', trust: 'Est. 2022 • a16z/BlackRock BUIDL • Sub-Second Finality' },
+      FILUSDT:    { name: 'Filecoin (FIL)', cap: 'Crypto', sector: 'DePIN Storage', isCrypto: true, binanceSym: 'FILUSDT', trust: 'Est. 2020 • #1 Decentralized Cloud Storage' },
+      ICPUSDT:    { name: 'Internet Computer (ICP)', cap: 'Crypto', sector: 'On-Chain Cloud', isCrypto: true, binanceSym: 'ICPUSDT', trust: 'Est. 2021 • DFINITY Foundation • Full-Stack Web3' },
+      HBARUSDT:   { name: 'Hedera (HBAR)', cap: 'Crypto', sector: 'Enterprise DLT', isCrypto: true, binanceSym: 'HBARUSDT', trust: 'Est. 2019 • Google, IBM & Boeing Governed Council' },
+      VETUSDT:    { name: 'VeChain (VET)', cap: 'Crypto', sector: 'Supply Chain', isCrypto: true, binanceSym: 'VETUSDT', trust: 'Est. 2015 • Walmart China & BMW Enterprise Track' },
+      ALGOUSDT:   { name: 'Algorand (ALGO)', cap: 'Crypto', sector: 'Pure PoS L1', isCrypto: true, binanceSym: 'ALGOUSDT', trust: 'Est. 2019 • MIT Turing Award Founder • Zero Forks' },
+      AAVEUSDT:   { name: 'Aave (AAVE)', cap: 'Crypto', sector: 'DeFi Lending', isCrypto: true, binanceSym: 'AAVEUSDT', trust: 'Est. 2017 • #1 DeFi Money Market • $15B+ TVL' },
+      MKRUSDT:    { name: 'Maker (MKR)', cap: 'Crypto', sector: 'RWA & Stablecoin', isCrypto: true, binanceSym: 'MKRUSDT', trust: 'Est. 2017 • US Treasury RWA Pioneer' },
+      GRTUSDT:    { name: 'The Graph (GRT)', cap: 'Crypto', sector: 'Web3 Indexing', isCrypto: true, binanceSym: 'GRTUSDT', trust: 'Est. 2020 • Core Query Layer for Ethereum & L2s' },
       RENDERUSDT: { name: 'Render (RENDER)', cap: 'Crypto', sector: 'AI GPU DePIN', isCrypto: true, binanceSym: 'RENDERUSDT', trust: 'Est. 2017 • Decentralized GPU Rendering Network' },
-      INJUSDT: { name: 'Injective (INJ)', cap: 'Crypto', sector: 'DeFi Orderbook L1', isCrypto: true, binanceSym: 'INJUSDT', trust: 'Binance & Pantera Backed • Zero-Gas DeFi L1' },
-      OPUSDT: { name: 'Optimism (OP)', cap: 'Crypto', sector: 'Ethereum L2', isCrypto: true, binanceSym: 'OPUSDT', trust: 'Coinbase Base Superchain Stack • Top Rollup' },
-      ARBUSDT: { name: 'Arbitrum (ARB)', cap: 'Crypto', sector: 'Ethereum L2', isCrypto: true, binanceSym: 'ARBUSDT', trust: '#1 Ethereum Layer-2 by DeFi TVL' },
-      STXUSDT: { name: 'Stacks (STX)', cap: 'Crypto', sector: 'Bitcoin L2', isCrypto: true, binanceSym: 'STXUSDT', trust: 'Est. 2017 • SEC-Qualified Reg A+ • Leading BTC Smart L2' },
-      IMXUSDT: { name: 'Immutable (IMX)', cap: 'Crypto', sector: 'Gaming ZK-L2', isCrypto: true, binanceSym: 'IMXUSDT', trust: 'Leading Web3 Gaming ZK-Rollup Ecosystem' },
-      LDOUSDT: { name: 'Lido DAO (LDO)', cap: 'Crypto', sector: 'Liquid Staking', isCrypto: true, binanceSym: 'LDOUSDT', trust: '#1 Ethereum Liquid Staking Protocol' },
-      ETCUSDT: { name: 'Ethereum Classic (ETC)', cap: 'Crypto', sector: 'Original EVM PoW', isCrypto: true, binanceSym: 'ETCUSDT', trust: 'Est. 2016 • Immutable Proof-of-Work EVM Chain' },
-      THETAUSDT: { name: 'Theta Network (THETA)', cap: 'Crypto', sector: 'Video DePIN', isCrypto: true, binanceSym: 'THETAUSDT', trust: 'Est. 2018 • Sony & Samsung Enterprise Validators' },
-      XTZUSDT: { name: 'Tezos (XTZ)', cap: 'Crypto', sector: 'Self-Amending L1', isCrypto: true, binanceSym: 'XTZUSDT', trust: 'Est. 2018 • Forkless On-Chain Governance' },
-      EGLDUSDT: { name: 'MultiversX (EGLD)', cap: 'Crypto', sector: 'Adaptive Sharding', isCrypto: true, binanceSym: 'EGLDUSDT', trust: 'Est. 2019 • High-Speed State Sharded L1' },
-      FLOWUSDT: { name: 'Flow (FLOW)', cap: 'Crypto', sector: 'Consumer Web3', isCrypto: true, binanceSym: 'FLOWUSDT', trust: 'NBA Top Shot & Disney Pinnacle Partner' },
-      SANDUSDT: { name: 'The Sandbox (SAND)', cap: 'Crypto', sector: 'Metaverse', isCrypto: true, binanceSym: 'SANDUSDT', trust: 'Animoca Brands • Atari & Gucci Partnerships' },
-      MANAUSDT: { name: 'Decentraland (MANA)', cap: 'Crypto', sector: 'Virtual World', isCrypto: true, binanceSym: 'MANAUSDT', trust: 'Est. 2017 • Pioneer Decentralized Metaverse' },
-      AXSUSDT: { name: 'Axie Infinity (AXS)', cap: 'Crypto', sector: 'GameFi', isCrypto: true, binanceSym: 'AXSUSDT', trust: 'Est. 2018 • Ronin Network Flagship Game' },
-      CRVUSDT: { name: 'Curve DAO (CRV)', cap: 'Crypto', sector: 'Stablecoin AMM', isCrypto: true, binanceSym: 'CRVUSDT', trust: 'Est. 2020 • Core DeFi Stablecoin Liquidity Engine' },
-      COMPUSDT: { name: 'Compound (COMP)', cap: 'Crypto', sector: 'DeFi Money Market', isCrypto: true, binanceSym: 'COMPUSDT', trust: 'Est. 2018 • Pioneer DeFi Lending Protocol' },
-      SNXUSDT: { name: 'Synthetix (SNX)', cap: 'Crypto', sector: 'DeFi Derivatives', isCrypto: true, binanceSym: 'SNXUSDT', trust: 'Est. 2018 • Pioneer On-Chain Liquidity & Perps' },
-      CHZUSDT: { name: 'Chiliz (CHZ)', cap: 'Crypto', sector: 'Sports Fan Tokens', isCrypto: true, binanceSym: 'CHZUSDT', trust: 'FC Barcelona / PSG / UFC Official Partner' },
-      QNTUSDT: { name: 'Quant (QNT)', cap: 'Crypto', sector: 'Enterprise Overledger', isCrypto: true, binanceSym: 'QNTUSDT', trust: 'Est. 2018 • Bank & CBDC Interoperability' },
-      RUNEUSDT: { name: 'THORChain (RUNE)', cap: 'Crypto', sector: 'Native Cross-Chain', isCrypto: true, binanceSym: 'RUNEUSDT', trust: 'Est. 2019 • Native BTC-to-ETH Decentralized Swaps' },
-      SUIUSDT: { name: 'Sui (SUI)', cap: 'Crypto', sector: 'Object-Centric L1', isCrypto: true, binanceSym: 'SUIUSDT', trust: 'Mysten Labs • Parallel Execution High-Cap L1' },
-      SEIUSDT: { name: 'Sei (SEI)', cap: 'Crypto', sector: 'Parallelized EVM', isCrypto: true, binanceSym: 'SEIUSDT', trust: 'Sub-400ms Parallelized Trading Layer-1' }
+      INJUSDT:    { name: 'Injective (INJ)', cap: 'Crypto', sector: 'DeFi Orderbook L1', isCrypto: true, binanceSym: 'INJUSDT', trust: 'Est. 2020 • Binance & Pantera Backed • Zero-Gas DeFi' },
+      OPUSDT:     { name: 'Optimism (OP)', cap: 'Crypto', sector: 'Ethereum L2', isCrypto: true, binanceSym: 'OPUSDT', trust: 'Est. 2022 • Coinbase Base Superchain Stack' },
+      ARBUSDT:    { name: 'Arbitrum (ARB)', cap: 'Crypto', sector: 'Ethereum L2', isCrypto: true, binanceSym: 'ARBUSDT', trust: 'Est. 2021 • #1 Ethereum Layer-2 by DeFi TVL' },
+      STXUSDT:    { name: 'Stacks (STX)', cap: 'Crypto', sector: 'Bitcoin L2', isCrypto: true, binanceSym: 'STXUSDT', trust: 'Est. 2017 • SEC-Qualified Reg A+ • Leading BTC L2' },
+      IMXUSDT:    { name: 'Immutable (IMX)', cap: 'Crypto', sector: 'Gaming ZK-L2', isCrypto: true, binanceSym: 'IMXUSDT', trust: 'Est. 2021 • Leading Web3 Gaming ZK-Rollup' },
+      LDOUSDT:    { name: 'Lido DAO (LDO)', cap: 'Crypto', sector: 'Liquid Staking', isCrypto: true, binanceSym: 'LDOUSDT', trust: 'Est. 2020 • #1 Ethereum Liquid Staking Protocol' },
+      ETCUSDT:    { name: 'Ethereum Classic (ETC)', cap: 'Crypto', sector: 'Original EVM PoW', isCrypto: true, binanceSym: 'ETCUSDT', trust: 'Est. 2016 • Immutable Proof-of-Work EVM Chain' },
+      XMRUSDT:    { name: 'Monero (XMR)', cap: 'Crypto', sector: 'Privacy PoW', isCrypto: true, binanceSym: 'XMRUSDT', trust: 'Est. 2014 • Battle-Tested Cryptographic Privacy' },
+      THETAUSDT:  { name: 'Theta Network (THETA)', cap: 'Crypto', sector: 'Video DePIN', isCrypto: true, binanceSym: 'THETAUSDT', trust: 'Est. 2018 • Sony & Samsung Enterprise Validators' },
+      XTZUSDT:    { name: 'Tezos (XTZ)', cap: 'Crypto', sector: 'Self-Amending L1', isCrypto: true, binanceSym: 'XTZUSDT', trust: 'Est. 2018 • Forkless On-Chain Governance' },
+      EGLDUSDT:   { name: 'MultiversX (EGLD)', cap: 'Crypto', sector: 'Adaptive Sharding', isCrypto: true, binanceSym: 'EGLDUSDT', trust: 'Est. 2019 • High-Speed State Sharded L1' },
+      FLOWUSDT:   { name: 'Flow (FLOW)', cap: 'Crypto', sector: 'Consumer Web3', isCrypto: true, binanceSym: 'FLOWUSDT', trust: 'Est. 2020 • NBA Top Shot & Disney Pinnacle Partner' },
+      SANDUSDT:   { name: 'The Sandbox (SAND)', cap: 'Crypto', sector: 'Metaverse', isCrypto: true, binanceSym: 'SANDUSDT', trust: 'Est. 2018 • Animoca Brands • Atari & Gucci Partners' },
+      MANAUSDT:   { name: 'Decentraland (MANA)', cap: 'Crypto', sector: 'Virtual World', isCrypto: true, binanceSym: 'MANAUSDT', trust: 'Est. 2017 • Pioneer Decentralized Metaverse' },
+      AXSUSDT:    { name: 'Axie Infinity (AXS)', cap: 'Crypto', sector: 'GameFi', isCrypto: true, binanceSym: 'AXSUSDT', trust: 'Est. 2018 • Ronin Network Flagship Game' },
+      CRVUSDT:    { name: 'Curve DAO (CRV)', cap: 'Crypto', sector: 'Stablecoin AMM', isCrypto: true, binanceSym: 'CRVUSDT', trust: 'Est. 2020 • Core DeFi Stablecoin Liquidity Engine' },
+      COMPUSDT:   { name: 'Compound (COMP)', cap: 'Crypto', sector: 'DeFi Money Market', isCrypto: true, binanceSym: 'COMPUSDT', trust: 'Est. 2018 • Pioneer DeFi Lending Protocol' },
+      SNXUSDT:    { name: 'Synthetix (SNX)', cap: 'Crypto', sector: 'DeFi Derivatives', isCrypto: true, binanceSym: 'SNXUSDT', trust: 'Est. 2018 • Pioneer On-Chain Liquidity & Perps' },
+      CHZUSDT:    { name: 'Chiliz (CHZ)', cap: 'Crypto', sector: 'Sports Fan Tokens', isCrypto: true, binanceSym: 'CHZUSDT', trust: 'Est. 2018 • FC Barcelona / PSG / UFC Official Partner' },
+      QNTUSDT:    { name: 'Quant (QNT)', cap: 'Crypto', sector: 'Enterprise Overledger', isCrypto: true, binanceSym: 'QNTUSDT', trust: 'Est. 2018 • Bank & CBDC Interoperability' },
+      RUNEUSDT:   { name: 'THORChain (RUNE)', cap: 'Crypto', sector: 'Native Cross-Chain', isCrypto: true, binanceSym: 'RUNEUSDT', trust: 'Est. 2019 • Native BTC-to-ETH Decentralized Swaps' },
+      SUIUSDT:    { name: 'Sui (SUI)', cap: 'Crypto', sector: 'Object-Centric L1', isCrypto: true, binanceSym: 'SUIUSDT', trust: 'Est. 2023 • Mysten Labs • Parallel Execution High-Cap L1' },
+
+      // --- 40 NSE INDIAN STOCKS (TWELVE DATA DIRECT CORS API) ---
+      RELIANCE:   { name: 'Reliance Industries Ltd', cap: 'Large', sector: 'Energy & Telecom', isCrypto: false, tdSym: 'RELIANCE:NSE' },
+      TCS:        { name: 'Tata Consultancy Services', cap: 'Large', sector: 'IT Services', isCrypto: false, tdSym: 'TCS:NSE' },
+      HDFCBANK:   { name: 'HDFC Bank Ltd', cap: 'Large', sector: 'Banking', isCrypto: false, tdSym: 'HDFCBANK:NSE' },
+      ICICIBANK:  { name: 'ICICI Bank Ltd', cap: 'Large', sector: 'Banking', isCrypto: false, tdSym: 'ICICIBANK:NSE' },
+      INFY:       { name: 'Infosys Ltd', cap: 'Large', sector: 'IT Services', isCrypto: false, tdSym: 'INFY:NSE' },
+      SBIN:       { name: 'State Bank of India', cap: 'Large', sector: 'PSU Banking', isCrypto: false, tdSym: 'SBIN:NSE' },
+      BHARTIARTL: { name: 'Bharti Airtel Ltd', cap: 'Large', sector: 'Telecom', isCrypto: false, tdSym: 'BHARTIARTL:NSE' },
+      ITC:        { name: 'ITC Ltd', cap: 'Large', sector: 'FMCG', isCrypto: false, tdSym: 'ITC:NSE' },
+      LT:         { name: 'Larsen & Toubro Ltd', cap: 'Large', sector: 'Infrastructure', isCrypto: false, tdSym: 'LT:NSE' },
+      AXISBANK:   { name: 'Axis Bank Ltd', cap: 'Large', sector: 'Banking', isCrypto: false, tdSym: 'AXISBANK:NSE' },
+      KOTAKBANK:  { name: 'Kotak Mahindra Bank Ltd', cap: 'Large', sector: 'Banking', isCrypto: false, tdSym: 'KOTAKBANK:NSE' },
+      BAJFINANCE: { name: 'Bajaj Finance Ltd', cap: 'Large', sector: 'NBFC', isCrypto: false, tdSym: 'BAJFINANCE:NSE' },
+      MARUTI:     { name: 'Maruti Suzuki India Ltd', cap: 'Large', sector: 'Automobiles', isCrypto: false, tdSym: 'MARUTI:NSE' },
+      SUNPHARMA:  { name: 'Sun Pharmaceutical Ind', cap: 'Large', sector: 'Pharma', isCrypto: false, tdSym: 'SUNPHARMA:NSE' },
+      TITAN:      { name: 'Titan Company Ltd', cap: 'Large', sector: 'Consumer', isCrypto: false, tdSym: 'TITAN:NSE' },
+      TATAMOTORS: { name: 'Tata Motors Ltd', cap: 'Large', sector: 'Automobiles', isCrypto: false, tdSym: 'TATAMOTORS:NSE' },
+      NTPC:       { name: 'NTPC Ltd', cap: 'Large', sector: 'Power', isCrypto: false, tdSym: 'NTPC:NSE' },
+      ONGC:       { name: 'Oil & Natural Gas Corp', cap: 'Large', sector: 'Oil & Gas', isCrypto: false, tdSym: 'ONGC:NSE' },
+      POWERGRID:  { name: 'Power Grid Corp of India', cap: 'Large', sector: 'Power', isCrypto: false, tdSym: 'POWERGRID:NSE' },
+      ULTRACEMCO: { name: 'UltraTech Cement Ltd', cap: 'Large', sector: 'Cement', isCrypto: false, tdSym: 'ULTRACEMCO:NSE' },
+      ADANIENT:   { name: 'Adani Enterprises Ltd', cap: 'Large', sector: 'Conglomerate', isCrypto: false, tdSym: 'ADANIENT:NSE' },
+      WIPRO:      { name: 'Wipro Ltd', cap: 'Large', sector: 'IT Services', isCrypto: false, tdSym: 'WIPRO:NSE' },
+      HCLTECH:    { name: 'HCL Technologies Ltd', cap: 'Large', sector: 'IT Services', isCrypto: false, tdSym: 'HCLTECH:NSE' },
+      'M&M':      { name: 'Mahindra & Mahindra Ltd', cap: 'Large', sector: 'Automobiles', isCrypto: false, tdSym: 'M&M:NSE' },
+      TRENT:      { name: 'Trent Ltd', cap: 'Large', sector: 'Retail', isCrypto: false, tdSym: 'TRENT:NSE' },
+      BEL:        { name: 'Bharat Electronics Ltd', cap: 'Large', sector: 'Defence', isCrypto: false, tdSym: 'BEL:NSE' },
+      HAL:        { name: 'Hindustan Aeronautics Ltd', cap: 'Large', sector: 'Defence', isCrypto: false, tdSym: 'HAL:NSE' },
+      // NSE Mid-Caps
+      COFORGE:    { name: 'Coforge Ltd', cap: 'Mid', sector: 'Mid-Cap IT', isCrypto: false, tdSym: 'COFORGE:NSE' },
+      PERSISTENT: { name: 'Persistent Systems Ltd', cap: 'Mid', sector: 'Mid-Cap IT', isCrypto: false, tdSym: 'PERSISTENT:NSE' },
+      POLYCAB:    { name: 'Polycab India Ltd', cap: 'Mid', sector: 'Cables & Wires', isCrypto: false, tdSym: 'POLYCAB:NSE' },
+      CGPOWER:    { name: 'CG Power & Industrial', cap: 'Mid', sector: 'Capital Goods', isCrypto: false, tdSym: 'CGPOWER:NSE' },
+      DIXON:      { name: 'Dixon Technologies Ltd', cap: 'Mid', sector: 'Electronics Mfg', isCrypto: false, tdSym: 'DIXON:NSE' },
+      CUMMINSIND: { name: 'Cummins India Ltd', cap: 'Mid', sector: 'Industrials', isCrypto: false, tdSym: 'CUMMINSIND:NSE' },
+      MAXHEALTH:  { name: 'Max Healthcare Institute', cap: 'Mid', sector: 'Healthcare', isCrypto: false, tdSym: 'MAXHEALTH:NSE' },
+      INDHOTEL:   { name: 'Indian Hotels Co Ltd', cap: 'Mid', sector: 'Hospitality', isCrypto: false, tdSym: 'INDHOTEL:NSE' },
+      // NSE Small-Caps
+      SUZLON:     { name: 'Suzlon Energy Ltd', cap: 'Small', sector: 'Renewables', isCrypto: false, tdSym: 'SUZLON:NSE' },
+      KPITTECH:   { name: 'KPIT Technologies Ltd', cap: 'Small', sector: 'Auto Tech', isCrypto: false, tdSym: 'KPITTECH:NSE' },
+      CDSL:       { name: 'Central Depository Services', cap: 'Small', sector: 'Capital Markets', isCrypto: false, tdSym: 'CDSL:NSE' },
+      IEX:        { name: 'Indian Energy Exchange', cap: 'Small', sector: 'Power Exchange', isCrypto: false, tdSym: 'IEX:NSE' },
+      MCX:        { name: 'Multi Commodity Exchange', cap: 'Small', sector: 'Exchange', isCrypto: false, tdSym: 'MCX:NSE' }
     };
 
     const STRATEGY_DESCRIPTIONS = {
-      cum_rsi2: 'Ultra-selective 1-click entry: Buys uptrending assets (Price > 200 SMA & 50 SMA > 200 SMA) when the 2-day cumulative RSI(2) drops below 10, and exits on a 5-SMA snapback or quick Take-Profit.',
-      connors_rsi2: 'Classic Larry Connors RSI(2) mean-reversion: Buys when Price > 200 SMA and single-bar RSI(2) drops below 10, exiting on a close above the 5-SMA.',
-      bb_rsi_snap: 'Volatility oversold bounce: Buys in a 50-SMA uptrend when price touches the Lower Bollinger Band (20, 2) with RSI(14) < 35.',
-      ema20_pullback: 'Trend continuation pullback: Buys when 20-EMA > 50-EMA and price dips into the 20-EMA support zone with healthy RSI(14) between 38 and 55.',
-      ema_cross: 'Momentum trend following: Enters Long when fast 9-EMA crosses above slow 21-EMA, and Short on bearish crossover.',
-      supertrend_breakout: 'Volatility breakout: Enters Long when price breaks above the upper ATR(10, 2.5) dynamic band.',
-      vwap_bounce: 'Institutional anchor reclaim: Enters Long when price reclaims the rolling 20-bar anchor average with a bullish close.'
+      cum_rsi2: 'Buys uptrending assets (Price > 200 SMA & 50 SMA > 200 SMA) when the 2-day cumulative RSI(2) drops below 10, and exits on a 5-SMA snapback or Take-Profit.',
+      rsi2_200sma: 'Classic Connors RSI(2) + 200 SMA pullback: Buys when Price > 200 SMA and single-bar RSI(2) drops below 10, exiting on a close above the 5-SMA.',
+      bb_reversion: 'Bollinger Band (20, 2) mean reversion: Buys in a 50-SMA uptrend when price touches or pierces the Lower Bollinger Band with RSI(14) < 35.',
+      macd_50ema: 'MACD + 50 EMA trend pullback: Buys above the 50 EMA when the MACD histogram turns upward from oversold pullback territory.',
+      ema_cross: '9/21 EMA momentum crossover: Enters Long when fast 9-EMA crosses above slow 21-EMA, and Short on bearish crossover (when Long & Short is enabled).'
     };
 
-    const SWING_STRATEGIES = new Set(['cum_rsi2', 'connors_rsi2', 'bb_rsi_snap']);
-    const SIGNALS_STORAGE_KEY = 'nse_algolab_persistent_signals_v2_real';
+    const SWING_STRATEGIES = new Set(['cum_rsi2', 'rsi2_200sma', 'bb_reversion']);
+
+    // Storage Keys
+    const SIGNALS_STORAGE_KEY = 'nse_algolab_signals_v3_clean';
+    const LAST_SCAN_IST_KEY = 'nse_algolab_last_scan_date_ist';
+    const TD_SETTINGS_KEY = 'nse_algolab_td_settings_v1';
+    const TD_CANDLE_CACHE_KEY = 'nse_algolab_td_candle_cache_v1';
+    const WA_PREFS_KEY = 'nse_algolab_wa_prefs_v1';
+
+    // Purge any legacy simulated keys
+    try {
+      localStorage.removeItem('nse_algolab_persistent_signals_v1');
+      localStorage.removeItem('nse_algolab_persistent_signals_v2_real');
+    } catch (e) {}
+
     let liveUsdToInr = 84.50;
 
-    // Purge any legacy simulated signals from earlier versions
-    try { localStorage.removeItem('nse_algolab_persistent_signals_v1'); } catch (e) {}
-
     // =========================================================================
-    // 2. APPLICATION STATE & REAL CANDLE CACHE
+    // 2. APPLICATION STATE & CREDIT-SAFE GUARD
     // =========================================================================
     const state = {
       mode: 'signals',
@@ -564,35 +622,168 @@
       duration: '6Y',
       riskUnit: 'percent',
       candles: [],
-      realCandleCache: {},
+      memoryCandleCache: {},
       activeSignalsTracker: {},
       closedSignalsToday: [],
-      hourlyScanTimer: null,
-      countdownTimer: null,
-      liveReplayTimer: null,
-      activeRequestId: 0
+      currentRequestId: 0,
+      tdApiKey: '',
+      tdCreditCap: 650,
+      tdCreditsUsedToday: 0,
+      tdCreditsDateIST: getTodayISTDateString(),
+      tdCallTimestamps: [],
+      replayIndex: 0,
+      replayTimer: null,
+      replayPlaying: false
     };
+
+    function loadTwelveDataSettings() {
+      try {
+        const raw = localStorage.getItem(TD_SETTINGS_KEY);
+        const today = getTodayISTDateString();
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          state.tdApiKey = String(parsed.apiKey || '').trim();
+          state.tdCreditCap = Math.min(800, Math.max(10, Number(parsed.creditCap) || 650));
+          if (parsed.creditsDateIST === today) {
+            state.tdCreditsUsedToday = Number(parsed.creditsUsedToday) || 0;
+            state.tdCreditsDateIST = today;
+          } else {
+            state.tdCreditsUsedToday = 0;
+            state.tdCreditsDateIST = today;
+          }
+        }
+      } catch (e) {}
+      syncTwelveDataUI();
+    }
+
+    function saveTwelveDataSettings(showFeedback = false) {
+      const keyInput = $('twelveDataKeyInput');
+      const capInput = $('creditCapInput');
+      if (keyInput) state.tdApiKey = keyInput.value.trim();
+      if (capInput) state.tdCreditCap = Math.min(800, Math.max(10, Number(capInput.value) || 650));
+
+      const today = getTodayISTDateString();
+      if (state.tdCreditsDateIST !== today) {
+        state.tdCreditsUsedToday = 0;
+        state.tdCreditsDateIST = today;
+      }
+
+      try {
+        localStorage.setItem(TD_SETTINGS_KEY, JSON.stringify({
+          apiKey: state.tdApiKey,
+          creditCap: state.tdCreditCap,
+          creditsUsedToday: state.tdCreditsUsedToday,
+          creditsDateIST: state.tdCreditsDateIST
+        }));
+      } catch (e) {}
+
+      syncTwelveDataUI();
+      if (showFeedback) {
+        showToast(
+          state.tdApiKey ? 'Twelve Data Key Saved' : 'Key Cleared',
+          state.tdApiKey
+            ? `Stored locally in browser. Safety cap set to ${state.tdCreditCap}/800 credits per IST day.`
+            : 'NSE live calls paused. All 50 Crypto coins remain active at 0 credits.'
+        );
+      }
+    }
+
+    function clearTwelveDataKey() {
+      const keyInput = $('twelveDataKeyInput');
+      if (keyInput) keyInput.value = '';
+      state.tdApiKey = '';
+      saveTwelveDataSettings(true);
+    }
+
+    function incrementTwelveDataCredit() {
+      const today = getTodayISTDateString();
+      if (state.tdCreditsDateIST !== today) {
+        state.tdCreditsUsedToday = 0;
+        state.tdCreditsDateIST = today;
+      }
+      state.tdCreditsUsedToday += 1;
+      saveTwelveDataSettings(false);
+    }
+
+    function syncTwelveDataUI() {
+      const keyInput = $('twelveDataKeyInput');
+      const capInput = $('creditCapInput');
+      const usedLabel = $('creditsUsedLabel');
+      const noKeyBanner = $('nseNoKeyNotice');
+      if (keyInput && keyInput.value !== state.tdApiKey) keyInput.value = state.tdApiKey;
+      if (capInput) capInput.value = state.tdCreditCap;
+      if (usedLabel) usedLabel.textContent = state.tdCreditsUsedToday;
+      if (noKeyBanner) noKeyBanner.classList.toggle('hidden', Boolean(state.tdApiKey));
+    }
+
+    function getCachedNseCandles24h(cacheKey) {
+      try {
+        const raw = localStorage.getItem(TD_CANDLE_CACHE_KEY);
+        if (!raw) return null;
+        const store = JSON.parse(raw);
+        const entry = store[cacheKey];
+        if (!entry || !Array.isArray(entry.candles) || entry.candles.length < 30) return null;
+        if ((Date.now() - entry.savedAt) > 24 * 60 * 60 * 1000) return null;
+        return entry.candles;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function setCachedNseCandles24h(cacheKey, candles) {
+      try {
+        const raw = localStorage.getItem(TD_CANDLE_CACHE_KEY);
+        const store = raw ? JSON.parse(raw) : {};
+        store[cacheKey] = { savedAt: Date.now(), candles };
+        localStorage.setItem(TD_CANDLE_CACHE_KEY, JSON.stringify(store));
+      } catch (e) {}
+    }
+
+    function clear24HrNseCache() {
+      try { localStorage.removeItem(TD_CANDLE_CACHE_KEY); } catch (e) {}
+      state.memoryCandleCache = {};
+      showToast('24h Cache Purged', 'Stored NSE candles cleared. Next NSE fetch will use 1 Twelve Data credit.');
+    }
+
+    // Rate limiter: max 6 Twelve Data calls per 60 seconds (well under free 8/min limit)
+    async function waitForTwelveDataRateSlot() {
+      while (true) {
+        const now = Date.now();
+        state.tdCallTimestamps = state.tdCallTimestamps.filter(ts => (now - ts) < 62000);
+        if (state.tdCallTimestamps.length < 6) {
+          state.tdCallTimestamps.push(now);
+          return;
+        }
+        const waitMs = Math.max(1000, 62000 - (now - state.tdCallTimestamps[0]));
+        await new Promise(r => setTimeout(r, waitMs));
+      }
+    }
 
     // =========================================================================
     // 3. SIDEBAR ASSET DROPDOWN & PARAMETER CONTROLS
     // =========================================================================
     function populateSymbolSelect(searchQuery = '') {
-      const select = document.getElementById('symbolSelect');
+      const select = $('symbolSelect');
       if (!select) return;
       const prevVal = select.value;
       const q = searchQuery.trim().toLowerCase();
-      const entries = Object.entries(NSE_SYMBOLS).filter(([sym, meta]) => {
+
+      const entries = Object.entries(ASSET_UNIVERSE).filter(([sym, meta]) => {
         const capMatch = state.capFilter === 'ALL' || meta.cap === state.capFilter;
-        const textMatch = !q || sym.toLowerCase().includes(q) || meta.name.toLowerCase().includes(q) || meta.sector.toLowerCase().includes(q);
+        const textMatch = !q ||
+          sym.toLowerCase().includes(q) ||
+          meta.name.toLowerCase().includes(q) ||
+          meta.sector.toLowerCase().includes(q);
         return capMatch && textMatch;
       });
 
-      const countEl = document.getElementById('universeCountLabel');
+      const countEl = $('universeCountLabel');
       if (countEl) countEl.textContent = `(${entries.length})`;
 
       select.innerHTML = entries.map(([sym, meta]) => {
         const displaySym = sym.replace('USDT', '');
-        return `<option value="${sym}">${displaySym} — ${meta.name}</option>`;
+        const tag = meta.isCrypto ? 'Crypto' : `NSE • ${meta.cap}`;
+        return `<option value="${sym}">${displaySym} — ${meta.name} (${tag})</option>`;
       }).join('');
 
       if (entries.some(([sym]) => sym === prevVal)) {
@@ -604,14 +795,14 @@
     }
 
     function updateSymbolMeta() {
-      const sym = document.getElementById('symbolSelect')?.value;
-      const meta = NSE_SYMBOLS[sym];
-      const metaEl = document.getElementById('symbolMetaText');
+      const sym = $('symbolSelect')?.value;
+      const meta = ASSET_UNIVERSE[sym];
+      const metaEl = $('symbolMetaText');
       if (!meta || !metaEl) return;
       if (meta.isCrypto) {
         metaEl.innerHTML = `<span class="font-semibold text-amber-700">${meta.sector}</span> • ${meta.trust}`;
       } else {
-        metaEl.textContent = `${meta.name} • ${meta.cap}-Cap • ${meta.sector}`;
+        metaEl.textContent = `${meta.name} • NSE ${meta.cap}-Cap • ${meta.sector}`;
       }
     }
 
@@ -623,8 +814,8 @@
           ? 'cap-btn py-1 rounded-lg text-[11px] font-semibold bg-white text-slate-900 shadow-sm transition'
           : 'cap-btn py-1 rounded-lg text-[11px] font-semibold text-slate-500 hover:text-slate-900 transition';
       });
-      populateSymbolSelect(document.getElementById('symbolSearchInput')?.value || '');
-      onSetupChanged(true);
+      populateSymbolSelect($('symbolSearchInput')?.value || '');
+      if (state.mode !== 'signals') onSetupChanged(false);
     }
 
     function filterSymbolDropdown(val) {
@@ -634,12 +825,12 @@
     function switchToCryptoMarket() {
       selectCapFilter('Crypto');
       setMode('signals');
-      scanAllLiveBuySignals(false);
+      renderActiveSignalsTable();
     }
 
     function toggleCryptoCurrency() {
       state.cryptoCurrency = state.cryptoCurrency === 'INR' ? 'USD' : 'INR';
-      const btn = document.getElementById('cryptoCurrencyToggleBtn');
+      const btn = $('cryptoCurrencyToggleBtn');
       if (btn) btn.textContent = state.cryptoCurrency === 'INR' ? 'Crypto: ₹ INR' : 'Crypto: $ USDT';
       renderActiveSignalsTable();
       if (state.mode !== 'signals') triggerRun();
@@ -652,7 +843,7 @@
           ? 'tf-btn py-1.5 rounded-lg text-xs font-semibold bg-white text-slate-900 shadow-sm transition'
           : 'tf-btn py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-900 transition';
       });
-      onSetupChanged(true);
+      if (state.mode !== 'signals') onSetupChanged(false);
     }
 
     function setDuration(dur) {
@@ -662,20 +853,22 @@
           ? 'dur-btn py-1.5 rounded-lg text-xs font-semibold bg-white text-slate-900 shadow-sm transition'
           : 'dur-btn py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-900 transition';
       });
-      onSetupChanged(true);
+      if (state.mode !== 'signals') onSetupChanged(false);
     }
 
     function onStrategyChanged() {
-      const strat = document.getElementById('strategySelect')?.value || 'cum_rsi2';
-      const descEl = document.getElementById('strategyDescBox');
+      const strat = $('strategySelect')?.value || 'cum_rsi2';
+      const descEl = $('strategyDescBox');
+      const badgeEl = $('strategyBadgeMode');
       if (descEl) descEl.textContent = STRATEGY_DESCRIPTIONS[strat] || '';
-      triggerRun();
+      if (badgeEl) badgeEl.textContent = SWING_STRATEGIES.has(strat) ? 'Mean Reversion' : 'Trend Momentum';
+      if (state.mode !== 'signals') triggerRun();
     }
 
     function setRiskUnit(unit) {
       state.riskUnit = unit;
-      const pctBtn = document.getElementById('unitPctBtn');
-      const ptsBtn = document.getElementById('unitPtsBtn');
+      const pctBtn = $('unitPctBtn');
+      const ptsBtn = $('unitPtsBtn');
       if (pctBtn && ptsBtn) {
         pctBtn.className = unit === 'percent'
           ? 'px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-white text-slate-900 shadow-sm transition'
@@ -684,58 +877,89 @@
           ? 'px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-white text-slate-900 shadow-sm transition'
           : 'px-2.5 py-0.5 rounded-md text-[11px] font-semibold text-slate-500 hover:text-slate-900 transition';
       }
-      triggerRun();
+      if (state.mode !== 'signals') triggerRun();
     }
 
     function syncRiskSlider(type, val) {
-      const el = document.getElementById(type === 'tp' ? 'tpInput' : 'tslInput');
+      const el = $(type === 'tp' ? 'tpInput' : 'tslInput');
       if (el) el.value = val;
-      triggerRun();
+      if (state.mode !== 'signals') triggerRun();
+    }
+
+    function syncRiskInput(type, val) {
+      const slider = $(type === 'tp' ? 'tpSlider' : 'tslSlider');
+      if (slider) slider.value = val;
+      if (state.mode !== 'signals') triggerRun();
     }
 
     async function onSetupChanged(forceRefetch = false) {
       updateSymbolMeta();
-      const sym = document.getElementById('symbolSelect')?.value || 'ICICIBANK';
-      const chartTitle = document.getElementById('chartTitle');
-      if (chartTitle) chartTitle.textContent = `${sym.replace('USDT', '')} • ${state.timeframe} (${state.duration}) Live Chart`;
+      const sym = $('symbolSelect')?.value || 'BTCUSDT';
+      const chartTitle = $('chartTitle');
+      if (chartTitle) {
+        chartTitle.textContent = `${sym.replace('USDT', '')} • ${state.timeframe} (${state.duration}) Real Chart`;
+      }
 
       if (state.mode === 'signals') return;
 
-      const reqId = ++state.activeRequestId;
+      const reqId = ++state.currentRequestId;
+      stopReplayTimer();
+
+      const meta = ASSET_UNIVERSE[sym];
+      if (meta && !meta.isCrypto && !state.tdApiKey) {
+        state.candles = [];
+        clearPriceChartWithNotice(
+          sym,
+          'NSE API Key Required for Indian Stocks',
+          'To protect you from blocked CORS proxies and fake prices, NSE stocks fetch directly via Twelve Data. Paste your free Twelve Data API key in the top bar, or select any of the 50 Trusted Crypto assets (0 API key required).'
+        );
+        return;
+      }
+
       const candles = await fetchRealHistoricalCandles(sym, state.timeframe, state.duration, forceRefetch);
-      if (reqId !== state.activeRequestId) return;
+      if (reqId !== state.currentRequestId) return;
 
       if (!candles || candles.length < 30) {
         state.candles = [];
-        clearPriceChartWithNotice(sym);
-        showToast('Live Feed Unavailable', `Could not retrieve live market candles for ${sym.replace('USDT', '')}. Try again shortly.`, true);
+        clearPriceChartWithNotice(
+          sym,
+          `Live Market Feed Unavailable for ${sym.replace('USDT', '')}`,
+          meta?.isCrypto
+            ? 'Could not retrieve Binance candles right now. Check your internet connection and click Retry.'
+            : 'Twelve Data rate limit / safety cap reached or symbol unavailable for this timeframe. Try Daily timeframe or check your API key.'
+        );
         return;
       }
+
       state.candles = candles;
-      triggerRun();
+      if (state.mode === 'live') {
+        restartLiveMarketReplay();
+      } else {
+        triggerRun();
+      }
     }
 
     // =========================================================================
-    // 4. 100% REAL LIVE MARKET DATA FETCHERS (BINANCE + MULTI-RELAY YAHOO)
+    // 4. 100% REAL MARKET DATA FETCHERS (BINANCE + TWELVE DATA CORS API)
     // =========================================================================
     async function fetchLiveUsdInrRate() {
       try {
-        const res = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=USDTINR', { signal: AbortSignal.timeout(4000) });
+        const res = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=USDTINR', { signal: AbortSignal.timeout(4500) });
         if (res.ok) {
           const data = await res.json();
           const p = parseFloat(data.price);
-          if (p > 70 && p < 120) {
+          if (p > 70 && p < 125) {
             liveUsdToInr = p;
             return;
           }
         }
       } catch (e) {}
       try {
-        const res = await fetch('https://open.er-api.com/v6/latest/USD', { signal: AbortSignal.timeout(4000) });
+        const res = await fetch('https://api.frankfurter.app/latest?from=USD&to=INR', { signal: AbortSignal.timeout(4500) });
         if (res.ok) {
           const data = await res.json();
           const r = Number(data?.rates?.INR);
-          if (r > 70 && r < 120) liveUsdToInr = r;
+          if (r > 70 && r < 125) liveUsdToInr = r;
         }
       } catch (e) {}
     }
@@ -744,156 +968,124 @@
       const intervalMap = { '5m': '5m', '15m': '15m', '1H': '1h', 'Daily': '1d' };
       const interval = intervalMap[timeframe] || '1d';
       const limit = timeframe === 'Daily' ? (duration === '1Y' ? 365 : 1000) : 500;
-      const urls = [
+      const endpoints = [
         `https://api.binance.com/api/v3/klines?symbol=${binanceSym}&interval=${interval}&limit=${limit}`,
         `https://data-api.binance.vision/api/v3/klines?symbol=${binanceSym}&interval=${interval}&limit=${limit}`
       ];
-      for (const url of urls) {
+
+      const maxValidTs = Math.floor(Date.now() / 1000) + 86400;
+
+      for (const url of endpoints) {
         try {
-          const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
+          const res = await fetch(url, { signal: AbortSignal.timeout(7000) });
           if (!res.ok) continue;
           const raw = await res.json();
           if (!Array.isArray(raw) || raw.length < 30) continue;
-          return raw.map(k => ({
-            time: Math.floor(k[0] / 1000),
-            open: parseFloat(k[1]),
-            high: parseFloat(k[2]),
-            low: parseFloat(k[3]),
-            close: parseFloat(k[4]),
-            volume: parseFloat(k[5])
-          }));
+          const candles = [];
+          for (const k of raw) {
+            const ts = Math.floor(Number(k[0]) / 1000);
+            const o = parseFloat(k[1]);
+            const h = parseFloat(k[2]);
+            const l = parseFloat(k[3]);
+            const c = parseFloat(k[4]);
+            if (ts > 0 && ts <= maxValidTs && c > 0) {
+              candles.push({ time: ts, open: o, high: h, low: l, close: c, volume: parseFloat(k[5]) || 0 });
+            }
+          }
+          if (candles.length >= 30) return candles;
         } catch (e) {}
       }
       return null;
     }
 
-    function getYahooTicker(sym) {
-      if (sym === 'NIFTY') return '^NSEI';
-      if (sym === 'BANKNIFTY') return '^NSEBANK';
-      if (sym === 'M_M') return 'M&M.NS';
-      return `${sym}.NS`;
-    }
+    async function fetchTwelveDataNSECandles(sym, timeframe, duration, forceRefresh = false) {
+      const meta = ASSET_UNIVERSE[sym];
+      if (!meta || meta.isCrypto) return null;
 
-    function parseYahooChartJSON(json) {
-      const result = json?.chart?.result?.[0];
-      if (!result || !result.timestamp || !result.indicators?.quote?.[0]) return null;
-      const ts = result.timestamp;
-      const q = result.indicators.quote[0];
-      const maxValidTs = Math.floor(Date.now() / 1000) + 86400;
-      const candles = [];
-      for (let i = 0; i < ts.length; i++) {
-        const o = q.open?.[i];
-        const h = q.high?.[i];
-        const l = q.low?.[i];
-        const c = q.close?.[i];
-        if (ts[i] <= maxValidTs && o != null && h != null && l != null && c != null && c > 0) {
-          candles.push({
-            time: ts[i],
-            open: Number(o.toFixed(2)),
-            high: Number(h.toFixed(2)),
-            low: Number(l.toFixed(2)),
-            close: Number(c.toFixed(2)),
-            volume: q.volume?.[i] || 0
-          });
-        }
+      const cacheKey = `${sym}_${timeframe}_${duration}`;
+      if (!forceRefresh) {
+        const diskCached = getCachedNseCandles24h(cacheKey);
+        if (diskCached) return diskCached;
       }
-      return candles.length >= 30 ? candles : null;
-    }
 
-    function parseYahooCSV(csvText) {
-      const lines = String(csvText || '').trim().split('\n');
-      if (lines.length < 35 || !lines[0].includes('Date,Open')) return null;
-      const maxValidTs = Math.floor(Date.now() / 1000) + 86400;
-      const candles = [];
-      for (let i = 1; i < lines.length; i++) {
-        const cols = lines[i].split(',');
-        if (cols.length < 5 || cols[4] === 'null' || !cols[4]) continue;
-        const ts = Math.floor(new Date(cols[0] + 'T09:15:00Z').getTime() / 1000);
-        const o = parseFloat(cols[1]);
-        const h = parseFloat(cols[2]);
-        const l = parseFloat(cols[3]);
-        const c = parseFloat(cols[4]);
-        if (ts > 0 && ts <= maxValidTs && !isNaN(c) && c > 0) {
-          candles.push({
-            time: ts,
-            open: Number(o.toFixed(2)),
-            high: Number(h.toFixed(2)),
-            low: Number(l.toFixed(2)),
-            close: Number(c.toFixed(2)),
-            volume: parseFloat(cols[6]) || 0
-          });
-        }
+      if (!state.tdApiKey) return null;
+
+      const today = getTodayISTDateString();
+      if (state.tdCreditsDateIST !== today) {
+        state.tdCreditsUsedToday = 0;
+        state.tdCreditsDateIST = today;
       }
-      return candles.length >= 30 ? candles : null;
-    }
-
-    async function fetchYahooNSECandles(sym, timeframe, duration) {
-      const ticker = encodeURIComponent(getYahooTicker(sym));
-      const intervalMap = { '5m': '5m', '15m': '15m', '1H': '60m', 'Daily': '1d' };
-      const rangeMap = {
-        '5m': '5d',
-        '15m': '15d',
-        '1H': '60d',
-        'Daily': duration === '1Y' ? '1y' : (duration === '3Y' ? '3y' : '5y')
-      };
-      const interval = intervalMap[timeframe] || '1d';
-      const range = rangeMap[timeframe] || '5y';
-
-      const yUrl1 = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=${interval}&range=${range}`;
-      const yUrl2 = `https://query2.finance.yahoo.com/v8/finance/chart/${ticker}?interval=${interval}&range=${range}`;
-      const period2 = Math.floor(Date.now() / 1000);
-      const period1 = period2 - (duration === '1Y' ? 365 : (duration === '3Y' ? 1095 : 1825)) * 86400;
-      const csvUrl = `https://query1.finance.yahoo.com/v7/finance/download/${ticker}?period1=${period1}&period2=${period2}&interval=1d&events=history`;
-
-      const fetchViaAllOrigins = async (targetUrl, isCsv = false) => {
-        const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`, { signal: AbortSignal.timeout(7000) });
-        if (!res.ok) throw new Error('ao fail');
-        const wrapped = await res.json();
-        if (!wrapped?.contents) throw new Error('ao empty');
-        const parsed = isCsv ? parseYahooCSV(wrapped.contents) : parseYahooChartJSON(JSON.parse(wrapped.contents));
-        if (!parsed) throw new Error('ao invalid');
-        return parsed;
-      };
-
-      const fetchViaDirectProxy = async (proxyPrefix, targetUrl, isCsv = false) => {
-        const res = await fetch(`${proxyPrefix}${encodeURIComponent(targetUrl)}`, { signal: AbortSignal.timeout(7000) });
-        if (!res.ok) throw new Error('proxy fail');
-        const parsed = isCsv ? parseYahooCSV(await res.text()) : parseYahooChartJSON(await res.json());
-        if (!parsed) throw new Error('proxy invalid');
-        return parsed;
-      };
-
-      const tasks = [
-        fetchViaAllOrigins(yUrl1, false),
-        fetchViaAllOrigins(yUrl2, false),
-        fetchViaDirectProxy('https://api.codetabs.com/v1/proxy?quest=', yUrl1, false),
-        fetchViaDirectProxy('https://corsproxy.io/?', yUrl2, false)
-      ];
-      if (timeframe === 'Daily') {
-        tasks.push(fetchViaAllOrigins(csvUrl, true));
-        tasks.push(fetchViaDirectProxy('https://api.codetabs.com/v1/proxy?quest=', csvUrl, true));
+      if (state.tdCreditsUsedToday >= state.tdCreditCap) {
+        showToast('Credit-Safe Guard Active', `Reached daily safety cap (${state.tdCreditsUsedToday}/${state.tdCreditCap} credits). Using cached data.`, true);
+        return getCachedNseCandles24h(cacheKey);
       }
+
+      const intervalMap = { '5m': '5min', '15m': '15min', '1H': '1h', 'Daily': '1day' };
+      const interval = intervalMap[timeframe] || '1day';
+      const outputsize = timeframe === 'Daily'
+        ? (duration === '1Y' ? 260 : (duration === '3Y' ? 760 : 1500))
+        : 400;
+
+      const tdSymbol = encodeURIComponent(meta.tdSym || `${sym}:NSE`);
+      const url = `https://api.twelvedata.com/time_series?symbol=${tdSymbol}&interval=${interval}&outputsize=${outputsize}&apikey=${encodeURIComponent(state.tdApiKey)}`;
 
       try {
-        return await Promise.any(tasks);
-      } catch (e) {
-        return null;
-      }
+        await waitForTwelveDataRateSlot();
+        const res = await fetch(url, { signal: AbortSignal.timeout(9000) });
+        incrementTwelveDataCredit();
+        if (!res.ok) return null;
+        const data = await res.json();
+        if (data.status === 'error' || !Array.isArray(data.values)) {
+          return null;
+        }
+
+        const maxValidTs = Math.floor(Date.now() / 1000) + 86400;
+        const candles = [];
+        // Twelve Data returns newest first -> reverse to chronological order
+        for (let i = data.values.length - 1; i >= 0; i--) {
+          const row = data.values[i];
+          const isoStr = row.datetime.includes(' ') ? `${row.datetime.replace(' ', 'T')}+05:30` : `${row.datetime}T09:15:00+05:30`;
+          const ts = Math.floor(new Date(isoStr).getTime() / 1000);
+          const o = parseFloat(row.open);
+          const h = parseFloat(row.high);
+          const l = parseFloat(row.low);
+          const c = parseFloat(row.close);
+          if (ts > 0 && ts <= maxValidTs && !isNaN(c) && c > 0) {
+            candles.push({
+              time: ts,
+              open: Number(o.toFixed(2)),
+              high: Number(h.toFixed(2)),
+              low: Number(l.toFixed(2)),
+              close: Number(c.toFixed(2)),
+              volume: parseFloat(row.volume) || 0
+            });
+          }
+        }
+
+        if (candles.length >= 30) {
+          setCachedNseCandles24h(cacheKey, candles);
+          return candles;
+        }
+      } catch (e) {}
+      return null;
     }
 
     async function fetchRealHistoricalCandles(sym, timeframe = 'Daily', duration = '6Y', forceRefresh = false) {
-      const cacheKey = `${sym}_${timeframe}_${duration}`;
-      const cached = state.realCandleCache[cacheKey];
-      if (!forceRefresh && cached && (Date.now() - cached.fetchedAt) < 120000) {
-        return cached.candles;
+      const memKey = `${sym}_${timeframe}_${duration}`;
+      const memCached = state.memoryCandleCache[memKey];
+      if (!forceRefresh && memCached && (Date.now() - memCached.fetchedAt) < 300000) {
+        return memCached.candles;
       }
-      const meta = NSE_SYMBOLS[sym];
+
+      const meta = ASSET_UNIVERSE[sym];
       if (!meta) return null;
+
       const candles = meta.isCrypto
         ? await fetchBinanceKlines(meta.binanceSym || sym, timeframe, duration)
-        : await fetchYahooNSECandles(sym, timeframe, duration);
+        : await fetchTwelveDataNSECandles(sym, timeframe, duration, forceRefresh);
+
       if (candles && candles.length >= 30) {
-        state.realCandleCache[cacheKey] = { candles, fetchedAt: Date.now() };
+        state.memoryCandleCache[memKey] = { candles, fetchedAt: Date.now() };
         return candles;
       }
       return null;
@@ -910,7 +1102,7 @@
     }
 
     // =========================================================================
-    // 5. TECHNICAL INDICATORS & SIGNAL GENERATOR
+    // 5. TECHNICAL INDICATORS & 5 SWING STRATEGY RULES
     // =========================================================================
     function calcSMA(values, period) {
       const out = new Array(values.length).fill(null);
@@ -959,11 +1151,9 @@
     }
 
     function generateSignals(candles) {
-      const strat = document.getElementById('strategySelect')?.value || 'cum_rsi2';
+      const strat = $('strategySelect')?.value || 'cum_rsi2';
       const n = candles.length;
       const closes = candles.map(c => c.close);
-      const highs = candles.map(c => c.high);
-      const lows = candles.map(c => c.low);
 
       const signals = new Array(n).fill(0);
       const exitSignals = new Array(n).fill(false);
@@ -974,14 +1164,20 @@
       const sma50 = calcSMA(closes, 50);
       const sma200 = calcSMA(closes, 200);
       const ema9 = calcEMA(closes, 9);
-      const ema20 = calcEMA(closes, 20);
+      const ema12 = calcEMA(closes, 12);
       const ema21 = calcEMA(closes, 21);
+      const ema26 = calcEMA(closes, 26);
       const ema50 = calcEMA(closes, 50);
       const rsi2 = calcRSI(closes, 2);
       const rsi14 = calcRSI(closes, 14);
 
+      const macdLine = closes.map((_, i) => (ema12[i] != null && ema26[i] != null) ? (ema12[i] - ema26[i]) : null);
+      const validMacd = macdLine.map(v => v ?? 0);
+      const macdSignal = calcEMA(validMacd, 9);
+
       for (let i = 1; i < n; i++) {
         const c = closes[i];
+
         if (strat === 'cum_rsi2') {
           if (sma5[i] && c > sma5[i]) exitSignals[i] = true;
           if (sma200[i] && sma50[i] && rsi2[i] != null && rsi2[i - 1] != null) {
@@ -991,13 +1187,13 @@
               reasons[i] = `Cum RSI(2): ${cum2.toFixed(1)} (<10) • >200 SMA`;
             }
           }
-        } else if (strat === 'connors_rsi2') {
+        } else if (strat === 'rsi2_200sma') {
           if (sma5[i] && c > sma5[i]) exitSignals[i] = true;
           if (sma200[i] && rsi2[i] != null && c > sma200[i] && rsi2[i] < 10) {
             signals[i] = 1;
             reasons[i] = `RSI(2): ${rsi2[i].toFixed(1)} (<10) • >200 SMA`;
           }
-        } else if (strat === 'bb_rsi_snap') {
+        } else if (strat === 'bb_reversion') {
           if (sma20[i] && c >= sma20[i]) exitSignals[i] = true;
           if (i >= 20 && sma50[i] && rsi14[i] != null) {
             const slice = closes.slice(i - 19, i + 1);
@@ -1009,11 +1205,13 @@
               reasons[i] = `Lower BB Touch • RSI(14): ${rsi14[i].toFixed(1)}`;
             }
           }
-        } else if (strat === 'ema20_pullback') {
-          if (ema20[i] && ema50[i] && rsi14[i] != null) {
-            if (ema20[i] > ema50[i] && lows[i] <= ema20[i] * 1.003 && c > ema20[i] && rsi14[i] >= 38 && rsi14[i] <= 55) {
+        } else if (strat === 'macd_50ema') {
+          if (ema50[i] && macdLine[i] != null && macdLine[i - 1] != null && macdSignal[i] != null) {
+            const histPrev = macdLine[i - 1] - macdSignal[i - 1];
+            const histCurr = macdLine[i] - macdSignal[i];
+            if (c > ema50[i] && histPrev <= 0 && histCurr > 0 && macdLine[i] < 0) {
               signals[i] = 1;
-              reasons[i] = `20-EMA Bounce • RSI(14): ${rsi14[i].toFixed(1)}`;
+              reasons[i] = 'MACD Bullish Turn • >50 EMA';
             }
           }
         } else if (strat === 'ema_cross') {
@@ -1026,24 +1224,6 @@
               reasons[i] = 'Bearish 9/21 EMA Crossover';
             }
           }
-        } else if (strat === 'supertrend_breakout') {
-          if (i >= 12) {
-            let trSum = 0;
-            for (let k = i - 9; k <= i; k++) {
-              trSum += Math.max(highs[k] - lows[k], Math.abs(highs[k] - closes[k - 1]), Math.abs(lows[k] - closes[k - 1]));
-            }
-            const atr = trSum / 10;
-            const upperBand = ((highs[i - 1] + lows[i - 1]) / 2) + 2.2 * atr;
-            if (closes[i - 1] <= upperBand && c > upperBand) {
-              signals[i] = 1;
-              reasons[i] = 'ATR(10) Volatility Breakout';
-            }
-          }
-        } else if (strat === 'vwap_bounce') {
-          if (sma20[i] && closes[i - 1] < sma20[i - 1] && c > sma20[i] && c > candles[i].open) {
-            signals[i] = 1;
-            reasons[i] = '20-Bar Anchor Reclaim';
-          }
         }
       }
 
@@ -1051,18 +1231,20 @@
     }
 
     // =========================================================================
-    // 6. BACKTEST SIMULATION ENGINE
+    // 6. BACKTEST SIMULATION ENGINE (ACCURATE INR / USDT SCALING)
     // =========================================================================
-    function executeStrategySimulation(candles) {
-      const strat = document.getElementById('strategySelect')?.value || 'cum_rsi2';
-      const tpVal = parseFloat(document.getElementById('tpInput')?.value) || 5.5;
-      const tslVal = parseFloat(document.getElementById('tslInput')?.value) || 2.5;
-      const capital = parseFloat(document.getElementById('capitalInput')?.value) || 100000;
-      const direction = document.getElementById('directionSelect')?.value || 'long';
-      const maxHold = parseInt(document.getElementById('maxHoldSelect')?.value || '15', 10);
-      const includeTaxes = document.getElementById('includeTaxesCheck')?.checked ?? true;
-      const sym = document.getElementById('symbolSelect')?.value || 'ICICIBANK';
-      const isCrypto = Boolean(NSE_SYMBOLS[sym]?.isCrypto);
+    function executeStrategySimulation(candles, overrideSym = null) {
+      const strat = $('strategySelect')?.value || 'cum_rsi2';
+      const tpVal = parseFloat($('tpInput')?.value) || 5.5;
+      const tslVal = parseFloat($('tslInput')?.value) || 2.5;
+      const capital = parseFloat($('capitalInput')?.value) || 100000;
+      const direction = $('directionSelect')?.value || 'long';
+      const maxHold = parseInt($('maxHoldSelect')?.value || '15', 10);
+      const includeTaxes = $('includeTaxesCheck')?.checked ?? true;
+      const intradayExit = $('intradayExitCheck')?.checked ?? false;
+      const sym = overrideSym || $('symbolSelect')?.value || 'BTCUSDT';
+
+      const isCrypto = Boolean(ASSET_UNIVERSE[sym]?.isCrypto);
       const priceScale = isCrypto ? liveUsdToInr : 1;
 
       const { signals, exitSignals, sma50, sma200 } = generateSignals(candles);
@@ -1084,6 +1266,17 @@
           let exitPrice = null;
           let exitReason = '';
 
+          // Optional 15:15 IST Intraday Exit for intraday timeframes
+          let isEodIntraday = false;
+          if (intradayExit && state.timeframe !== 'Daily') {
+            const istHourMin = new Date(bar.time * 1000).toLocaleTimeString('en-GB', {
+              timeZone: 'Asia/Kolkata',
+              hour: '2-digit',
+              minute: '2-digit'
+            });
+            if (istHourMin >= '15:15') isEodIntraday = true;
+          }
+
           if (pos.side === 'LONG') {
             if (bar.high > pos.highest) {
               pos.highest = bar.high;
@@ -1100,9 +1293,12 @@
             } else if (isSwing && exitSignals[i] && bar.close > pos.entryPrice) {
               exitPrice = bar.close;
               exitReason = '5-SMA Snapback';
+            } else if (isEodIntraday) {
+              exitPrice = bar.close;
+              exitReason = '15:15 Square-Off';
             } else if (maxHold > 0 && barsHeld >= maxHold) {
               exitPrice = bar.close;
-              exitReason = `${maxHold}-Bar Time Exit`;
+              exitReason = `${maxHold}-Bar Exit`;
             } else if (!isSwing && signals[i] === -1) {
               exitPrice = bar.close;
               exitReason = 'Signal Flip';
@@ -1118,9 +1314,12 @@
             } else if (bar.low <= pos.tpPrice) {
               exitPrice = pos.tpPrice;
               exitReason = 'Take-Profit';
+            } else if (isEodIntraday) {
+              exitPrice = bar.close;
+              exitReason = '15:15 Square-Off';
             } else if (maxHold > 0 && barsHeld >= maxHold) {
               exitPrice = bar.close;
-              exitReason = `${maxHold}-Bar Time Exit`;
+              exitReason = `${maxHold}-Bar Exit`;
             } else if (signals[i] === 1) {
               exitPrice = bar.close;
               exitReason = 'Signal Flip';
@@ -1187,7 +1386,7 @@
               shape: 'arrowUp',
               text: 'BUY'
             });
-          } else if (sig === -1 && !isSwing && (direction === 'short' || direction === 'both')) {
+          } else if (sig === -1 && !isSwing && direction === 'both') {
             const entryPrice = bar.close;
             const tpDist = state.riskUnit === 'percent' ? entryPrice * (tpVal / 100) : (tpVal / priceScale);
             const tslDist = state.riskUnit === 'percent' ? entryPrice * (tslVal / 100) : (tslVal / priceScale);
@@ -1239,7 +1438,7 @@
     }
 
     // =========================================================================
-    // 7. FORMATTERS, PERSISTENT TRACKER & WHATSAPP ALERTS
+    // 7. FORMATTERS, SIGNAL SANITIZER & WHATSAPP / AUDIO ALERTS
     // =========================================================================
     function formatINR(val) {
       const sign = val > 0 ? '+' : (val < 0 ? '-' : '');
@@ -1247,22 +1446,20 @@
     }
 
     function formatAssetPrice(rawPrice, sym) {
-      const isCrypto = Boolean(NSE_SYMBOLS[sym]?.isCrypto);
+      const isCrypto = Boolean(ASSET_UNIVERSE[sym]?.isCrypto);
       if (isCrypto) {
         if (state.cryptoCurrency === 'USD') {
           const dec = rawPrice < 1 ? 4 : 2;
           return `$${rawPrice.toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec })}`;
         }
         const inrVal = rawPrice * liveUsdToInr;
-        const dec = inrVal < 10 ? 2 : 2;
-        return `₹${inrVal.toLocaleString('en-IN', { minimumFractionDigits: dec, maximumFractionDigits: dec })}`;
+        return `₹${inrVal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       }
       return `₹${rawPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     }
 
     function formatISTDateBadge(unixSec) {
-      const d = new Date(unixSec * 1000);
-      return d.toLocaleDateString('en-IN', {
+      return new Date(unixSec * 1000).toLocaleDateString('en-IN', {
         timeZone: 'Asia/Kolkata',
         weekday: 'short',
         day: '2-digit',
@@ -1272,8 +1469,7 @@
     }
 
     function formatExactISTTimestamp(unixSec) {
-      const d = new Date(unixSec * 1000);
-      return d.toLocaleString('en-IN', {
+      return new Date(unixSec * 1000).toLocaleString('en-IN', {
         timeZone: 'Asia/Kolkata',
         day: '2-digit',
         month: 'short',
@@ -1298,17 +1494,22 @@
         const raw = localStorage.getItem(SIGNALS_STORAGE_KEY);
         if (!raw) return;
         const parsed = JSON.parse(raw);
+        const maxAllowedMs = Date.now() + 86400000;
+
         if (parsed && typeof parsed.active === 'object') {
           const cleanActive = {};
           for (const [sym, item] of Object.entries(parsed.active)) {
-            if (item && item.isRealFeed === true && NSE_SYMBOLS[sym] && !String(item.signalDate || '').includes('2027')) {
+            const validTs = Number(item?.barUnixSec || 0) * 1000 <= maxAllowedMs;
+            if (item && item.isRealFeed === true && ASSET_UNIVERSE[sym] && validTs) {
               cleanActive[sym] = item;
             }
           }
           state.activeSignalsTracker = cleanActive;
         }
         if (parsed && Array.isArray(parsed.closed)) {
-          state.closedSignalsToday = parsed.closed.filter(c => c && c.isRealFeed === true && !String(c.signalDate || '').includes('2027'));
+          state.closedSignalsToday = parsed.closed.filter(c =>
+            c && c.isRealFeed === true && ASSET_UNIVERSE[c.sym]
+          );
         }
       } catch (e) {}
     }
@@ -1318,11 +1519,30 @@
       state.closedSignalsToday = [];
       savePersistentSignals();
       renderActiveSignalsTable();
-      showToast('Tracker Cleared', 'All tracked signals have been reset.');
+      showToast('Tracker Cleared', 'All tracked live signals have been reset.');
+    }
+
+    function loadWhatsAppPrefs() {
+      try {
+        const raw = localStorage.getItem(WA_PREFS_KEY);
+        if (!raw) return;
+        const p = JSON.parse(raw);
+        if ($('whatsappPhoneInput') && p.phone) $('whatsappPhoneInput').value = p.phone;
+        if ($('callmebotKeyInput') && p.apikey) $('callmebotKeyInput').value = p.apikey;
+      } catch (e) {}
+    }
+
+    function saveWhatsAppPrefs() {
+      try {
+        localStorage.setItem(WA_PREFS_KEY, JSON.stringify({
+          phone: $('whatsappPhoneInput')?.value || '',
+          apikey: $('callmebotKeyInput')?.value || ''
+        }));
+      } catch (e) {}
     }
 
     function playAlertChime() {
-      if (!document.getElementById('audioChimeCheck')?.checked) return;
+      if (!$('audioChimeCheck')?.checked) return;
       try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
         const osc = ctx.createOscillator();
@@ -1340,8 +1560,8 @@
     }
 
     function dispatchWhatsAppMessage(text, openBrowser = true) {
-      const rawPhone = (document.getElementById('whatsappPhoneInput')?.value || '').replace(/[^0-9]/g, '');
-      const apiKey = (document.getElementById('callmebotKeyInput')?.value || '').trim();
+      const rawPhone = ($('whatsappPhoneInput')?.value || '').replace(/[^0-9]/g, '');
+      const apiKey = ($('callmebotKeyInput')?.value || '').trim();
       if (rawPhone && apiKey) {
         fetch(`https://api.callmebot.com/whatsapp.php?phone=${rawPhone}&text=${encodeURIComponent(text)}&apikey=${encodeURIComponent(apiKey)}`, { mode: 'no-cors' }).catch(() => {});
       }
@@ -1373,33 +1593,47 @@
     }
 
     // =========================================================================
-    // 8. HOURLY LIVE BUY SIGNALS SCANNER & AUTO-REMOVAL ENGINE
+    // 8. ONCE-A-DAY (IST) AUTO-SCANNER & PERSISTENT SIGNAL MONITOR
     // =========================================================================
-    async function scanAllLiveBuySignals(isScheduledAuto = false) {
-      const badge = document.getElementById('liveFeedCountBadge');
-      if (badge) badge.textContent = 'Fetching Live Market Data...';
+    async function runDailyOrManualScan(forceManual = false) {
+      const todayIST = getTodayISTDateString();
+      const lastScanIST = localStorage.getItem(LAST_SCAN_IST_KEY);
+      const badge = $('dailyScanStatusBadge');
 
       await fetchLiveUsdInrRate();
 
-      const allSymbols = Object.keys(NSE_SYMBOLS).filter(sym => {
-        if (state.capFilter === 'ALL') return true;
-        return NSE_SYMBOLS[sym]?.cap === state.capFilter;
-      });
+      // If already scanned today in IST and not a manual force scan -> 0 API credits used!
+      if (!forceManual && lastScanIST === todayIST) {
+        if (badge) {
+          badge.textContent = `Daily Scan Completed Today (${todayIST} IST) • 0 Credits Used`;
+        }
+        renderActiveSignalsTable();
+        return;
+      }
 
-      const tpVal = parseFloat(document.getElementById('tpInput')?.value) || 5.5;
-      const tslVal = parseFloat(document.getElementById('tslInput')?.value) || 2.5;
+      if (badge) badge.textContent = 'Scanning Real Market Feeds (Once-A-Day IST)...';
+
+      // Build scan list: All 50 Crypto (0 TD credits) + NSE stocks ONLY if TD API key is saved
+      const cryptoSymbols = Object.keys(ASSET_UNIVERSE).filter(s => ASSET_UNIVERSE[s].isCrypto);
+      const nseSymbols = state.tdApiKey
+        ? Object.keys(ASSET_UNIVERSE).filter(s => !ASSET_UNIVERSE[s].isCrypto)
+        : [];
+      const scanList = [...cryptoSymbols, ...nseSymbols];
+
+      const tpVal = parseFloat($('tpInput')?.value) || 5.5;
+      const tslVal = parseFloat($('tslInput')?.value) || 2.5;
       let syncedCount = 0;
       let newlyAddedCount = 0;
       let trackerChanged = false;
 
-      await fetchInBatches(allSymbols, 4, async (sym) => {
-        const candles = await fetchRealHistoricalCandles(sym, state.timeframe, '1Y', true);
+      await fetchInBatches(scanList, 5, async (sym) => {
+        const candles = await fetchRealHistoricalCandles(sym, 'Daily', '1Y', forceManual);
         if (!candles || candles.length < 30) return;
         syncedCount++;
 
         const livePrice = candles[candles.length - 1].close;
 
-        // 1. Update existing active signal & auto-remove if Target TP or Trailing SL hits
+        // 1. Update active signals & auto-remove if TP or Trailing SL hits
         if (state.activeSignalsTracker[sym]) {
           const tracked = state.activeSignalsTracker[sym];
           tracked.livePrice = livePrice;
@@ -1415,16 +1649,12 @@
               sym,
               isRealFeed: true,
               status: 'TARGET REACHED',
-              entryPrice: tracked.entryPrice,
-              exitPrice: tracked.tpPrice,
-              signalDate: tracked.signalDate,
               pct: `+${gainPct}%`,
               closedAtIST: formatExactISTTimestamp(Math.floor(Date.now() / 1000))
             });
             delete state.activeSignalsTracker[sym];
             trackerChanged = true;
             playAlertChime();
-            showToast('Target Reached!', `${sym.replace('USDT', '')} hit Target TP (+${gainPct}%) and was auto-removed.`);
             return;
           } else if (livePrice <= tracked.tslPrice) {
             const diffPct = (((tracked.tslPrice - tracked.entryPrice) / tracked.entryPrice) * 100).toFixed(2);
@@ -1432,21 +1662,17 @@
               sym,
               isRealFeed: true,
               status: 'TRAILING SL HIT',
-              entryPrice: tracked.entryPrice,
-              exitPrice: tracked.tslPrice,
-              signalDate: tracked.signalDate,
               pct: `${Number(diffPct) >= 0 ? '+' : ''}${diffPct}%`,
               closedAtIST: formatExactISTTimestamp(Math.floor(Date.now() / 1000))
             });
             delete state.activeSignalsTracker[sym];
             trackerChanged = true;
-            showToast('Stop-Loss Triggered', `${sym.replace('USDT', '')} hit Trailing SL (${diffPct}%) and was auto-removed.`, true);
             return;
           }
           trackerChanged = true;
         }
 
-        // 2. Check fresh BUY trigger on the latest completed or live bar
+        // 2. Check fresh BUY trigger on latest or prior daily bar
         const { signals, reasons } = generateSignals(candles);
         const lastIdx = candles.length - 1;
         const prevIdx = candles.length - 2;
@@ -1454,7 +1680,7 @@
 
         if (triggeredIdx !== -1 && !state.activeSignalsTracker[sym]) {
           const entryPrice = candles[triggeredIdx].close;
-          const isCrypto = NSE_SYMBOLS[sym]?.isCrypto;
+          const isCrypto = ASSET_UNIVERSE[sym]?.isCrypto;
           const priceScale = isCrypto ? liveUsdToInr : 1;
           const tpDist = state.riskUnit === 'percent' ? entryPrice * (tpVal / 100) : (tpVal / priceScale);
           const tslDist = state.riskUnit === 'percent' ? entryPrice * (tslVal / 100) : (tslVal / priceScale);
@@ -1463,6 +1689,7 @@
           const signalObj = {
             sym,
             isRealFeed: true,
+            barUnixSec: candles[triggeredIdx].time,
             entryPrice,
             livePrice,
             highestPrice: Math.max(entryPrice, livePrice),
@@ -1477,36 +1704,40 @@
           newlyAddedCount++;
           trackerChanged = true;
 
-          // Auto-send webhook WhatsApp alert if CallMeBot key is configured
           const label = sym.replace('USDT', '');
           const autoMsg = `🚨 NEW BUY SIGNAL: ${label} (${signalObj.signalDate}) | Entry: ${formatAssetPrice(entryPrice, sym)} | TP: ${formatAssetPrice(signalObj.tpPrice, sym)} | SL: ${formatAssetPrice(signalObj.tslPrice, sym)}`;
           dispatchWhatsAppMessage(autoMsg, false);
         }
       });
 
+      try { localStorage.setItem(LAST_SCAN_IST_KEY, todayIST); } catch (e) {}
       if (trackerChanged) savePersistentSignals();
       renderActiveSignalsTable();
 
       if (badge) {
-        badge.textContent = `${syncedCount} Real Live Feeds Synced • ${formatExactISTTimestamp(Math.floor(Date.now() / 1000))}`;
+        badge.textContent = `Daily Scan Completed (${todayIST} IST) • ${syncedCount} Real Feeds Synced`;
       }
 
       if (newlyAddedCount > 0) {
         playAlertChime();
-        showToast(`${newlyAddedCount} New Live Buy Signal${newlyAddedCount > 1 ? 's' : ''}!`, 'Added to Active Live Buy Signals until Target or Stop-Loss hits.');
-      } else if (!isScheduledAuto) {
-        showToast('Hourly Scan Complete', `Scanned ${syncedCount} real live feeds. No new BUY triggers on this bar.`);
+        showToast(`${newlyAddedCount} New Live Buy Signal${newlyAddedCount > 1 ? 's' : ''}!`, 'Locked in Active Live Buy Signals until Target or Trailing SL hits.');
+      } else if (forceManual) {
+        showToast('Manual Scan Complete', `Scanned ${syncedCount} real market feeds. No new BUY triggers found.`);
       }
     }
 
     function renderActiveSignalsTable() {
-      const tbody = document.getElementById('activeSignalsBody');
-      const countBadge = document.getElementById('navSignalsCount');
-      const closedStrip = document.getElementById('closedSignalsStrip');
-      const closedList = document.getElementById('closedSignalsList');
+      const tbody = $('activeSignalsBody');
+      const countBadge = $('navSignalsCount');
+      const closedStrip = $('closedSignalsStrip');
+      const closedList = $('closedSignalsList');
 
-      const activeList = Object.values(state.activeSignalsTracker);
-      if (countBadge) countBadge.textContent = activeList.length;
+      const allActive = Object.values(state.activeSignalsTracker);
+      const filteredActive = state.capFilter === 'ALL'
+        ? allActive
+        : allActive.filter(s => ASSET_UNIVERSE[s.sym]?.cap === state.capFilter);
+
+      if (countBadge) countBadge.textContent = allActive.length;
 
       if (closedStrip && closedList) {
         if (state.closedSignalsToday.length > 0) {
@@ -1521,13 +1752,13 @@
       }
 
       if (!tbody) return;
-      if (activeList.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="py-10 text-center text-slate-400 text-xs">No active BUY signals triggered yet. The scanner checks real market feeds at the top of every hour and locks any qualifying signal here until Target or SL hits.</td></tr>`;
+      if (filteredActive.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="py-10 text-center text-slate-400 text-xs">No active BUY signals in this filter right now. Once-a-day IST scan locks qualifying signals here until Target or Trailing SL hits.</td></tr>`;
         return;
       }
 
-      tbody.innerHTML = activeList.map(s => {
-        const meta = NSE_SYMBOLS[s.sym] || { cap: 'Asset', sector: '' };
+      tbody.innerHTML = filteredActive.map(s => {
+        const meta = ASSET_UNIVERSE[s.sym] || { cap: 'Asset', sector: '' };
         const pnlPct = ((s.livePrice - s.entryPrice) / s.entryPrice) * 100;
         const tpPct = ((s.tpPrice - s.entryPrice) / s.entryPrice) * 100;
         const slPct = ((s.tslPrice - s.entryPrice) / s.entryPrice) * 100;
@@ -1573,70 +1804,50 @@
       }).join('');
     }
 
-    function startHourlyAutoScheduler() {
-      if (state.hourlyScanTimer) clearTimeout(state.hourlyScanTimer);
-      if (state.countdownTimer) clearInterval(state.countdownTimer);
-
-      const scheduleNextHour = () => {
-        const now = new Date();
-        const nextHour = new Date(now);
-        nextHour.setHours(now.getHours() + 1, 0, 2, 0);
-        const msUntilNextHour = Math.max(5000, nextHour.getTime() - now.getTime());
-
-        state.hourlyScanTimer = setTimeout(async () => {
-          await scanAllLiveBuySignals(true);
-          scheduleNextHour();
-        }, msUntilNextHour);
-
-        if (state.countdownTimer) clearInterval(state.countdownTimer);
-        state.countdownTimer = setInterval(() => {
-          const rem = Math.max(0, Math.floor((nextHour.getTime() - Date.now()) / 1000));
-          const mins = String(Math.floor(rem / 60)).padStart(2, '0');
-          const secs = String(rem % 60).padStart(2, '0');
-          const el = document.getElementById('nextScanCountdown');
-          if (el) el.textContent = `${mins}m ${secs}s`;
-        }, 1000);
-      };
-
-      scheduleNextHour();
-    }
-
     // =========================================================================
-    // 9. CHARTS, TABLES, SCANNER & NAVIGATION HANDLERS
+    // 9. CHARTS (RESIZEOBSERVER + FALLBACK WIDTH), LIVE REPLAY & TABLES
     // =========================================================================
     let tvChart = null;
-    let candleSeries = null;
-    let sma50Series = null;
-    let sma200Series = null;
+    let tvResizeObserver = null;
     let equityChartInstance = null;
 
-    function clearPriceChartWithNotice(sym) {
-      const container = document.getElementById('tvChartContainer');
-      if (!container) return;
+    function destroyPriceChart() {
+      if (tvResizeObserver) {
+        try { tvResizeObserver.disconnect(); } catch (e) {}
+        tvResizeObserver = null;
+      }
       if (tvChart) {
         try { tvChart.remove(); } catch (e) {}
         tvChart = null;
       }
+    }
+
+    function clearPriceChartWithNotice(sym, heading, bodyText) {
+      const container = $('tvChartContainer');
+      if (!container) return;
+      destroyPriceChart();
       container.innerHTML = `<div class="w-full h-full flex flex-col items-center justify-center bg-slate-50 text-center p-6">
-        <div class="text-sm font-bold text-slate-800 mb-1">Live Market Feed Unavailable for ${sym.replace('USDT', '')}</div>
-        <p class="text-xs text-slate-500 max-w-md mb-3">Public NSE proxy relays are temporarily rate-limited. Click Retry below or select any of the 50 Trusted Crypto coins (direct 24/7 Binance API).</p>
+        <div class="text-sm font-bold text-slate-800 mb-1">${heading || `Live Feed Unavailable for ${sym.replace('USDT', '')}`}</div>
+        <p class="text-xs text-slate-500 max-w-md mb-3">${bodyText || 'Could not retrieve real market candles.'}</p>
         <button onclick="onSetupChanged(true)" class="px-4 py-1.5 rounded-xl bg-slate-900 text-white text-xs font-semibold">Retry Live Feed</button>
       </div>`;
     }
 
     function renderPriceChart(candles, sim) {
-      const container = document.getElementById('tvChartContainer');
+      const container = $('tvChartContainer');
       if (!container || !candles || candles.length === 0) return;
 
-      if (tvChart) {
-        try { tvChart.remove(); } catch (e) {}
-        tvChart = null;
-      }
+      destroyPriceChart();
       container.innerHTML = '';
 
-      const width = container.clientWidth || container.parentElement?.clientWidth || 820;
+      if (typeof LightweightCharts === 'undefined') {
+        container.innerHTML = `<div class="w-full h-full flex items-center justify-center text-xs text-slate-500">Chart library loading... please click Run Test.</div>`;
+        return;
+      }
+
+      const initialWidth = container.clientWidth || container.parentElement?.clientWidth || 720;
       tvChart = LightweightCharts.createChart(container, {
-        width,
+        width: initialWidth,
         height: 360,
         layout: { background: { color: '#ffffff' }, textColor: '#475569', fontFamily: 'Inter, sans-serif' },
         grid: { vertLines: { color: '#f1f5f9' }, horzLines: { color: '#f1f5f9' } },
@@ -1644,7 +1855,7 @@
         timeScale: { borderColor: '#e2e8f0', timeVisible: state.timeframe !== 'Daily' }
       });
 
-      candleSeries = tvChart.addCandlestickSeries({
+      const candleSeries = tvChart.addCandlestickSeries({
         upColor: '#10b981',
         downColor: '#ef4444',
         borderVisible: false,
@@ -1652,9 +1863,9 @@
         wickDownColor: '#ef4444'
       });
 
-      const sym = document.getElementById('symbolSelect')?.value || 'ICICIBANK';
-      const isCrypto = Boolean(NSE_SYMBOLS[sym]?.isCrypto && state.cryptoCurrency === 'INR');
-      const mult = isCrypto ? liveUsdToInr : 1;
+      const sym = $('symbolSelect')?.value || 'BTCUSDT';
+      const isCryptoInr = Boolean(ASSET_UNIVERSE[sym]?.isCrypto && state.cryptoCurrency === 'INR');
+      const mult = isCryptoInr ? liveUsdToInr : 1;
 
       candleSeries.setData(candles.map(c => ({
         time: c.time,
@@ -1668,8 +1879,8 @@
         candleSeries.setMarkers(sim.markers);
       }
 
-      sma50Series = tvChart.addLineSeries({ color: '#0ea5e9', lineWidth: 1.5, priceLineVisible: false });
-      sma200Series = tvChart.addLineSeries({ color: '#8b5cf6', lineWidth: 1.5, priceLineVisible: false });
+      const sma50Series = tvChart.addLineSeries({ color: '#0ea5e9', lineWidth: 1.5, priceLineVisible: false });
+      const sma200Series = tvChart.addLineSeries({ color: '#8b5cf6', lineWidth: 1.5, priceLineVisible: false });
 
       const s50Data = [];
       const s200Data = [];
@@ -1682,20 +1893,20 @@
       tvChart.timeScale().fitContent();
 
       if (typeof ResizeObserver !== 'undefined') {
-        const ro = new ResizeObserver(entries => {
+        tvResizeObserver = new ResizeObserver(entries => {
           for (const entry of entries) {
             if (tvChart && entry.contentRect.width > 0) {
               tvChart.applyOptions({ width: entry.contentRect.width });
             }
           }
         });
-        ro.observe(container);
+        tvResizeObserver.observe(container);
       }
     }
 
     function renderEquityCurve(sim) {
-      const canvas = document.getElementById('equityCanvas');
-      if (!canvas) return;
+      const canvas = $('equityCanvas');
+      if (!canvas || typeof Chart === 'undefined') return;
       if (equityChartInstance) {
         equityChartInstance.destroy();
         equityChartInstance = null;
@@ -1731,21 +1942,29 @@
     }
 
     async function renderTopSwingScanner() {
-      const tbody = document.getElementById('scannerTableBody');
+      const tbody = $('scannerTableBody');
       if (!tbody) return;
-      const highWinOnly = document.getElementById('highWinFilterCheck')?.checked ?? true;
-      tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-400 text-xs">Scanning real historical candles across filtered universe...</td></tr>`;
+      const highWinOnly = $('highWinFilterCheck')?.checked ?? true;
+      tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-400 text-xs">Ranking assets on real historical candles...</td></tr>`;
 
-      const candidates = Object.keys(NSE_SYMBOLS).filter(sym => state.capFilter === 'ALL' || NSE_SYMBOLS[sym]?.cap === state.capFilter);
+      const candidates = Object.keys(ASSET_UNIVERSE).filter(sym => {
+        const meta = ASSET_UNIVERSE[sym];
+        if (state.capFilter !== 'ALL' && meta.cap !== state.capFilter) return false;
+        // For NSE stocks, use cached 24h data or live API only if key is present
+        if (!meta.isCrypto && !state.tdApiKey && !getCachedNseCandles24h(`${sym}_${state.timeframe}_${state.duration}`)) {
+          return false;
+        }
+        return true;
+      });
+
       const ranked = [];
-
       await fetchInBatches(candidates, 5, async (sym) => {
         const candles = await fetchRealHistoricalCandles(sym, state.timeframe, state.duration, false);
         if (!candles || candles.length < 40) return;
-        const sim = executeStrategySimulation(candles);
+        const sim = executeStrategySimulation(candles, sym);
         ranked.push({
           sym,
-          meta: NSE_SYMBOLS[sym],
+          meta: ASSET_UNIVERSE[sym],
           winRate: sim.winRate,
           trades: sim.trades.length,
           netProfit: sim.netProfit
@@ -1779,7 +1998,7 @@
     }
 
     function renderTradeHistoryTable(trades, sym) {
-      const tbody = document.getElementById('tradeHistoryBody');
+      const tbody = $('tradeHistoryBody');
       if (!tbody) return;
       if (!trades || trades.length === 0) {
         tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-slate-400 text-xs">No completed trades in this period. Try switching duration to 6 Years or adjusting Take-Profit / Stop-Loss.</td></tr>`;
@@ -1800,28 +2019,28 @@
     }
 
     function renderAllResults(candles, sim) {
-      const sym = document.getElementById('symbolSelect')?.value || 'ICICIBANK';
-      const npEl = document.getElementById('kpiNetProfit');
+      const sym = $('symbolSelect')?.value || 'BTCUSDT';
+      const npEl = $('kpiNetProfit');
       if (npEl) {
         npEl.textContent = formatINR(sim.netProfit);
         npEl.className = `text-2xl font-bold font-mono tracking-tight ${sim.netProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`;
       }
-      const retEl = document.getElementById('kpiReturnPct');
+      const retEl = $('kpiReturnPct');
       if (retEl) retEl.textContent = `${sim.returnPct >= 0 ? '+' : ''}${sim.returnPct.toFixed(2)}%`;
 
-      const wrEl = document.getElementById('kpiWinRate');
+      const wrEl = $('kpiWinRate');
       if (wrEl) wrEl.textContent = `${sim.winRate.toFixed(1)}%`;
 
-      const wlEl = document.getElementById('kpiWinLossCount');
+      const wlEl = $('kpiWinLossCount');
       if (wlEl) wlEl.textContent = `${sim.wins} Wins / ${sim.losses} Losses`;
 
-      const ttEl = document.getElementById('kpiTotalTrades');
+      const ttEl = $('kpiTotalTrades');
       if (ttEl) ttEl.textContent = sim.trades.length;
 
-      const ddEl = document.getElementById('kpiMaxDrawdown');
+      const ddEl = $('kpiMaxDrawdown');
       if (ddEl) ddEl.textContent = `-${sim.maxDrawdownPct.toFixed(2)}%`;
 
-      const fcEl = document.getElementById('kpiFinalCapital');
+      const fcEl = $('kpiFinalCapital');
       if (fcEl) fcEl.textContent = `Final: ${formatINR(sim.finalCapital).replace('+', '')}`;
 
       renderPriceChart(candles, sim);
@@ -1829,15 +2048,86 @@
       renderTradeHistoryTable(sim.trades, sym);
     }
 
+    // --- Live Market Step-By-Step Replay Engine ---
+    function stopReplayTimer() {
+      if (state.replayTimer) {
+        clearInterval(state.replayTimer);
+        state.replayTimer = null;
+      }
+      state.replayPlaying = false;
+      const btn = $('replayPlayPauseBtn');
+      if (btn) btn.textContent = 'Resume Replay';
+    }
+
+    function restartLiveMarketReplay() {
+      stopReplayTimer();
+      if (!state.candles || state.candles.length < 60) {
+        onSetupChanged(false);
+        return;
+      }
+      state.replayIndex = Math.max(50, state.candles.length - 60);
+      renderReplaySlice();
+      state.replayPlaying = true;
+      const btn = $('replayPlayPauseBtn');
+      if (btn) btn.textContent = 'Pause Replay';
+      state.replayTimer = setInterval(() => {
+        if (state.replayIndex < state.candles.length) {
+          state.replayIndex++;
+          renderReplaySlice();
+        } else {
+          stopReplayTimer();
+        }
+      }, 650);
+    }
+
+    function toggleReplayPlayback() {
+      if (state.replayPlaying) {
+        stopReplayTimer();
+      } else {
+        if (state.replayIndex >= state.candles.length) {
+          restartLiveMarketReplay();
+          return;
+        }
+        state.replayPlaying = true;
+        const btn = $('replayPlayPauseBtn');
+        if (btn) btn.textContent = 'Pause Replay';
+        state.replayTimer = setInterval(() => {
+          if (state.replayIndex < state.candles.length) {
+            state.replayIndex++;
+            renderReplaySlice();
+          } else {
+            stopReplayTimer();
+          }
+        }, 650);
+      }
+    }
+
+    function stepReplayForward() {
+      stopReplayTimer();
+      if (!state.candles || state.candles.length < 60) return;
+      if (state.replayIndex < state.candles.length) {
+        state.replayIndex++;
+        renderReplaySlice();
+      }
+    }
+
+    function renderReplaySlice() {
+      const slice = state.candles.slice(0, state.replayIndex);
+      const prog = $('replayProgressText');
+      if (prog) prog.textContent = `Bar ${slice.length} / ${state.candles.length}`;
+      const sim = executeStrategySimulation(slice);
+      renderAllResults(slice, sim);
+    }
+
     function switchChartTab(tab) {
       const views = { price: 'priceChartView', equity: 'equityChartView', scanner: 'scannerChartView' };
       const tabs = { price: 'tabPrice', equity: 'tabEquity', scanner: 'tabScan' };
       Object.entries(views).forEach(([k, id]) => {
-        const el = document.getElementById(id);
+        const el = $(id);
         if (el) el.classList.toggle('hidden', k !== tab);
       });
       Object.entries(tabs).forEach(([k, id]) => {
-        const btn = document.getElementById(id);
+        const btn = $(id);
         if (btn) {
           btn.className = k === tab
             ? 'whitespace-nowrap px-3 py-1 rounded-lg bg-white text-slate-900 shadow-sm transition'
@@ -1845,7 +2135,7 @@
         }
       });
       if (tab === 'price' && tvChart) {
-        const c = document.getElementById('tvChartContainer');
+        const c = $('tvChartContainer');
         if (c && c.clientWidth > 0) tvChart.applyOptions({ width: c.clientWidth });
         tvChart.timeScale().fitContent();
       } else if (tab === 'scanner') {
@@ -1854,10 +2144,10 @@
     }
 
     async function loadSymbolAndBacktest(sym) {
-      if (state.capFilter !== 'ALL' && NSE_SYMBOLS[sym]?.cap !== state.capFilter) {
+      if (state.capFilter !== 'ALL' && ASSET_UNIVERSE[sym]?.cap !== state.capFilter) {
         selectCapFilter('ALL');
       }
-      const sel = document.getElementById('symbolSelect');
+      const sel = $('symbolSelect');
       if (sel) sel.value = sym;
       setMode('backtest');
       switchChartTab('price');
@@ -1866,15 +2156,17 @@
 
     function setMode(newMode) {
       state.mode = newMode;
-      const btnSig = document.getElementById('btnModeSignals');
-      const btnBt = document.getElementById('btnModeBacktest');
-      const btnLv = document.getElementById('btnModeLive');
-      const signalsPanel = document.getElementById('liveSignalsPanel');
-      const livePanel = document.getElementById('liveMarketPanel');
-      const mainWorkspace = document.getElementById('backtestMainWorkspace');
-      const signalsNavDot = document.getElementById('signalsNavDot');
-      const navDot = document.getElementById('liveNavDot');
-      const actionLabel = document.getElementById('primaryActionLabel');
+      stopReplayTimer();
+
+      const btnSig = $('btnModeSignals');
+      const btnBt = $('btnModeBacktest');
+      const btnLv = $('btnModeLive');
+      const signalsPanel = $('liveSignalsPanel');
+      const livePanel = $('liveMarketPanel');
+      const mainWorkspace = $('backtestMainWorkspace');
+      const signalsNavDot = $('signalsNavDot');
+      const navDot = $('liveNavDot');
+      const actionLabel = $('primaryActionLabel');
 
       const inactiveClass = 'whitespace-nowrap px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all text-slate-600 hover:text-slate-900 flex items-center gap-1.5';
       if (btnSig) btnSig.className = inactiveClass;
@@ -1906,23 +2198,32 @@
         if (mainWorkspace) mainWorkspace.classList.remove('hidden');
         if (signalsNavDot) signalsNavDot.classList.add('hidden');
         if (navDot) navDot.classList.remove('hidden');
-        if (actionLabel) actionLabel.textContent = 'Sync Live';
-        startLiveMarketTest();
+        if (actionLabel) actionLabel.textContent = 'Replay Live';
+        if (!state.candles || state.candles.length === 0) onSetupChanged(false);
+        else restartLiveMarketReplay();
       }
     }
 
-    async function startLiveMarketTest() {
-      await onSetupChanged(true);
+    function triggerPrimaryAction() {
+      if (state.mode === 'signals') {
+        runDailyOrManualScan(true);
+      } else if (state.mode === 'live') {
+        restartLiveMarketReplay();
+      } else {
+        triggerRun();
+      }
     }
 
     function triggerRun() {
       try {
-        const sym = document.getElementById('symbolSelect')?.value || 'ICICIBANK';
-        const chartTitle = document.getElementById('chartTitle');
-        if (chartTitle) chartTitle.textContent = `${sym.replace('USDT', '')} • ${state.timeframe} (${state.duration}) Live Chart`;
+        const sym = $('symbolSelect')?.value || 'BTCUSDT';
+        const chartTitle = $('chartTitle');
+        if (chartTitle) {
+          chartTitle.textContent = `${sym.replace('USDT', '')} • ${state.timeframe} (${state.duration}) Real Chart`;
+        }
 
         if (state.mode === 'signals') {
-          scanAllLiveBuySignals(false);
+          renderActiveSignalsTable();
           return;
         }
         if (!state.candles || state.candles.length < 30) {
@@ -1939,7 +2240,7 @@
 
     function downloadTradesCSV() {
       if (!state.candles || state.candles.length < 30) return;
-      const sym = document.getElementById('symbolSelect')?.value || 'ICICIBANK';
+      const sym = $('symbolSelect')?.value || 'BTCUSDT';
       const sim = executeStrategySimulation(state.candles);
       if (!sim.trades.length) {
         showToast('No Trades', 'No completed trades to export.', true);
@@ -1956,9 +2257,9 @@
 
     let toastTimer = null;
     function showToast(title, msg, isError = false) {
-      const box = document.getElementById('toastBox');
-      const tEl = document.getElementById('toastTitle');
-      const mEl = document.getElementById('toastMsg');
+      const box = $('toastBox');
+      const tEl = $('toastTitle');
+      const mEl = $('toastMsg');
       if (!box || !tEl || !mEl) return;
       box.className = `fixed bottom-5 right-5 z-50 max-w-sm px-4 py-3 rounded-2xl shadow-lg border text-xs transition-all ${
         isError ? 'bg-rose-50 border-rose-200 text-rose-900' : 'bg-slate-900 border-slate-800 text-white'
@@ -1974,12 +2275,13 @@
     // 10. INITIALIZATION ON PAGE LOAD
     // =========================================================================
     async function initApp() {
+      loadTwelveDataSettings();
+      loadWhatsAppPrefs();
       populateSymbolSelect();
       loadPersistentSignals();
       renderActiveSignalsTable();
       setMode('signals');
-      startHourlyAutoScheduler();
-      await scanAllLiveBuySignals(true);
+      await runDailyOrManualScan(false);
     }
 
     if (document.readyState === 'loading') {
