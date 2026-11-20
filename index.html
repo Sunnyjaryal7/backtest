@@ -147,17 +147,104 @@
 
         <div class="mt-2 p-2.5 rounded-xl bg-emerald-50/60 border border-emerald-200/80">
           <div class="flex items-center justify-between text-[11px] font-semibold text-emerald-800 mb-1">
-          <div class="flex items-center gap-3 text-xs">
-            <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 font-mono">
-              <span>Credits Used Today:</span>
-              <strong id="creditsUsedLabel">0</strong>
-              <span>/</span>
-              <input id="creditCapInput" type="number" min="10" max="800" value="650" onchange="saveTwelveDataSettings()" class="w-12 text-center font-bold bg-white border border-emerald-300 rounded px-1 py-0.2 text-emerald-900" />
-              <span class="text-[10px] text-emerald-600">(Max 800)</span>
-            </div>
-            <button onclick="clear24HrNseCache()" class="text-[11px] font-semibold text-slate-500 hover:text-slate-800 underline">Purge 24h Cache</button>
+            <span>Two-Stage Exit • Real Feed</span>
+            <span id="strategyWinBadge" class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-900 font-mono">~80–85% Win</span>
+          </div>
+          <p id="strategyDescBox" class="text-[11px] text-slate-600 leading-relaxed"></p>
+        </div>
+      </div>
+
+      <!-- 4. Exit Targets (Stage 1 Fixed SL -> Stage 2 Trail After Target Hit) -->
+      <div>
+        <div class="flex items-center justify-between mb-1.5">
+          <label class="text-xs font-semibold text-slate-700">Exit Targets (SL Trails After TP)</label>
+          <div class="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200/70">
+            <button id="unitPctBtn" onclick="setRiskUnit('percent')" class="px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-white text-slate-900 shadow-sm transition">%</button>
+            <button id="unitPtsBtn" onclick="setRiskUnit('points')" class="px-2.5 py-0.5 rounded-md text-[11px] font-semibold text-slate-500 hover:text-slate-900 transition">Pts (₹)</button>
           </div>
         </div>
+
+        <div class="space-y-2.5 bg-slate-50/80 p-3 rounded-xl border border-slate-200/70">
+          <div>
+            <div class="flex items-center justify-between text-xs mb-1">
+              <span class="font-semibold text-emerald-700">Target (Activates Trail)</span>
+              <input id="tpInput" type="number" step="0.5" min="0.5" max="100" value="5.5" oninput="syncRiskInput('tp', this.value)" class="w-16 px-2 py-0.5 text-right font-mono font-bold text-xs text-emerald-700 bg-white border border-emerald-200 rounded-lg" />
+            </div>
+            <input id="tpSlider" type="range" min="1" max="25" step="0.5" value="5.5" oninput="syncRiskSlider('tp', this.value)" class="w-full accent-emerald-600 cursor-pointer" />
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between text-xs mb-1">
+              <span class="font-semibold text-amber-700">Initial Stop-Loss</span>
+              <input id="tslInput" type="number" step="0.5" min="0.5" max="50" value="2.5" oninput="syncRiskInput('tsl', this.value)" class="w-16 px-2 py-0.5 text-right font-mono font-bold text-xs text-amber-700 bg-white border border-amber-200 rounded-lg" />
+            </div>
+            <input id="tslSlider" type="range" min="0.5" max="15" step="0.5" value="2.5" oninput="syncRiskSlider('tsl', this.value)" class="w-full accent-amber-500 cursor-pointer" />
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. Backtest Capital, Max Hold & Taxes -->
+      <div class="space-y-2.5 pt-1 border-t border-slate-100">
+        <div class="flex items-center justify-between gap-2">
+          <label class="text-xs font-semibold text-slate-700">Backtest Capital (₹)</label>
+          <input id="capitalInput" type="number" min="1000" step="5000" value="100000" onchange="if (state.mode !== 'signals') triggerRun()" class="w-28 px-2.5 py-1 text-right font-mono font-bold text-xs bg-slate-50 border border-slate-200 rounded-lg" />
+        </div>
+        <div class="flex items-center justify-between gap-2">
+          <label class="text-xs font-semibold text-slate-700">Max Hold Bars</label>
+          <select id="maxHoldSelect" onchange="if (state.mode !== 'signals') triggerRun()" class="px-2.5 py-1 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-lg">
+            <option value="10">10 Bars Exit</option>
+            <option value="15" selected>15 Bars Exit</option>
+            <option value="25">25 Bars Exit</option>
+            <option value="0">No Bar Limit</option>
+          </select>
+        </div>
+        <label class="inline-flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
+          <input id="includeTaxesCheck" type="checkbox" checked onchange="renderPaperWalletUI(); if (state.mode !== 'signals') triggerRun();" class="rounded text-emerald-600 focus:ring-emerald-500" />
+          <span>Include STT &amp; Brokerage (0.18%)</span>
+        </label>
+      </div>
+
+      <!-- 6. DIRECT MANUAL STRATEGY BUY (YOUR OWN STOCK / CRYPTO PICK) -->
+      <div class="pt-3 border-t border-indigo-100 bg-indigo-50/50 -mx-4 px-4 pb-3 rounded-b-2xl space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] font-bold text-indigo-900 uppercase tracking-wide">Your Strategy Pick</span>
+          <span id="sidebarSelectedPriceBadge" class="text-[11px] font-mono font-bold text-indigo-700">Live: --</span>
+        </div>
+        <p class="text-[11px] text-slate-600 leading-snug">
+          Buy the selected asset above directly using your active strategy rules, Target &amp; Initial SL:
+        </p>
+        <div class="grid grid-cols-2 gap-1.5 pt-0.5">
+          <button onclick="manualBuySelectedAsset(false)" class="py-2 px-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-sm transition">
+            Paper Buy ₹20k
+          </button>
+          <button onclick="manualBuySelectedAsset(true)" class="py-2 px-2.5 rounded-xl bg-white hover:bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold transition">
+            + Add to Signals
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- RIGHT WORKSPACE COLUMN -->
+    <section class="lg:col-span-9 space-y-5">
+
+      <!-- TWELVE DATA NSE API KEY & DAILY CREDIT GUARD BAR -->
+      <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm px-4 sm:px-5 py-3 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex flex-wrap items-center gap-2 flex-1">
+          <span class="text-xs font-semibold text-slate-700">NSE API Key (Twelve Data):</span>
+          <input id="twelveDataKeyInput" type="password" onchange="saveTwelveDataSettings(true)" placeholder="Paste free Twelve Data key for NSE" class="px-3 py-1.5 text-xs font-mono bg-slate-50 border border-slate-200 rounded-xl w-52 focus:outline-none focus:border-emerald-500" />
+          <button onclick="clearTwelveDataKey()" class="text-[11px] font-semibold text-slate-400 hover:text-rose-600 transition">Clear</button>
+        </div>
+        <div class="flex items-center gap-3 text-xs">
+          <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 font-mono">
+            <span>Credits Used Today:</span>
+            <strong id="creditsUsedLabel">0</strong>
+            <span>/</span>
+            <input id="creditCapInput" type="number" min="10" max="800" value="650" onchange="saveTwelveDataSettings()" class="w-12 text-center font-bold bg-white border border-emerald-300 rounded px-1 py-0.2 text-emerald-900" />
+            <span class="text-[10px] text-emerald-600">(Max 800)</span>
+          </div>
+          <button onclick="clear24HrNseCache()" class="text-[11px] font-semibold text-slate-500 hover:text-slate-800 underline">Purge 24h Cache</button>
+        </div>
+      </div>
 
       <!-- =================================================================== -->
       <!-- ₹1,00,000 VIRTUAL PAPER TRADING WALLET (1-CLICK ₹20,000 BUY)        -->
@@ -219,7 +306,7 @@
           <table class="w-full text-left border-collapse">
             <thead>
               <tr class="border-b border-slate-100 text-[10px] font-semibold text-slate-500 uppercase bg-slate-50/50">
-                <th class="px-4 py-2.5">Asset &amp; Strategy</th>
+                <th class="px-4 py-2.5">Asset &amp; Source</th>
                 <th class="px-3 py-2.5">Allocated</th>
                 <th class="px-3 py-2.5">Entry / Live Price</th>
                 <th class="px-3 py-2.5">Target / Active SL</th>
@@ -228,7 +315,7 @@
               </tr>
             </thead>
             <tbody id="paperOpenPositionsBody" class="divide-y divide-slate-100 text-xs">
-              <tr><td colspan="6" class="py-5 text-center text-slate-400 text-xs">No open paper positions yet. Click <strong>Paper Buy ₹20k</strong> on any live signal below.</td></tr>
+              <tr><td colspan="6" class="py-5 text-center text-slate-400 text-xs">No open paper positions yet. Click <strong>Paper Buy ₹20k</strong> on any algo signal below or pick your own stock in the sidebar.</td></tr>
             </tbody>
           </table>
         </div>
@@ -238,7 +325,7 @@
           <table class="w-full text-left border-collapse">
             <thead>
               <tr class="border-b border-slate-100 text-[10px] font-semibold text-slate-500 uppercase bg-slate-50/50">
-                <th class="px-4 py-2.5">Asset</th>
+                <th class="px-4 py-2.5">Asset &amp; Source</th>
                 <th class="px-3 py-2.5">Entry → Exit</th>
                 <th class="px-3 py-2.5">Exit Reason</th>
                 <th class="px-4 py-2.5 text-right">Net P&amp;L (After Fees)</th>
@@ -252,7 +339,7 @@
       </div>
 
       <!-- =================================================================== -->
-      <!-- PANEL A: LIVE BUY SIGNALS TRACKER (DEFAULT SCREEN ON OPEN)          -->
+      <!-- PANEL A: LIVE BUY SIGNALS TRACKER (ALGO SIGNALS + MY PICKS)         -->
       <!-- =================================================================== -->
       <div id="liveSignalsPanel" class="bg-white rounded-2xl border border-emerald-200/80 shadow-sm overflow-hidden">
         <!-- Header Bar -->
@@ -265,13 +352,16 @@
               </span>
               <span id="dailyScanStatusBadge" class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700">Checking Daily Scan Status...</span>
             </div>
-            <h2 class="text-base sm:text-lg font-bold text-slate-900">Active Live Buy Signals (Fixed Initial SL → Trails After Target Hit)</h2>
+            <h2 class="text-base sm:text-lg font-bold text-slate-900">Active Live Buy Signals &amp; Your Strategy Picks (Fixed Initial SL → Trails After Target Hit)</h2>
             <p class="text-xs text-slate-500 mt-0.5">
-              Auto-scans at <span class="font-semibold text-slate-700">10:00 AM IST</span> &amp; <span class="font-semibold text-slate-700">3:00 PM IST</span> • Repeat reloads use <span class="font-semibold text-emerald-700">0 extra credits</span> • Next window: <span id="nextIstResetLabel" class="font-mono font-semibold text-slate-800">10:00 AM / 3:00 PM IST</span>
+              Includes both <span class="font-semibold text-emerald-700">Algo Scanner Signals</span> &amp; <span class="font-semibold text-indigo-700">Your Own Strategy Picks</span> • Next window: <span id="nextIstResetLabel" class="font-mono font-semibold text-slate-800">10:00 AM / 3:00 PM IST</span>
             </p>
           </div>
 
-          <div class="flex items-center gap-2">
+          <div class="flex flex-wrap items-center gap-2">
+            <button onclick="openAddCustomWatchSignal()" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-sm transition">
+              + Track Selected Stock
+            </button>
             <button onclick="sendAllActiveSignalsWhatsApp()" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm transition">
               Send All to WhatsApp
             </button>
@@ -816,23 +906,66 @@
       if (el && meta) {
         el.textContent = `${meta.name} • ${meta.sector}`;
       }
+      refreshSidebarSelectedLivePrice();
+    }
+
+    async function refreshSidebarSelectedLivePrice() {
+      const sym = $('symbolSelect')?.value || 'BTCUSDT';
+      const badge = $('sidebarSelectedPriceBadge');
+      if (!badge) return;
+      badge.textContent = 'Live: Loading...';
+
+      const tracked = state.activeSignalsTracker[sym];
+      if (tracked && tracked.livePrice > 0) {
+        badge.textContent = `Live: ${formatAssetPrice(tracked.livePrice, sym)}`;
+        return;
+      }
+      const candles = await fetchRealHistoricalCandles(sym, state.timeframe, '1Y', false);
+      if (($('symbolSelect')?.value || 'BTCUSDT') !== sym) return;
+      if (candles && candles.length > 0) {
+        const lastClose = candles[candles.length - 1].close;
+        badge.textContent = `Live: ${formatAssetPrice(lastClose, sym)}`;
+      } else {
+        badge.textContent = 'Live: Key Needed';
+      }
     }
 
     function selectCapFilter(cap) {
       state.capFilter = cap;
       document.querySelectorAll('.cap-btn').forEach(btn => {
-        const isActive = btn.getAttribute('data-cap') === cap;
-        const isCryptoBtn = btn.getAttribute('data-cap') === 'Crypto';
-        btn.className = isActive
-          ? 'cap-btn py-1 rounded-lg text-[11px] font-semibold bg-white text-slate-900 shadow-sm transition'
-          : `cap-btn py-1 rounded-lg text-[11px] font-semibold ${isCryptoBtn ? 'text-amber-700 hover:text-amber-900' : 'text-slate-500 hover:text-slate-900'} transition`;
+        const isSelected = btn.getAttribute('data-cap') === cap;
+        if (isSelected) {
+          btn.className = 'cap-btn py-1 rounded-lg text-[11px] font-semibold bg-white text-slate-900 shadow-sm transition';
+        } else if (btn.getAttribute('data-cap') === 'Crypto') {
+          btn.className = 'cap-btn py-1 rounded-lg text-[11px] font-semibold text-amber-700 hover:text-amber-900 transition';
+        } else {
+          btn.className = 'cap-btn py-1 rounded-lg text-[11px] font-semibold text-slate-500 hover:text-slate-900 transition';
+        }
       });
       populateSymbolSelect();
-      onSetupChanged(false);
+      if (state.mode !== 'signals') {
+        onSetupChanged(false);
+      } else {
+        renderActiveSignalsTable();
+      }
     }
 
-    function filterSymbolDropdown(val) {
-      populateSymbolSelect(val);
+    function filterSymbolDropdown(query) {
+      populateSymbolSelect(query);
+    }
+
+    function switchToCryptoMarket() {
+      selectCapFilter('Crypto');
+      const sel = $('symbolSelect');
+      if (sel && sel.options.length > 0 && !ASSET_UNIVERSE[sel.value]?.isCrypto) {
+        sel.value = 'BTCUSDT';
+      }
+      updateSymbolMetaText();
+      if (state.mode === 'signals') {
+        runDailyOrManualScan(false);
+      } else {
+        onSetupChanged(false);
+      }
     }
 
     function toggleCryptoCurrency() {
@@ -841,13 +974,10 @@
       if (btn) {
         btn.textContent = state.cryptoCurrency === 'INR' ? 'Crypto: ₹ INR' : 'Crypto: $ USDT';
       }
+      refreshSidebarSelectedLivePrice();
+      renderPaperWalletUI();
       renderActiveSignalsTable();
       if (state.mode !== 'signals') triggerRun();
-    }
-
-    function switchToCryptoMarket() {
-      selectCapFilter('Crypto');
-      showToast('Top 50 Trusted Crypto', 'Filtered to 50 high-market-cap battle-tested cryptocurrencies.');
     }
 
     function setTimeframe(tf) {
@@ -858,7 +988,7 @@
           ? 'tf-btn py-1.5 rounded-lg text-xs font-semibold bg-white text-slate-900 shadow-sm transition'
           : 'tf-btn py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-900 transition';
       });
-      onSetupChanged(false);
+      if (state.mode !== 'signals') onSetupChanged(false);
     }
 
     function setDuration(dur) {
@@ -869,12 +999,12 @@
           ? 'dur-btn py-1.5 rounded-lg text-xs font-semibold bg-white text-slate-900 shadow-sm transition'
           : 'dur-btn py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-900 transition';
       });
-      onSetupChanged(false);
+      if (state.mode !== 'signals') onSetupChanged(false);
     }
 
     function onStrategyChanged() {
-      const stratKey = $('strategySelect')?.value || 'connors_cum_rsi2';
-      const info = STRATEGY_DESCRIPTIONS[stratKey] || STRATEGY_DESCRIPTIONS.connors_cum_rsi2;
+      const strat = $('strategySelect')?.value || 'connors_cum_rsi2';
+      const info = STRATEGY_DESCRIPTIONS[strat] || STRATEGY_DESCRIPTIONS.connors_cum_rsi2;
       if ($('strategyWinBadge')) $('strategyWinBadge').textContent = info.badge;
       if ($('strategyDescBox')) $('strategyDescBox').innerHTML = info.html;
       if (state.mode !== 'signals') triggerRun();
@@ -884,12 +1014,10 @@
       state.riskUnit = unit;
       const pctBtn = $('unitPctBtn');
       const ptsBtn = $('unitPtsBtn');
-      if (pctBtn) {
+      if (pctBtn && ptsBtn) {
         pctBtn.className = unit === 'percent'
           ? 'px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-white text-slate-900 shadow-sm transition'
           : 'px-2.5 py-0.5 rounded-md text-[11px] font-semibold text-slate-500 hover:text-slate-900 transition';
-      }
-      if (ptsBtn) {
         ptsBtn.className = unit === 'points'
           ? 'px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-white text-slate-900 shadow-sm transition'
           : 'px-2.5 py-0.5 rounded-md text-[11px] font-semibold text-slate-500 hover:text-slate-900 transition';
@@ -897,21 +1025,26 @@
       if (state.mode !== 'signals') triggerRun();
     }
 
-    function syncRiskInput(kind, val) {
-      const slider = $(kind === 'tp' ? 'tpSlider' : 'tslSlider');
-      if (slider) slider.value = val;
+    function syncRiskInput(type, val) {
+      const num = parseFloat(val);
+      if (isNaN(num)) return;
+      if (type === 'tp' && $('tpSlider')) $('tpSlider').value = Math.min(25, Math.max(1, num));
+      if (type === 'tsl' && $('tslSlider')) $('tslSlider').value = Math.min(15, Math.max(0.5, num));
       if (state.mode !== 'signals') triggerRun();
     }
 
-    function syncRiskSlider(kind, val) {
-      const input = $(kind === 'tp' ? 'tpInput' : 'tslInput');
-      if (input) input.value = val;
+    function syncRiskSlider(type, val) {
+      if (type === 'tp' && $('tpInput')) $('tpInput').value = val;
+      if (type === 'tsl' && $('tslInput')) $('tslInput').value = val;
       if (state.mode !== 'signals') triggerRun();
     }
 
     async function onSetupChanged(forceRefresh = false) {
       updateSymbolMetaText();
       const sym = $('symbolSelect')?.value || 'BTCUSDT';
+      const meta = ASSET_UNIVERSE[sym];
+      const reqId = ++state.currentRequestId;
+
       const chartTitle = $('chartTitle');
       if (chartTitle) {
         chartTitle.textContent = `${sym.replace('USDT', '')} • ${state.timeframe} (${state.duration}) Real Chart`;
@@ -919,17 +1052,33 @@
 
       if (state.mode === 'signals') return;
 
-      const reqId = ++state.currentRequestId;
+      if (meta && !meta.isCrypto && !state.tdApiKey && !getCachedNseCandles24h(`${sym}_${state.timeframe}_${state.duration}`)) {
+        state.candles = [];
+        clearPriceChartWithNotice(
+          sym,
+          `Twelve Data API Key Needed for ${sym}`,
+          'Paste your free Twelve Data API key in the top bar to load unblocked NSE stock candles, or select any of the 50 Trusted Crypto coins (direct 24/7 Binance API).'
+        );
+        return;
+      }
+
+      const container = $('tvChartContainer');
+      if (container) {
+        destroyPriceChart();
+        container.innerHTML = `<div class="w-full h-full flex items-center justify-center text-xs text-slate-400">Loading real ${sym.replace('USDT', '')} market candles...</div>`;
+      }
+
+      await fetchLiveUsdInrRate();
       const candles = await fetchRealHistoricalCandles(sym, state.timeframe, state.duration, forceRefresh);
       if (reqId !== state.currentRequestId) return;
 
       if (!candles || candles.length < 30) {
         state.candles = [];
-        const meta = ASSET_UNIVERSE[sym];
-        const msg = !meta?.isCrypto && !state.tdApiKey
-          ? 'Paste your free Twelve Data API key in the bar above to load real NSE stock candles, or select any of the 50 Trusted Crypto coins (direct 24/7 Binance API).'
-          : 'Live feed temporarily rate-limited or daily credit cap reached. Wait 60s or retry.';
-        clearPriceChartWithNotice(sym, `Live Feed Unavailable for ${sym.replace('USDT', '')}`, msg);
+        clearPriceChartWithNotice(
+          sym,
+          `Live Feed Unavailable for ${sym.replace('USDT', '')}`,
+          'Could not retrieve live market candles right now. Check your Twelve Data daily credit limit or retry shortly.'
+        );
         return;
       }
 
@@ -949,8 +1098,9 @@
         const res = await fetch('https://open.er-api.com/v6/latest/USD', { signal: AbortSignal.timeout(5000) });
         if (res.ok) {
           const data = await res.json();
-          if (data?.rates?.INR && data.rates.INR > 50) {
-            liveUsdToInr = Number(data.rates.INR.toFixed(2));
+          const inr = Number(data?.rates?.INR);
+          if (inr > 50 && inr < 150) {
+            liveUsdToInr = inr;
           }
         }
       } catch (e) {}
@@ -1501,13 +1651,12 @@
       state.activeSignalsTracker = {};
       state.closedSignalsToday = [];
       savePersistentSignals();
-      try { localStorage.removeItem(LAST_SCAN_SLOT_IST_KEY); } catch (e) {}
       renderActiveSignalsTable();
-      showToast('Tracker Reset', 'Cleared active and closed signals from local storage.');
+      showToast('Tracker Cleared', 'Cleared all active and closed signals from storage.');
     }
 
     // =========================================================================
-    // 7B. ₹1,00,000 VIRTUAL PAPER WALLET (₹20,000 PER TRADE + AUTO TWO-STAGE EXIT)
+    // 7B. ₹1,00,000 VIRTUAL PAPER TRADING WALLET (1-CLICK ₹20,000 BUY)
     // =========================================================================
     function savePaperWallet() {
       try {
@@ -1517,9 +1666,13 @@
 
     function loadPaperWallet() {
       try {
-        const raw = JSON.parse(localStorage.getItem(PAPER_WALLET_STORAGE_KEY) || 'null');
-        if (raw && typeof raw.cash === 'number' && raw.openPositions && Array.isArray(raw.closedTrades)) {
-          state.paperWallet = raw;
+        const raw = JSON.parse(localStorage.getItem(PAPER_WALLET_STORAGE_KEY) || '{}');
+        if (typeof raw.cash === 'number' && raw.openPositions && Array.isArray(raw.closedTrades)) {
+          state.paperWallet = {
+            cash: raw.cash,
+            openPositions: raw.openPositions,
+            closedTrades: raw.closedTrades
+          };
           return;
         }
       } catch (e) {}
@@ -1539,7 +1692,7 @@
       savePaperWallet();
       renderPaperWalletUI();
       renderActiveSignalsTable();
-      showToast('Paper Wallet Reset', 'Restored virtual balance to ₹1,00,000.00.');
+      showToast('Paper Wallet Reset', 'Virtual balance restored to ₹1,00,000.00 (5 × ₹20,000 slots).');
     }
 
     function switchPaperTab(tab) {
@@ -1563,7 +1716,7 @@
       }
     }
 
-    function executePaperBuy(sym) {
+    function executePaperBuy(sym, customSource = null) {
       const sig = state.activeSignalsTracker[sym];
       if (!sig) {
         showToast('Signal Unavailable', 'This signal is no longer active.', true);
@@ -1590,6 +1743,7 @@
       state.paperWallet.cash -= PAPER_TRADE_ALLOCATION;
       state.paperWallet.openPositions[sym] = {
         sym,
+        sourceTag: customSource || sig.sourceTag || 'Algo Signal',
         allocated: PAPER_TRADE_ALLOCATION,
         entryPrice,
         livePrice: entryPrice,
@@ -1609,6 +1763,75 @@
       showToast('Paper Buy Executed (₹20,000)', `Bought ${sym.replace('USDT', '')} @ ${formatAssetPrice(entryPrice, sym)}. Monitoring two-stage SL/Trail.`);
     }
 
+    async function manualBuySelectedAsset(addToSignalsOnly = false) {
+      const sym = $('symbolSelect')?.value || 'BTCUSDT';
+      const meta = ASSET_UNIVERSE[sym];
+      if (!meta) return;
+
+      if (!meta.isCrypto && !state.tdApiKey && !getCachedNseCandles24h(`${sym}_${state.timeframe}_1Y`)) {
+        showToast('NSE API Key Required', 'Paste your free Twelve Data key above to fetch live NSE prices, or pick any of the 50 Crypto assets.', true);
+        return;
+      }
+
+      showToast('Fetching Live Price...', `Syncing real market price for ${sym.replace('USDT', '')}...`);
+      const candles = await fetchRealHistoricalCandles(sym, state.timeframe, '1Y', false);
+      if (!candles || candles.length < 30) {
+        showToast('Live Feed Unavailable', `Could not retrieve live price for ${sym.replace('USDT', '')}.`, true);
+        return;
+      }
+
+      const livePrice = candles[candles.length - 1].close;
+      const tpVal = parseFloat($('tpInput')?.value) || 5.5;
+      const slVal = parseFloat($('tslInput')?.value) || 2.5;
+      const priceScale = meta.isCrypto ? liveUsdToInr : 1;
+      const tpDist = state.riskUnit === 'percent' ? livePrice * (tpVal / 100) : (tpVal / priceScale);
+      const slDist = state.riskUnit === 'percent' ? livePrice * (slVal / 100) : (slVal / priceScale);
+
+      const stratSelect = $('strategySelect');
+      const stratLabel = stratSelect ? stratSelect.options[stratSelect.selectedIndex].text.split('(')[0].trim() : 'My Strategy Pick';
+
+      if (!state.activeSignalsTracker[sym]) {
+        state.activeSignalsTracker[sym] = {
+          sym,
+          isRealFeed: true,
+          sourceTag: 'My Strategy Pick',
+          entryPrice: livePrice,
+          livePrice,
+          highestPrice: livePrice,
+          tpPrice: livePrice + tpDist,
+          activeSl: livePrice - slDist,
+          trailDist: slDist,
+          targetHit: false,
+          reason: `My Pick • ${stratLabel}`,
+          signalDate: formatISTDateBadge(candles[candles.length - 1].time),
+          triggeredAtIST: formatExactISTTimestamp(Math.floor(Date.now() / 1000))
+        };
+        savePersistentSignals();
+      } else {
+        state.activeSignalsTracker[sym].livePrice = livePrice;
+      }
+
+      if (addToSignalsOnly) {
+        renderActiveSignalsTable();
+        playAlertChime();
+        showToast('Added to Live Signals', `${sym.replace('USDT', '')} added @ ${formatAssetPrice(livePrice, sym)} with your Target & Initial SL.`);
+      } else {
+        executePaperBuy(sym, 'My Strategy Pick');
+      }
+    }
+
+    function openAddCustomWatchSignal() {
+      manualBuySelectedAsset(true);
+    }
+
+    function removeTrackedSignal(sym) {
+      if (!state.activeSignalsTracker[sym]) return;
+      delete state.activeSignalsTracker[sym];
+      savePersistentSignals();
+      renderActiveSignalsTable();
+      showToast('Removed Signal', `Removed ${sym.replace('USDT', '')} from active signals list.`);
+    }
+
     function closePaperPosition(sym, exitPrice, exitReason) {
       const pos = state.paperWallet.openPositions[sym];
       if (!pos) return;
@@ -1621,6 +1844,7 @@
       state.paperWallet.cash += pos.allocated + netPnl;
       state.paperWallet.closedTrades.unshift({
         sym,
+        sourceTag: pos.sourceTag || 'Algo Signal',
         allocated: pos.allocated,
         entryPrice: pos.entryPrice,
         exitPrice,
@@ -1734,11 +1958,18 @@
             const stageTag = p.targetHit
               ? `<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">🎯 Trailing SL</span>`
               : `<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-600">Fixed Initial SL</span>`;
+            const srcBadge = p.sourceTag === 'My Strategy Pick'
+              ? `<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-800">My Pick</span>`
+              : `<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700">Algo Signal</span>`;
             return `
               <tr class="hover:bg-slate-50/70 transition">
                 <td class="px-4 py-2.5">
-                  <div class="font-bold text-slate-900">${p.sym.replace('USDT', '')} ${stageTag}</div>
-                  <div class="text-[10px] text-slate-400">${p.boughtAtIST}</div>
+                  <div class="font-bold text-slate-900 flex items-center gap-1.5 flex-wrap">
+                    <span>${p.sym.replace('USDT', '')}</span>
+                    ${srcBadge}
+                    ${stageTag}
+                  </div>
+                  <div class="text-[10px] text-slate-400 mt-0.5">${p.boughtAtIST}</div>
                 </td>
                 <td class="px-3 py-2.5 font-mono font-semibold text-slate-700">₹20,000</td>
                 <td class="px-3 py-2.5 font-mono">
@@ -1767,7 +1998,10 @@
           closedBody.innerHTML = closedList.map(t => `
             <tr class="hover:bg-slate-50/70 transition">
               <td class="px-4 py-2.5">
-                <div class="font-bold text-slate-900">${t.sym.replace('USDT', '')}</div>
+                <div class="font-bold text-slate-900 flex items-center gap-1.5">
+                  <span>${t.sym.replace('USDT', '')}</span>
+                  <span class="px-1.5 py-0.2 rounded text-[10px] font-semibold ${t.sourceTag === 'My Strategy Pick' ? 'bg-indigo-100 text-indigo-800' : 'bg-emerald-50 text-emerald-700'}">${t.sourceTag || 'Algo Signal'}</span>
+                </div>
                 <div class="text-[10px] text-slate-400">${t.closedAtIST}</div>
               </td>
               <td class="px-3 py-2.5 font-mono text-slate-700">${formatAssetPrice(t.entryPrice, t.sym)} → ${formatAssetPrice(t.exitPrice, t.sym)}</td>
@@ -1914,13 +2148,13 @@
           const sigObj = {
             sym,
             isRealFeed: true,
+            sourceTag: 'Algo Signal',
             entryPrice,
             livePrice,
             highestPrice: Math.max(entryPrice, livePrice),
             tpPrice: entryPrice + tpDist,
             activeSl: entryPrice - slDist,
             trailDist: slDist,
-            targetHit: false,
             reason: reasons[trigIdx] || 'Top-3 Mean-Reversion Buy',
             signalDate: formatISTDateBadge(candles[trigIdx].time),
             triggeredAtIST: formatExactISTTimestamp(Math.floor(Date.now() / 1000))
@@ -1979,6 +2213,9 @@
       tbody.innerHTML = activeList.map(s => {
         const meta = ASSET_UNIVERSE[s.sym] || { cap: 'Asset', sector: '' };
         const diffPct = (((s.livePrice - s.entryPrice) / s.entryPrice) * 100).toFixed(2);
+        const sourceBadge = s.sourceTag === 'My Strategy Pick'
+          ? `<span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-indigo-100 text-indigo-800">My Pick</span>`
+          : `<span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">Algo Signal</span>`;
         const stageBadge = s.targetHit
           ? `<span class="inline-block mt-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800">🎯 Target Hit! Trailing SL Active</span>`
           : `<span class="inline-block mt-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-700">Stage 1: Fixed Initial SL</span>`;
@@ -1986,9 +2223,10 @@
         return `
           <tr class="hover:bg-slate-50/70 transition">
             <td class="px-5 py-3.5">
-              <div class="flex items-center gap-1.5">
+              <div class="flex items-center gap-1.5 flex-wrap">
                 <span class="font-bold text-slate-900">${s.sym.replace('USDT', '')}</span>
                 <span class="px-1.5 py-0.2 rounded text-[10px] font-semibold ${meta.isCrypto ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'}">${meta.cap}</span>
+                ${sourceBadge}
               </div>
               <div class="text-[11px] text-slate-500 mt-0.5">📅 ${s.signalDate} • ${s.triggeredAtIST}</div>
             </td>
@@ -2017,6 +2255,7 @@
                 }
                 <button onclick="sendSingleSignalWhatsApp('${s.sym}')" class="px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[11px] font-semibold transition">Alert</button>
                 <button onclick="loadSymbolAndBacktest('${s.sym}')" class="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-semibold transition">Chart</button>
+                <button onclick="removeTrackedSignal('${s.sym}')" title="Remove from tracker" class="px-2 py-1.5 rounded-lg bg-slate-100 hover:bg-rose-100 text-slate-500 hover:text-rose-700 text-[11px] font-semibold transition">✕</button>
               </div>
             </td>
           </tr>
