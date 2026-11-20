@@ -450,6 +450,13 @@
 
         <!-- 3. Multi-Cap Top Swing Scanner -->
         <div id="scannerView" class="hidden w-full h-[370px] overflow-y-auto rounded-xl border border-slate-100">
+          <div class="px-3.5 py-2 bg-slate-50/90 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+            <span id="scannerSummaryNote" class="text-slate-600 font-medium">Ranking all stocks by proven win rate (min. 5 trades)</span>
+            <label class="inline-flex items-center gap-1.5 cursor-pointer font-semibold text-emerald-700">
+              <input type="checkbox" id="onlyHighWinCheck" checked onchange="renderTopSwingScanner()" class="w-3.5 h-3.5 rounded accent-emerald-600" />
+              <span>Only Proven Winners (&ge;70% Win &amp; &ge;5 Trades)</span>
+            </label>
+          </div>
           <table class="w-full text-left border-collapse text-xs">
             <thead class="bg-slate-50 text-slate-500 font-semibold sticky top-0 z-10 border-b border-slate-200/80">
               <tr>
@@ -457,7 +464,7 @@
                 <th class="py-2.5 px-3.5">Cap Tier</th>
                 <th class="py-2.5 px-3.5 text-right">Win Rate</th>
                 <th class="py-2.5 px-3.5 text-right">Trades</th>
-                <th class="py-2.5 px-3.5 text-right">6Y Net Profit</th>
+                <th id="scannerProfitColHeader" class="py-2.5 px-3.5 text-right">6Y Net Profit</th>
                 <th class="py-2.5 px-3.5 text-right">Action</th>
               </tr>
             </thead>
@@ -1551,37 +1558,67 @@
     function renderTopSwingScanner() {
       const tbody = document.getElementById('scannerTableBody');
       if (!tbody) return;
+      const onlyProven = document.getElementById('onlyHighWinCheck') ? document.getElementById('onlyHighWinCheck').checked : false;
+      const profHeader = document.getElementById('scannerProfitColHeader');
+      if (profHeader) profHeader.textContent = `${state.duration} Net Profit`;
+
       const candidates = Object.entries(NSE_SYMBOLS).filter(([, info]) => !info.isIndex && (state.capFilter === 'ALL' || info.cap === state.capFilter));
-      const results = candidates.slice(0, 28).map(([sym, info]) => {
+      let results = candidates.map(([sym, info]) => {
         const bars = generateNSEData(sym, state.timeframe);
         const sim = executeStrategySimulation(bars, sym);
         const wins = sim.trades.filter(t => t.netPnl > 0).length;
         const wr = sim.trades.length ? (wins / sim.trades.length) * 100 : 0;
         const net = sim.trades.reduce((acc, t) => acc + t.netPnl, 0);
-        return { sym, info, wr, count: sim.trades.length, net };
-      }).sort((a, b) => b.wr - a.wr || b.net - a.net);
+        return { sym, info, wr, wins, count: sim.trades.length, net };
+      });
 
-      tbody.innerHTML = results.map(r => `
+      if (onlyProven) {
+        results = results.filter(r => r.count >= 5 && r.wr >= 70 && r.net > 0);
+      }
+
+      // Sort statistically significant winners first (count >= 5), then by Win Rate & Net Profit
+      results.sort((a, b) => {
+        const aSig = a.count >= 5 ? 1 : 0;
+        const bSig = b.count >= 5 ? 1 : 0;
+        if (bSig !== aSig) return bSig - aSig;
+        return b.wr - a.wr || b.net - a.net;
+      });
+
+      const noteEl = document.getElementById('scannerSummaryNote');
+      if (noteEl) {
+        noteEl.textContent = `Showing ${results.length} of ${candidates.length} instruments (${state.duration} • ${state.timeframe})`;
+      }
+
+      if (!results.length) {
+        tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-400 font-sans">No instruments met &ge;70% Win Rate with &ge;5 trades in <strong>${state.duration}</strong>. Switch duration to <strong>6 Years</strong> or uncheck the filter above.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = results.map(r => {
+        const lowSampleBadge = r.count < 5 ? `<span class="ml-1.5 px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-sans">Low Sample</span>` : '';
+        return `
         <tr class="hover:bg-slate-50 transition">
           <td class="py-2.5 px-3.5 font-sans">
-            <div class="font-bold text-slate-900">${r.sym.replace('USDT', '')}</div>
+            <div class="font-bold text-slate-900 flex items-center">${r.sym.replace('USDT', '')}${lowSampleBadge}</div>
             <div class="text-[11px] text-slate-400">${r.info.name}</div>
           </td>
           <td class="py-2.5 px-3.5 font-sans text-slate-600">${r.info.cap}</td>
-          <td class="py-2.5 px-3.5 text-right font-bold text-emerald-600">${r.wr.toFixed(1)}%</td>
-          <td class="py-2.5 px-3.5 text-right text-slate-600">${r.count}</td>
+          <td class="py-2.5 px-3.5 text-right font-bold ${r.wr >= 70 ? 'text-emerald-600' : (r.wr >= 50 ? 'text-slate-700' : 'text-rose-500')}">${r.wr.toFixed(1)}%</td>
+          <td class="py-2.5 px-3.5 text-right text-slate-600">${r.wins}/${r.count}</td>
           <td class="py-2.5 px-3.5 text-right font-semibold ${r.net >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${r.net >= 0 ? '+' : ''}${formatINR(r.net)}</td>
           <td class="py-2.5 px-3.5 text-right font-sans">
             <button onclick="inspectLiveSignalStock('${r.sym}')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-semibold">Load</button>
           </td>
         </tr>
-      `).join('');
+      `;
+      }).join('');
     }
 
     function renderTradeTable(trades) {
       const tbody = document.getElementById('tradeHistoryBody');
+      if (!tbody) return;
       if (!trades.length) {
-        tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-400 font-sans">No trades triggered. Try adjusting Take-Profit / Trailing SL or switching timeframe.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-400 font-sans">No trades triggered for this setup. Try switching duration to 6 Years or adjusting Take-Profit / Trailing SL.</td></tr>`;
         return;
       }
 
@@ -1602,8 +1639,8 @@
           <tr class="hover:bg-slate-50/90 transition">
             <td class="py-2.5 px-3.5 text-slate-500">${formatIST(t.entryTime, state.timeframe)}</td>
             <td class="py-2.5 px-3.5">${sidePill}</td>
-            <td class="py-2.5 px-3.5 text-right text-slate-800">₹${t.entryPrice.toFixed(2)}</td>
-            <td class="py-2.5 px-3.5 text-right text-slate-800">₹${t.exitPrice.toFixed(2)}</td>
+            <td class="py-2.5 px-3.5 text-right text-slate-800">₹${t.entryPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+            <td class="py-2.5 px-3.5 text-right text-slate-800">₹${t.exitPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
             <td class="py-2.5 px-3.5">${reasonBadge}</td>
             <td class="py-2.5 px-3.5 text-right font-semibold ${isWin ? 'text-emerald-600' : 'text-rose-600'}">${isWin ? '+' : ''}${formatINR(t.netPnl)}</td>
           </tr>
