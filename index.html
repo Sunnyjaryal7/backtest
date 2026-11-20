@@ -547,157 +547,231 @@
     };
 
     const SWING_STRATEGIES = new Set(['cum_rsi2', 'connors_rsi2', 'bb_rsi_snap']);
-    const SIGNALS_STORAGE_KEY = 'nse_algolab_persistent_signals_v1';
+    const SIGNALS_STORAGE_KEY = 'nse_algolab_persistent_signals_v2_real';
     let liveUsdToInr = 84.50;
 
+    // Purge any legacy simulated signals from earlier versions
+    try { localStorage.removeItem('nse_algolab_persistent_signals_v1'); } catch (e) {}
+
     // =========================================================================
-    // 2. APPLICATION STATE
+    // 2. APPLICATION STATE & REAL CANDLE CACHE
     // =========================================================================
     const state = {
       mode: 'signals',
       capFilter: 'ALL',
+      cryptoCurrency: 'INR',
       timeframe: 'Daily',
       duration: '6Y',
       riskUnit: 'percent',
-      cryptoCurrency: 'INR',
       candles: [],
-      equityCurve: [],
-      lastTrades: [],
-      priceChart: null,
-      equityChart: null,
-      liveUniverseMap: {},
+      realCandleCache: {},
       activeSignalsTracker: {},
-      closedSignalsToday: []
+      closedSignalsToday: [],
+      hourlyScanTimer: null,
+      countdownTimer: null,
+      liveReplayTimer: null,
+      activeRequestId: 0
     };
 
     // =========================================================================
-    // 3. UNIVERSE DROPDOWN & FILTER CONTROLS
+    // 3. SIDEBAR ASSET DROPDOWN & PARAMETER CONTROLS
     // =========================================================================
-    function populateSymbolSelect(searchQuery = '', preferredSym = null) {
-      const sel = document.getElementById('symbolSelect');
-      const countLbl = document.getElementById('universeCountLabel');
-      if (!sel) return;
-
+    function populateSymbolSelect(searchQuery = '') {
+      const select = document.getElementById('symbolSelect');
+      if (!select) return;
+      const prevVal = select.value;
       const q = searchQuery.trim().toLowerCase();
-      const prevVal = preferredSym || sel.value || 'ICICIBANK';
-
-      const entries = Object.entries(NSE_SYMBOLS).filter(([sym, info]) => {
-        const matchesCap = state.capFilter === 'ALL' || info.cap === state.capFilter;
-        const matchesQuery = !q || sym.toLowerCase().includes(q) || info.name.toLowerCase().includes(q) || info.sector.toLowerCase().includes(q);
-        return matchesCap && matchesQuery;
+      const entries = Object.entries(NSE_SYMBOLS).filter(([sym, meta]) => {
+        const capMatch = state.capFilter === 'ALL' || meta.cap === state.capFilter;
+        const textMatch = !q || sym.toLowerCase().includes(q) || meta.name.toLowerCase().includes(q) || meta.sector.toLowerCase().includes(q);
+        return capMatch && textMatch;
       });
 
-      if (countLbl) {
-        countLbl.textContent = `(${entries.length})`;
-      }
+      const countEl = document.getElementById('universeCountLabel');
+      if (countEl) countEl.textContent = `(${entries.length})`;
 
-      sel.innerHTML = entries.map(([sym, info]) => {
-        const displayCode = sym.replace('USDT', '');
-        return `<option value="${sym}">${displayCode} — ${info.name}</option>`;
+      select.innerHTML = entries.map(([sym, meta]) => {
+        const displaySym = sym.replace('USDT', '');
+        return `<option value="${sym}">${displaySym} — ${meta.name}</option>`;
       }).join('');
 
       if (entries.some(([sym]) => sym === prevVal)) {
-        sel.value = prevVal;
+        select.value = prevVal;
       } else if (entries.length > 0) {
-        sel.value = entries[0][0];
+        select.value = entries[0][0];
       }
-
-      updateSymbolMetaLabel();
+      updateSymbolMeta();
     }
 
-    function updateSymbolMetaLabel() {
-      const sym = document.getElementById('symbolSelect')?.value || 'ICICIBANK';
+    function updateSymbolMeta() {
+      const sym = document.getElementById('symbolSelect')?.value;
+      const meta = NSE_SYMBOLS[sym];
       const metaEl = document.getElementById('symbolMetaText');
-      const info = NSE_SYMBOLS[sym];
-      if (!metaEl || !info) return;
-
-      if (info.isCrypto) {
-        metaEl.textContent = `${info.name} • Crypto • ${info.trust || info.sector}`;
+      if (!meta || !metaEl) return;
+      if (meta.isCrypto) {
+        metaEl.innerHTML = `<span class="font-semibold text-amber-700">${meta.sector}</span> • ${meta.trust}`;
       } else {
-        metaEl.textContent = `${info.name} • ${info.cap}-Cap • ${info.sector}`;
+        metaEl.textContent = `${meta.name} • ${meta.cap}-Cap • ${meta.sector}`;
       }
     }
 
     function selectCapFilter(cap) {
       state.capFilter = cap;
       document.querySelectorAll('.cap-btn').forEach(btn => {
-        const isActive = btn.dataset.cap === cap;
-        if (btn.dataset.cap === 'Crypto') {
-          btn.className = isActive
-            ? 'cap-btn py-1 rounded-lg text-[11px] font-semibold bg-amber-500 text-white shadow-sm transition'
-            : 'cap-btn py-1 rounded-lg text-[11px] font-semibold text-amber-700 hover:text-amber-900 transition';
-        } else {
-          btn.className = isActive
-            ? 'cap-btn py-1 rounded-lg text-[11px] font-semibold bg-white text-slate-900 shadow-sm transition'
-            : 'cap-btn py-1 rounded-lg text-[11px] font-semibold text-slate-500 hover:text-slate-900 transition';
-        }
+        const active = btn.dataset.cap === cap;
+        btn.className = active
+          ? 'cap-btn py-1 rounded-lg text-[11px] font-semibold bg-white text-slate-900 shadow-sm transition'
+          : 'cap-btn py-1 rounded-lg text-[11px] font-semibold text-slate-500 hover:text-slate-900 transition';
       });
-
-      const q = document.getElementById('symbolSearchInput')?.value || '';
-      populateSymbolSelect(q);
-
-      if (state.mode === 'signals') {
-        renderActiveSignalsTable();
-        scanAllLiveBuySignals(false);
-      } else {
-        triggerRun();
-      }
+      populateSymbolSelect(document.getElementById('symbolSearchInput')?.value || '');
+      onSetupChanged(true);
     }
 
-    function filterSymbolDropdown(query) {
-      populateSymbolSelect(query);
-    }
-
-    function onSetupChanged(shouldRun = true) {
-      updateSymbolMetaLabel();
-      if (shouldRun && state.mode !== 'signals') {
-        triggerRun();
-      }
+    function filterSymbolDropdown(val) {
+      populateSymbolSelect(val);
     }
 
     function switchToCryptoMarket() {
       selectCapFilter('Crypto');
-      populateSymbolSelect('', 'BTCUSDT');
-      if (state.mode === 'signals') {
-        scanAllLiveBuySignals(false);
-      } else {
-        triggerRun();
+      setMode('signals');
+      scanAllLiveBuySignals(false);
+    }
+
+    function toggleCryptoCurrency() {
+      state.cryptoCurrency = state.cryptoCurrency === 'INR' ? 'USD' : 'INR';
+      const btn = document.getElementById('cryptoCurrencyToggleBtn');
+      if (btn) btn.textContent = state.cryptoCurrency === 'INR' ? 'Crypto: ₹ INR' : 'Crypto: $ USDT';
+      renderActiveSignalsTable();
+      if (state.mode !== 'signals') triggerRun();
+    }
+
+    function setTimeframe(tf) {
+      state.timeframe = tf;
+      document.querySelectorAll('.tf-btn').forEach(btn => {
+        btn.className = btn.dataset.tf === tf
+          ? 'tf-btn py-1.5 rounded-lg text-xs font-semibold bg-white text-slate-900 shadow-sm transition'
+          : 'tf-btn py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-900 transition';
+      });
+      onSetupChanged(true);
+    }
+
+    function setDuration(dur) {
+      state.duration = dur;
+      document.querySelectorAll('.dur-btn').forEach(btn => {
+        btn.className = btn.dataset.dur === dur
+          ? 'dur-btn py-1.5 rounded-lg text-xs font-semibold bg-white text-slate-900 shadow-sm transition'
+          : 'dur-btn py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-900 transition';
+      });
+      onSetupChanged(true);
+    }
+
+    function onStrategyChanged() {
+      const strat = document.getElementById('strategySelect')?.value || 'cum_rsi2';
+      const descEl = document.getElementById('strategyDescBox');
+      if (descEl) descEl.textContent = STRATEGY_DESCRIPTIONS[strat] || '';
+      triggerRun();
+    }
+
+    function setRiskUnit(unit) {
+      state.riskUnit = unit;
+      const pctBtn = document.getElementById('unitPctBtn');
+      const ptsBtn = document.getElementById('unitPtsBtn');
+      if (pctBtn && ptsBtn) {
+        pctBtn.className = unit === 'percent'
+          ? 'px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-white text-slate-900 shadow-sm transition'
+          : 'px-2.5 py-0.5 rounded-md text-[11px] font-semibold text-slate-500 hover:text-slate-900 transition';
+        ptsBtn.className = unit === 'points'
+          ? 'px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-white text-slate-900 shadow-sm transition'
+          : 'px-2.5 py-0.5 rounded-md text-[11px] font-semibold text-slate-500 hover:text-slate-900 transition';
       }
-      showToast('Top 50 Trusted Crypto', 'Switched to 24/7 live Binance crypto feeds.');
+      triggerRun();
+    }
+
+    function syncRiskSlider(type, val) {
+      const el = document.getElementById(type === 'tp' ? 'tpInput' : 'tslInput');
+      if (el) el.value = val;
+      triggerRun();
+    }
+
+    async function onSetupChanged(forceRefetch = false) {
+      updateSymbolMeta();
+      const sym = document.getElementById('symbolSelect')?.value || 'ICICIBANK';
+      const chartTitle = document.getElementById('chartTitle');
+      if (chartTitle) chartTitle.textContent = `${sym.replace('USDT', '')} • ${state.timeframe} (${state.duration}) Live Chart`;
+
+      if (state.mode === 'signals') return;
+
+      const reqId = ++state.activeRequestId;
+      const candles = await fetchRealHistoricalCandles(sym, state.timeframe, state.duration, forceRefetch);
+      if (reqId !== state.activeRequestId) return;
+
+      if (!candles || candles.length < 30) {
+        state.candles = [];
+        clearPriceChartWithNotice(sym);
+        showToast('Live Feed Unavailable', `Could not retrieve live market candles for ${sym.replace('USDT', '')}. Try again shortly.`, true);
+        return;
+      }
+      state.candles = candles;
+      triggerRun();
     }
 
     // =========================================================================
-    // 4. 100% REAL LIVE DATA FETCHERS (BINANCE PUBLIC API + MULTI-RELAY NSE)
+    // 4. 100% REAL LIVE MARKET DATA FETCHERS (BINANCE + MULTI-RELAY YAHOO)
     // =========================================================================
-    const realCandleCache = {};
-    let currentFetchToken = 0;
-
-    function parseYahooCSV(csvText) {
-      if (!csvText || typeof csvText !== 'string' || !csvText.includes('Date,Open,High,Low,Close')) return null;
-      const lines = csvText.trim().split('\n');
-      const candles = [];
-      for (let i = 1; i < lines.length; i++) {
-        const cols = lines[i].split(',');
-        if (cols.length < 5) continue;
-        const ts = Math.floor(new Date(cols[0].trim() + 'T09:15:00+05:30').getTime() / 1000);
-        const o = parseFloat(cols[1]);
-        const h = parseFloat(cols[2]);
-        const l = parseFloat(cols[3]);
-        const c = parseFloat(cols[4]);
-        const v = parseFloat(cols[6] || cols[5] || '0');
-        if (!isNaN(ts) && !isNaN(c) && c > 0 && o > 0) {
-          candles.push({
-            time: ts,
-            open: Number(o.toFixed(2)),
-            high: Number(h.toFixed(2)),
-            low: Number(l.toFixed(2)),
-            close: Number(c.toFixed(2)),
-            volume: isNaN(v) ? 0 : v
-          });
+    async function fetchLiveUsdInrRate() {
+      try {
+        const res = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=USDTINR', { signal: AbortSignal.timeout(4000) });
+        if (res.ok) {
+          const data = await res.json();
+          const p = parseFloat(data.price);
+          if (p > 70 && p < 120) {
+            liveUsdToInr = p;
+            return;
+          }
         }
+      } catch (e) {}
+      try {
+        const res = await fetch('https://open.er-api.com/v6/latest/USD', { signal: AbortSignal.timeout(4000) });
+        if (res.ok) {
+          const data = await res.json();
+          const r = Number(data?.rates?.INR);
+          if (r > 70 && r < 120) liveUsdToInr = r;
+        }
+      } catch (e) {}
+    }
+
+    async function fetchBinanceKlines(binanceSym, timeframe, duration) {
+      const intervalMap = { '5m': '5m', '15m': '15m', '1H': '1h', 'Daily': '1d' };
+      const interval = intervalMap[timeframe] || '1d';
+      const limit = timeframe === 'Daily' ? (duration === '1Y' ? 365 : 1000) : 500;
+      const urls = [
+        `https://api.binance.com/api/v3/klines?symbol=${binanceSym}&interval=${interval}&limit=${limit}`,
+        `https://data-api.binance.vision/api/v3/klines?symbol=${binanceSym}&interval=${interval}&limit=${limit}`
+      ];
+      for (const url of urls) {
+        try {
+          const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
+          if (!res.ok) continue;
+          const raw = await res.json();
+          if (!Array.isArray(raw) || raw.length < 30) continue;
+          return raw.map(k => ({
+            time: Math.floor(k[0] / 1000),
+            open: parseFloat(k[1]),
+            high: parseFloat(k[2]),
+            low: parseFloat(k[3]),
+            close: parseFloat(k[4]),
+            volume: parseFloat(k[5])
+          }));
+        } catch (e) {}
       }
-      candles.sort((a, b) => a.time - b.time);
-      return candles.length >= 30 ? candles : null;
+      return null;
+    }
+
+    function getYahooTicker(sym) {
+      if (sym === 'NIFTY') return '^NSEI';
+      if (sym === 'BANKNIFTY') return '^NSEBANK';
+      if (sym === 'M_M') return 'M&M.NS';
+      return `${sym}.NS`;
     }
 
     function parseYahooChartJSON(json) {
@@ -705,13 +779,14 @@
       if (!result || !result.timestamp || !result.indicators?.quote?.[0]) return null;
       const ts = result.timestamp;
       const q = result.indicators.quote[0];
+      const maxValidTs = Math.floor(Date.now() / 1000) + 86400;
       const candles = [];
       for (let i = 0; i < ts.length; i++) {
         const o = q.open?.[i];
         const h = q.high?.[i];
         const l = q.low?.[i];
         const c = q.close?.[i];
-        if (o != null && h != null && l != null && c != null && c > 0) {
+        if (ts[i] <= maxValidTs && o != null && h != null && l != null && c != null && c > 0) {
           candles.push({
             time: ts[i],
             open: Number(o.toFixed(2)),
@@ -725,156 +800,117 @@
       return candles.length >= 30 ? candles : null;
     }
 
-    async function fetchLiveUsdInrRate() {
-      try {
-        const res = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=USDTINR');
-        if (res.ok) {
-          const data = await res.json();
-          const rate = parseFloat(data.price);
-          if (!isNaN(rate) && rate > 50 && rate < 150) {
-            liveUsdToInr = rate;
-            return liveUsdToInr;
-          }
+    function parseYahooCSV(csvText) {
+      const lines = String(csvText || '').trim().split('\n');
+      if (lines.length < 35 || !lines[0].includes('Date,Open')) return null;
+      const maxValidTs = Math.floor(Date.now() / 1000) + 86400;
+      const candles = [];
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',');
+        if (cols.length < 5 || cols[4] === 'null' || !cols[4]) continue;
+        const ts = Math.floor(new Date(cols[0] + 'T09:15:00Z').getTime() / 1000);
+        const o = parseFloat(cols[1]);
+        const h = parseFloat(cols[2]);
+        const l = parseFloat(cols[3]);
+        const c = parseFloat(cols[4]);
+        if (ts > 0 && ts <= maxValidTs && !isNaN(c) && c > 0) {
+          candles.push({
+            time: ts,
+            open: Number(o.toFixed(2)),
+            high: Number(h.toFixed(2)),
+            low: Number(l.toFixed(2)),
+            close: Number(c.toFixed(2)),
+            volume: parseFloat(cols[6]) || 0
+          });
         }
-      } catch (e) {}
-      return liveUsdToInr;
-    }
-
-    async function fetchBinanceKlines(binanceSym, tf, dur) {
-      const intervalMap = { '5m': '5m', '15m': '15m', '1H': '1h', 'Daily': '1d' };
-      const limitMap = { '5m': 500, '15m': 500, '1H': 750, 'Daily': dur === '6Y' ? 1000 : (dur === '3Y' ? 1000 : 365) };
-      const interval = intervalMap[tf] || '1d';
-      const limit = limitMap[tf] || 365;
-      const url = `https://api.binance.com/api/v3/klines?symbol=${binanceSym}&interval=${interval}&limit=${limit}`;
-
-      try {
-        const res = await fetch(url);
-        if (!res.ok) return null;
-        const rows = await res.json();
-        if (!Array.isArray(rows) || !rows.length) return null;
-
-        return rows.map(r => ({
-          time: Math.floor(r[0] / 1000),
-          open: parseFloat(r[1]),
-          high: parseFloat(r[2]),
-          low: parseFloat(r[3]),
-          close: parseFloat(r[4]),
-          volume: parseFloat(r[5])
-        })).filter(c => !isNaN(c.close) && c.close > 0);
-      } catch (e) {
-        return null;
       }
+      return candles.length >= 30 ? candles : null;
     }
 
-    async function fetchYahooNSECandles(sym, tf, dur) {
-      const yahooSym = sym === 'NIFTY' ? '^NSEI' : (sym === 'BANKNIFTY' ? '^NSEBANK' : `${sym}.NS`);
-      const stooqSym = sym === 'NIFTY' ? '^nf' : (sym === 'BANKNIFTY' ? '^nfb' : `${sym.toLowerCase()}.in`);
+    async function fetchYahooNSECandles(sym, timeframe, duration) {
+      const ticker = encodeURIComponent(getYahooTicker(sym));
       const intervalMap = { '5m': '5m', '15m': '15m', '1H': '60m', 'Daily': '1d' };
       const rangeMap = {
         '5m': '5d',
         '15m': '15d',
         '1H': '60d',
-        'Daily': dur === '6Y' ? '10y' : (dur === '3Y' ? '5y' : '2y')
+        'Daily': duration === '1Y' ? '1y' : (duration === '3Y' ? '3y' : '5y')
       };
-      const interval = intervalMap[tf] || '1d';
-      const range = rangeMap[tf] || '2y';
+      const interval = intervalMap[timeframe] || '1d';
+      const range = rangeMap[timeframe] || '5y';
 
-      const chartUrl1 = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSym)}?interval=${interval}&range=${range}&includePrePost=false`;
-      const chartUrl2 = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSym)}?interval=${interval}&range=${range}&includePrePost=false`;
+      const yUrl1 = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=${interval}&range=${range}`;
+      const yUrl2 = `https://query2.finance.yahoo.com/v8/finance/chart/${ticker}?interval=${interval}&range=${range}`;
+      const period2 = Math.floor(Date.now() / 1000);
+      const period1 = period2 - (duration === '1Y' ? 365 : (duration === '3Y' ? 1095 : 1825)) * 86400;
+      const csvUrl = `https://query1.finance.yahoo.com/v7/finance/download/${ticker}?period1=${period1}&period2=${period2}&interval=1d&events=history`;
 
-      const nowSec = Math.floor(Date.now() / 1000);
-      const yearsSec = dur === '6Y' ? 6 * 365 * 86400 : (dur === '3Y' ? 3 * 365 * 86400 : 2 * 365 * 86400);
-      const yahooCsvUrl = `https://query1.finance.yahoo.com/v7/finance/download/${encodeURIComponent(yahooSym)}?period1=${nowSec - yearsSec}&period2=${nowSec}&interval=1d&events=history`;
-      const stooqCsvUrl = `https://stooq.com/q/d/l/?s=${encodeURIComponent(stooqSym)}&i=d`;
-
-      const fetchRace = async (proxyUrl, mode) => {
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 9000);
-        try {
-          const res = await fetch(proxyUrl, { signal: controller.signal });
-          clearTimeout(timer);
-          if (!res.ok) throw new Error('HTTP ' + res.status);
-          if (mode === 'csv') {
-            const txt = await res.text();
-            const parsed = parseYahooCSV(txt);
-            if (!parsed) throw new Error('Bad CSV');
-            return parsed;
-          }
-          if (mode === 'wrapped_csv') {
-            const wrapper = await res.json();
-            const parsed = parseYahooCSV(wrapper?.contents || '');
-            if (!parsed) throw new Error('Bad Wrapped CSV');
-            return parsed;
-          }
-          let json = await res.json();
-          if (mode === 'wrapped' && json && typeof json.contents === 'string') {
-            json = JSON.parse(json.contents);
-          }
-          const parsed = parseYahooChartJSON(json);
-          if (!parsed) throw new Error('Bad Chart JSON');
-          return parsed;
-        } catch (err) {
-          clearTimeout(timer);
-          throw err;
-        }
+      const fetchViaAllOrigins = async (targetUrl, isCsv = false) => {
+        const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`, { signal: AbortSignal.timeout(7000) });
+        if (!res.ok) throw new Error('ao fail');
+        const wrapped = await res.json();
+        if (!wrapped?.contents) throw new Error('ao empty');
+        const parsed = isCsv ? parseYahooCSV(wrapped.contents) : parseYahooChartJSON(JSON.parse(wrapped.contents));
+        if (!parsed) throw new Error('ao invalid');
+        return parsed;
       };
 
-      const candidates = [
-        fetchRace(`https://api.allorigins.win/get?url=${encodeURIComponent(chartUrl1)}`, 'wrapped'),
-        fetchRace(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(chartUrl1)}`, 'json'),
-        fetchRace(`https://corsproxy.io/?url=${encodeURIComponent(chartUrl2)}`, 'json'),
-        fetchRace(`https://thingproxy.freeboard.io/fetch/${chartUrl2}`, 'json'),
-        fetchRace(`https://api.cors.lol/?url=${encodeURIComponent(chartUrl1)}`, 'json')
+      const fetchViaDirectProxy = async (proxyPrefix, targetUrl, isCsv = false) => {
+        const res = await fetch(`${proxyPrefix}${encodeURIComponent(targetUrl)}`, { signal: AbortSignal.timeout(7000) });
+        if (!res.ok) throw new Error('proxy fail');
+        const parsed = isCsv ? parseYahooCSV(await res.text()) : parseYahooChartJSON(await res.json());
+        if (!parsed) throw new Error('proxy invalid');
+        return parsed;
+      };
+
+      const tasks = [
+        fetchViaAllOrigins(yUrl1, false),
+        fetchViaAllOrigins(yUrl2, false),
+        fetchViaDirectProxy('https://api.codetabs.com/v1/proxy?quest=', yUrl1, false),
+        fetchViaDirectProxy('https://corsproxy.io/?', yUrl2, false)
       ];
-
-      if (tf === 'Daily') {
-        candidates.push(
-          fetchRace(`https://api.allorigins.win/get?url=${encodeURIComponent(stooqCsvUrl)}`, 'wrapped_csv'),
-          fetchRace(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(stooqCsvUrl)}`, 'csv'),
-          fetchRace(`https://corsproxy.io/?url=${encodeURIComponent(stooqCsvUrl)}`, 'csv'),
-          fetchRace(`https://api.allorigins.win/get?url=${encodeURIComponent(yahooCsvUrl)}`, 'wrapped_csv')
-        );
+      if (timeframe === 'Daily') {
+        tasks.push(fetchViaAllOrigins(csvUrl, true));
+        tasks.push(fetchViaDirectProxy('https://api.codetabs.com/v1/proxy?quest=', csvUrl, true));
       }
 
       try {
-        return await Promise.any(candidates);
+        return await Promise.any(tasks);
       } catch (e) {
         return null;
       }
     }
 
-    async function fetchRealHistoricalCandles(sym, tf, dur) {
-      const cacheKey = `${sym}_${tf}_${dur}`;
-      const cached = realCandleCache[cacheKey];
-      if (cached && (Date.now() - cached.fetchedAt) < 120000) {
+    async function fetchRealHistoricalCandles(sym, timeframe = 'Daily', duration = '6Y', forceRefresh = false) {
+      const cacheKey = `${sym}_${timeframe}_${duration}`;
+      const cached = state.realCandleCache[cacheKey];
+      if (!forceRefresh && cached && (Date.now() - cached.fetchedAt) < 120000) {
         return cached.candles;
       }
-
-      const cfg = NSE_SYMBOLS[sym];
-      if (!cfg) return null;
-
-      let candles = null;
-      if (cfg.isCrypto && cfg.binanceSym) {
-        candles = await fetchBinanceKlines(cfg.binanceSym, tf, dur);
-      } else {
-        candles = await fetchYahooNSECandles(sym, tf, dur);
-      }
-
+      const meta = NSE_SYMBOLS[sym];
+      if (!meta) return null;
+      const candles = meta.isCrypto
+        ? await fetchBinanceKlines(meta.binanceSym || sym, timeframe, duration)
+        : await fetchYahooNSECandles(sym, timeframe, duration);
       if (candles && candles.length >= 30) {
-        realCandleCache[cacheKey] = { candles, fetchedAt: Date.now() };
+        state.realCandleCache[cacheKey] = { candles, fetchedAt: Date.now() };
+        return candles;
       }
-      return candles;
+      return null;
     }
 
-    async function fetchInBatches(symbols, workerFn, batchSize = 3) {
-      for (let i = 0; i < symbols.length; i += batchSize) {
-        const chunk = symbols.slice(i, i + batchSize);
-        await Promise.allSettled(chunk.map(sym => workerFn(sym)));
+    async function fetchInBatches(items, batchSize, workerFn) {
+      const results = [];
+      for (let i = 0; i < items.length; i += batchSize) {
+        const chunk = items.slice(i, i + batchSize);
+        const chunkRes = await Promise.all(chunk.map(item => workerFn(item)));
+        results.push(...chunkRes);
       }
+      return results;
     }
 
     // =========================================================================
-    // 5. TECHNICAL INDICATORS & SIGNAL ENGINE
+    // 5. TECHNICAL INDICATORS & SIGNAL GENERATOR
     // =========================================================================
     function calcSMA(values, period) {
       const out = new Array(values.length).fill(null);
@@ -899,51 +935,38 @@
       return out;
     }
 
-    function calcRSI(closes, period = 2) {
+    function calcRSI(closes, period) {
       const out = new Array(closes.length).fill(null);
       if (closes.length <= period) return out;
-      let avgGain = 0, avgLoss = 0;
+      let gainSum = 0, lossSum = 0;
       for (let i = 1; i <= period; i++) {
         const diff = closes[i] - closes[i - 1];
-        if (diff >= 0) avgGain += diff;
-        else avgLoss += Math.abs(diff);
+        if (diff >= 0) gainSum += diff;
+        else lossSum -= diff;
       }
-      avgGain /= period;
-      avgLoss /= period;
+      let avgGain = gainSum / period;
+      let avgLoss = lossSum / period;
       out[period] = avgLoss === 0 ? 100 : 100 - (100 / (1 + avgGain / avgLoss));
       for (let i = period + 1; i < closes.length; i++) {
         const diff = closes[i] - closes[i - 1];
-        const gain = diff > 0 ? diff : 0;
-        const loss = diff < 0 ? Math.abs(diff) : 0;
-        avgGain = (avgGain * (period - 1) + gain) / period;
-        avgLoss = (avgLoss * (period - 1) + loss) / period;
+        const g = diff > 0 ? diff : 0;
+        const l = diff < 0 ? -diff : 0;
+        avgGain = (avgGain * (period - 1) + g) / period;
+        avgLoss = (avgLoss * (period - 1) + l) / period;
         out[i] = avgLoss === 0 ? 100 : 100 - (100 / (1 + avgGain / avgLoss));
       }
       return out;
     }
 
-    function calcATR(candles, period = 10) {
-      const out = new Array(candles.length).fill(null);
-      const trs = candles.map((c, i) => {
-        if (i === 0) return c.high - c.low;
-        const prevC = candles[i - 1].close;
-        return Math.max(c.high - c.low, Math.abs(c.high - prevC), Math.abs(c.low - prevC));
-      });
-      let sum = 0;
-      for (let i = 0; i < trs.length; i++) {
-        sum += trs[i];
-        if (i >= period) sum -= trs[i - period];
-        if (i >= period - 1) out[i] = sum / period;
-      }
-      return out;
-    }
-
     function generateSignals(candles) {
-      const strategy = document.getElementById('strategySelect')?.value || 'cum_rsi2';
-      const closes = candles.map(c => c.close);
+      const strat = document.getElementById('strategySelect')?.value || 'cum_rsi2';
       const n = candles.length;
+      const closes = candles.map(c => c.close);
+      const highs = candles.map(c => c.high);
+      const lows = candles.map(c => c.low);
+
       const signals = new Array(n).fill(0);
-      const snapExits = new Array(n).fill(false);
+      const exitSignals = new Array(n).fill(false);
       const reasons = new Array(n).fill('');
 
       const sma5 = calcSMA(closes, 5);
@@ -956,115 +979,99 @@
       const ema50 = calcEMA(closes, 50);
       const rsi2 = calcRSI(closes, 2);
       const rsi14 = calcRSI(closes, 14);
-      const atr10 = calcATR(candles, 10);
 
-      let fastLine = ema9;
-      let slowLine = ema21;
-
-      if (strategy === 'cum_rsi2') {
-        fastLine = sma5;
-        slowLine = sma200;
-        for (let i = 200; i < n; i++) {
-          if (rsi2[i] !== null && rsi2[i - 1] !== null && sma200[i] !== null && sma50[i] !== null) {
-            const cumRsi = rsi2[i] + rsi2[i - 1];
-            if (closes[i] > sma200[i] && sma50[i] > sma200[i] && cumRsi < 10) {
+      for (let i = 1; i < n; i++) {
+        const c = closes[i];
+        if (strat === 'cum_rsi2') {
+          if (sma5[i] && c > sma5[i]) exitSignals[i] = true;
+          if (sma200[i] && sma50[i] && rsi2[i] != null && rsi2[i - 1] != null) {
+            const cum2 = rsi2[i] + rsi2[i - 1];
+            if (c > sma200[i] && sma50[i] > sma200[i] && cum2 < 10) {
               signals[i] = 1;
-              reasons[i] = `Cum RSI(2): ${cumRsi.toFixed(1)} (<10) • >200 SMA`;
+              reasons[i] = `Cum RSI(2): ${cum2.toFixed(1)} (<10) • >200 SMA`;
             }
           }
-          if (sma5[i] !== null && closes[i] > sma5[i]) snapExits[i] = true;
-        }
-      } else if (strategy === 'connors_rsi2') {
-        fastLine = sma5;
-        slowLine = sma200;
-        for (let i = 200; i < n; i++) {
-          if (rsi2[i] !== null && sma200[i] !== null && closes[i] > sma200[i] && rsi2[i] < 10) {
+        } else if (strat === 'connors_rsi2') {
+          if (sma5[i] && c > sma5[i]) exitSignals[i] = true;
+          if (sma200[i] && rsi2[i] != null && c > sma200[i] && rsi2[i] < 10) {
             signals[i] = 1;
             reasons[i] = `RSI(2): ${rsi2[i].toFixed(1)} (<10) • >200 SMA`;
           }
-          if (sma5[i] !== null && closes[i] > sma5[i]) snapExits[i] = true;
-        }
-      } else if (strategy === 'bb_rsi_snap') {
-        fastLine = sma20;
-        slowLine = sma50;
-        for (let i = 50; i < n; i++) {
-          let sq = 0;
-          for (let j = i - 19; j <= i; j++) sq += Math.pow(closes[j] - sma20[i], 2);
-          const std = Math.sqrt(sq / 20);
-          const lowerBB = sma20[i] - 2 * std;
-          if (closes[i] > sma50[i] && closes[i] <= lowerBB && rsi14[i] !== null && rsi14[i] < 35) {
-            signals[i] = 1;
-            reasons[i] = `Lower BB Touch + RSI(14): ${rsi14[i].toFixed(1)}`;
+        } else if (strat === 'bb_rsi_snap') {
+          if (sma20[i] && c >= sma20[i]) exitSignals[i] = true;
+          if (i >= 20 && sma50[i] && rsi14[i] != null) {
+            const slice = closes.slice(i - 19, i + 1);
+            const mean = sma20[i];
+            const std = Math.sqrt(slice.reduce((acc, v) => acc + Math.pow(v - mean, 2), 0) / 20);
+            const lowerBB = mean - 2 * std;
+            if (c > sma50[i] && c <= lowerBB && rsi14[i] < 35) {
+              signals[i] = 1;
+              reasons[i] = `Lower BB Touch • RSI(14): ${rsi14[i].toFixed(1)}`;
+            }
           }
-          if (sma20[i] !== null && closes[i] >= sma20[i]) snapExits[i] = true;
-        }
-      } else if (strategy === 'ema20_pullback') {
-        fastLine = ema20;
-        slowLine = ema50;
-        for (let i = 50; i < n; i++) {
-          if (ema20[i] > ema50[i] && candles[i].low <= ema20[i] * 1.003 && closes[i] > ema20[i] && rsi14[i] >= 38 && rsi14[i] <= 55) {
-            signals[i] = 1;
-            reasons[i] = `20-EMA Pullback Bounce • RSI: ${rsi14[i].toFixed(1)}`;
+        } else if (strat === 'ema20_pullback') {
+          if (ema20[i] && ema50[i] && rsi14[i] != null) {
+            if (ema20[i] > ema50[i] && lows[i] <= ema20[i] * 1.003 && c > ema20[i] && rsi14[i] >= 38 && rsi14[i] <= 55) {
+              signals[i] = 1;
+              reasons[i] = `20-EMA Bounce • RSI(14): ${rsi14[i].toFixed(1)}`;
+            }
           }
-        }
-      } else if (strategy === 'ema_cross') {
-        for (let i = 22; i < n; i++) {
-          if (ema9[i - 1] <= ema21[i - 1] && ema9[i] > ema21[i]) {
-            signals[i] = 1;
-            reasons[i] = '9-EMA Bullish Crossover 21-EMA';
-          } else if (ema9[i - 1] >= ema21[i - 1] && ema9[i] < ema21[i]) {
-            signals[i] = -1;
-            reasons[i] = '9-EMA Bearish Crossover 21-EMA';
+        } else if (strat === 'ema_cross') {
+          if (ema9[i] && ema21[i] && ema9[i - 1] && ema21[i - 1]) {
+            if (ema9[i - 1] <= ema21[i - 1] && ema9[i] > ema21[i]) {
+              signals[i] = 1;
+              reasons[i] = 'Bullish 9/21 EMA Crossover';
+            } else if (ema9[i - 1] >= ema21[i - 1] && ema9[i] < ema21[i]) {
+              signals[i] = -1;
+              reasons[i] = 'Bearish 9/21 EMA Crossover';
+            }
           }
-        }
-      } else if (strategy === 'supertrend_breakout') {
-        fastLine = ema20;
-        slowLine = sma50;
-        for (let i = 15; i < n; i++) {
-          const hl2 = (candles[i].high + candles[i].low) / 2;
-          const prevHl2 = (candles[i - 1].high + candles[i - 1].low) / 2;
-          const upper = hl2 + 2.5 * (atr10[i] || 1);
-          const prevUpper = prevHl2 + 2.5 * (atr10[i - 1] || 1);
-          if (closes[i - 1] <= prevUpper && closes[i] > upper) {
-            signals[i] = 1;
-            reasons[i] = 'ATR Supertrend Bullish Breakout';
+        } else if (strat === 'supertrend_breakout') {
+          if (i >= 12) {
+            let trSum = 0;
+            for (let k = i - 9; k <= i; k++) {
+              trSum += Math.max(highs[k] - lows[k], Math.abs(highs[k] - closes[k - 1]), Math.abs(lows[k] - closes[k - 1]));
+            }
+            const atr = trSum / 10;
+            const upperBand = ((highs[i - 1] + lows[i - 1]) / 2) + 2.2 * atr;
+            if (closes[i - 1] <= upperBand && c > upperBand) {
+              signals[i] = 1;
+              reasons[i] = 'ATR(10) Volatility Breakout';
+            }
           }
-        }
-      } else if (strategy === 'vwap_bounce') {
-        fastLine = sma20;
-        slowLine = sma50;
-        for (let i = 21; i < n; i++) {
-          if (closes[i - 1] < sma20[i - 1] && closes[i] > sma20[i] && closes[i] > candles[i].open) {
+        } else if (strat === 'vwap_bounce') {
+          if (sma20[i] && closes[i - 1] < sma20[i - 1] && c > sma20[i] && c > candles[i].open) {
             signals[i] = 1;
-            reasons[i] = 'VWAP / 20-Anchor Bullish Reclaim';
+            reasons[i] = '20-Bar Anchor Reclaim';
           }
         }
       }
 
-      return { signals, snapExits, reasons, fastLine, slowLine };
+      return { signals, exitSignals, reasons, sma50, sma200 };
     }
 
     // =========================================================================
-    // 6. STRATEGY BACKTEST & POSITION SIMULATION ENGINE
+    // 6. BACKTEST SIMULATION ENGINE
     // =========================================================================
-    function executeStrategySimulation(candles, overrideSym = null) {
-      const sym = overrideSym || document.getElementById('symbolSelect')?.value || 'ICICIBANK';
-      const cfg = NSE_SYMBOLS[sym] || { isCrypto: false };
-      const priceScale = cfg.isCrypto ? liveUsdToInr : 1;
-      const initialCap = Math.max(5000, parseFloat(document.getElementById('capitalInput')?.value) || 100000);
-      const tpVal = Math.max(0.1, parseFloat(document.getElementById('tpInput')?.value) || 5.5);
-      const tslVal = Math.max(0.05, parseFloat(document.getElementById('tslInput')?.value) || 2.5);
+    function executeStrategySimulation(candles) {
+      const strat = document.getElementById('strategySelect')?.value || 'cum_rsi2';
+      const tpVal = parseFloat(document.getElementById('tpInput')?.value) || 5.5;
+      const tslVal = parseFloat(document.getElementById('tslInput')?.value) || 2.5;
+      const capital = parseFloat(document.getElementById('capitalInput')?.value) || 100000;
       const direction = document.getElementById('directionSelect')?.value || 'long';
-      const maxHoldBars = parseInt(document.getElementById('maxHoldSelect')?.value, 10) || 0;
-      const autoSquareOff = document.getElementById('autoSquareOffCheck')?.checked ?? false;
+      const maxHold = parseInt(document.getElementById('maxHoldSelect')?.value || '15', 10);
       const includeTaxes = document.getElementById('includeTaxesCheck')?.checked ?? true;
-      const strategy = document.getElementById('strategySelect')?.value || 'cum_rsi2';
-      const isSwing = SWING_STRATEGIES.has(strategy);
+      const sym = document.getElementById('symbolSelect')?.value || 'ICICIBANK';
+      const isCrypto = Boolean(NSE_SYMBOLS[sym]?.isCrypto);
+      const priceScale = isCrypto ? liveUsdToInr : 1;
 
-      const { signals, snapExits, fastLine, slowLine } = generateSignals(candles);
+      const { signals, exitSignals, sma50, sma200 } = generateSignals(candles);
+      const isSwing = SWING_STRATEGIES.has(strat);
 
-      let equity = initialCap;
-      let openPosition = null;
+      let equity = capital;
+      let peakEquity = capital;
+      let maxDrawdownPct = 0;
+      let pos = null;
       const trades = [];
       const markers = [];
       const equityCurve = [];
@@ -1072,194 +1079,190 @@
       for (let i = 0; i < candles.length; i++) {
         const bar = candles[i];
 
-        if (openPosition) {
-          const p = openPosition;
-          const barsHeld = i - p.entryIdx;
+        if (pos) {
+          const barsHeld = i - pos.entryIndex;
+          let exitPrice = null;
+          let exitReason = '';
 
-          if (p.side === 'BUY') {
-            if (bar.high > p.highestPrice) {
-              p.highestPrice = bar.high;
-              const newSL = p.highestPrice - p.tslDist;
-              if (newSL > p.currentSL) p.currentSL = newSL;
+          if (pos.side === 'LONG') {
+            if (bar.high > pos.highest) {
+              pos.highest = bar.high;
+              if (!isSwing) {
+                pos.stopPrice = Math.max(pos.stopPrice, pos.highest - pos.tslDist);
+              }
             }
-
-            let exitPrice = null;
-            let exitReason = '';
-
-            if (bar.low <= p.currentSL) {
-              exitPrice = Math.min(bar.open, p.currentSL);
-              exitReason = 'Trailing SL';
-            } else if (bar.high >= p.tpPrice) {
-              exitPrice = Math.max(bar.open, p.tpPrice);
+            if (bar.low <= pos.stopPrice) {
+              exitPrice = pos.stopPrice;
+              exitReason = isSwing ? 'Safety SL' : 'Trailing SL';
+            } else if (bar.high >= pos.tpPrice) {
+              exitPrice = pos.tpPrice;
               exitReason = 'Take-Profit';
-            } else if (isSwing && barsHeld >= 1 && snapExits[i]) {
+            } else if (isSwing && exitSignals[i] && bar.close > pos.entryPrice) {
               exitPrice = bar.close;
               exitReason = '5-SMA Snapback';
-            } else if (maxHoldBars > 0 && barsHeld >= maxHoldBars) {
+            } else if (maxHold > 0 && barsHeld >= maxHold) {
               exitPrice = bar.close;
-              exitReason = 'Max Hold Exit';
-            } else if (autoSquareOff && state.timeframe !== 'Daily' && getISTMinutesOfDay(bar.time) >= 915) {
+              exitReason = `${maxHold}-Bar Time Exit`;
+            } else if (!isSwing && signals[i] === -1) {
               exitPrice = bar.close;
-              exitReason = '15:15 Square-Off';
+              exitReason = 'Signal Flip';
             }
-
-            if (exitPrice !== null) {
-              const grossPnlInr = (exitPrice - p.entryPrice) * priceScale * p.qty;
-              const turnoverInr = (p.entryPrice + exitPrice) * priceScale * p.qty;
-              const costsInr = includeTaxes ? Math.min(40, turnoverInr * 0.0003) + turnoverInr * 0.0011 : 0;
-              const netPnl = grossPnlInr - costsInr;
-              equity += netPnl;
-              trades.push({
-                entryTime: p.entryTime,
-                exitTime: bar.time,
-                side: 'BUY',
-                qty: p.qty,
-                entryPrice: p.entryPrice,
-                exitPrice,
-                exitReason,
-                netPnl
-              });
-              markers.push({
-                time: bar.time,
-                position: 'aboveBar',
-                color: netPnl >= 0 ? '#10b981' : '#f59e0b',
-                shape: 'arrowDown',
-                text: `${exitReason} (${netPnl >= 0 ? '+' : ''}₹${Math.round(netPnl)})`
-              });
-              openPosition = null;
+          } else {
+            if (bar.low < pos.lowest) {
+              pos.lowest = bar.low;
+              pos.stopPrice = Math.min(pos.stopPrice, pos.lowest + pos.tslDist);
             }
-          } else if (p.side === 'SELL') {
-            if (bar.low < p.lowestPrice) {
-              p.lowestPrice = bar.low;
-              const newSL = p.lowestPrice + p.tslDist;
-              if (newSL < p.currentSL) p.currentSL = newSL;
-            }
-
-            let exitPrice = null;
-            let exitReason = '';
-            if (bar.high >= p.currentSL) {
-              exitPrice = Math.max(bar.open, p.currentSL);
+            if (bar.high >= pos.stopPrice) {
+              exitPrice = pos.stopPrice;
               exitReason = 'Trailing SL';
-            } else if (bar.low <= p.tpPrice) {
-              exitPrice = Math.min(bar.open, p.tpPrice);
+            } else if (bar.low <= pos.tpPrice) {
+              exitPrice = pos.tpPrice;
               exitReason = 'Take-Profit';
+            } else if (maxHold > 0 && barsHeld >= maxHold) {
+              exitPrice = bar.close;
+              exitReason = `${maxHold}-Bar Time Exit`;
+            } else if (signals[i] === 1) {
+              exitPrice = bar.close;
+              exitReason = 'Signal Flip';
             }
+          }
 
-            if (exitPrice !== null) {
-              const grossPnlInr = (p.entryPrice - exitPrice) * priceScale * p.qty;
-              const turnoverInr = (p.entryPrice + exitPrice) * priceScale * p.qty;
-              const costsInr = includeTaxes ? Math.min(40, turnoverInr * 0.0003) + turnoverInr * 0.0005 : 0;
-              const netPnl = grossPnlInr - costsInr;
-              equity += netPnl;
-              trades.push({
-                entryTime: p.entryTime,
-                exitTime: bar.time,
-                side: 'SELL',
-                qty: p.qty,
-                entryPrice: p.entryPrice,
-                exitPrice,
-                exitReason,
-                netPnl
-              });
-              markers.push({
-                time: bar.time,
-                position: 'belowBar',
-                color: netPnl >= 0 ? '#10b981' : '#f59e0b',
-                shape: 'arrowUp',
-                text: exitReason
-              });
-              openPosition = null;
-            }
+          if (exitPrice !== null) {
+            const rawDiff = pos.side === 'LONG' ? (exitPrice - pos.entryPrice) : (pos.entryPrice - exitPrice);
+            const grossPnl = rawDiff * pos.qty * priceScale;
+            const turnover = (pos.entryPrice + exitPrice) * pos.qty * priceScale;
+            const charges = includeTaxes ? turnover * 0.0012 : 0;
+            const netPnl = grossPnl - charges;
+
+            equity += netPnl;
+            if (equity > peakEquity) peakEquity = equity;
+            const dd = peakEquity > 0 ? ((peakEquity - equity) / peakEquity) * 100 : 0;
+            if (dd > maxDrawdownPct) maxDrawdownPct = dd;
+
+            trades.push({
+              num: trades.length + 1,
+              side: pos.side,
+              entryTime: pos.entryTime,
+              exitTime: bar.time,
+              entryPrice: pos.entryPrice,
+              exitPrice,
+              exitReason,
+              netPnl
+            });
+
+            markers.push({
+              time: bar.time,
+              position: pos.side === 'LONG' ? 'aboveBar' : 'belowBar',
+              color: netPnl >= 0 ? '#059669' : '#e11d48',
+              shape: 'circle',
+              text: exitReason
+            });
+            pos = null;
           }
         }
 
-        if (!openPosition && i < candles.length - 1) {
+        if (!pos && i < candles.length - 1) {
           const sig = signals[i];
           if (sig === 1 && (direction === 'long' || direction === 'both')) {
             const entryPrice = bar.close;
             const tpDist = state.riskUnit === 'percent' ? entryPrice * (tpVal / 100) : (tpVal / priceScale);
             const tslDist = state.riskUnit === 'percent' ? entryPrice * (tslVal / 100) : (tslVal / priceScale);
-            const rawQty = equity / (entryPrice * priceScale);
-            const qty = cfg.isCrypto ? Number(rawQty.toFixed(4)) : Math.max(1, Math.floor(rawQty));
-            if (qty > 0) {
-              openPosition = {
-                side: 'BUY',
-                entryIdx: i,
-                entryTime: bar.time,
-                entryPrice,
-                qty,
-                highestPrice: entryPrice,
-                tslDist,
-                currentSL: entryPrice - tslDist,
-                tpPrice: entryPrice + tpDist
-              };
-              markers.push({
-                time: bar.time,
-                position: 'belowBar',
-                color: '#10b981',
-                shape: 'arrowUp',
-                text: 'BUY'
-              });
-            }
-          } else if (sig === -1 && (direction === 'short' || direction === 'both') && !cfg.isCrypto) {
-            const entryPrice = bar.close;
-            const tpDist = state.riskUnit === 'percent' ? entryPrice * (tpVal / 100) : tpVal;
-            const tslDist = state.riskUnit === 'percent' ? entryPrice * (tslVal / 100) : tslVal;
-            const qty = Math.max(1, Math.floor(equity / entryPrice));
-            openPosition = {
-              side: 'SELL',
-              entryIdx: i,
+            const safetySlDist = isSwing ? Math.max(tslDist * 2.5, entryPrice * 0.075) : tslDist;
+            const qty = equity / (entryPrice * priceScale);
+            pos = {
+              side: 'LONG',
+              entryIndex: i,
               entryTime: bar.time,
               entryPrice,
-              qty,
-              lowestPrice: entryPrice,
+              highest: entryPrice,
+              tpPrice: entryPrice + tpDist,
+              stopPrice: entryPrice - safetySlDist,
               tslDist,
-              currentSL: entryPrice + tslDist,
-              tpPrice: entryPrice - tpDist
+              qty
+            };
+            markers.push({
+              time: bar.time,
+              position: 'belowBar',
+              color: '#059669',
+              shape: 'arrowUp',
+              text: 'BUY'
+            });
+          } else if (sig === -1 && !isSwing && (direction === 'short' || direction === 'both')) {
+            const entryPrice = bar.close;
+            const tpDist = state.riskUnit === 'percent' ? entryPrice * (tpVal / 100) : (tpVal / priceScale);
+            const tslDist = state.riskUnit === 'percent' ? entryPrice * (tslVal / 100) : (tslVal / priceScale);
+            const qty = equity / (entryPrice * priceScale);
+            pos = {
+              side: 'SHORT',
+              entryIndex: i,
+              entryTime: bar.time,
+              entryPrice,
+              lowest: entryPrice,
+              tpPrice: entryPrice - tpDist,
+              stopPrice: entryPrice + tslDist,
+              tslDist,
+              qty
             };
             markers.push({
               time: bar.time,
               position: 'aboveBar',
-              color: '#f43f5e',
+              color: '#e11d48',
               shape: 'arrowDown',
-              text: 'SELL'
+              text: 'SHORT'
             });
           }
         }
 
-        let markEquity = equity;
-        if (openPosition) {
-          const unrealized = openPosition.side === 'BUY'
-            ? (bar.close - openPosition.entryPrice) * priceScale * openPosition.qty
-            : (openPosition.entryPrice - bar.close) * priceScale * openPosition.qty;
-          markEquity += unrealized;
-        }
-        equityCurve.push({ time: bar.time, equity: Number(markEquity.toFixed(2)) });
+        equityCurve.push({ time: bar.time, equity });
       }
 
-      return { trades, markers, equityCurve, fastLine, slowLine, openPosition };
+      const wins = trades.filter(t => t.netPnl > 0).length;
+      const losses = trades.length - wins;
+      const netProfit = equity - capital;
+      const returnPct = capital > 0 ? (netProfit / capital) * 100 : 0;
+      const winRate = trades.length > 0 ? (wins / trades.length) * 100 : 0;
+
+      return {
+        trades,
+        markers,
+        equityCurve,
+        sma50,
+        sma200,
+        netProfit,
+        returnPct,
+        winRate,
+        wins,
+        losses,
+        maxDrawdownPct,
+        finalCapital: equity
+      };
     }
 
     // =========================================================================
-    // 7. WHATSAPP & PERSISTENT SIGNAL STORAGE HELPERS
+    // 7. FORMATTERS, PERSISTENT TRACKER & WHATSAPP ALERTS
     // =========================================================================
-    function formatIST(unixSec, tf) {
-      const d = new Date(unixSec * 1000);
-      if (tf === 'Daily') {
-        return d.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: '2-digit' });
+    function formatINR(val) {
+      const sign = val > 0 ? '+' : (val < 0 ? '-' : '');
+      return `${sign}₹${Math.abs(val).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+
+    function formatAssetPrice(rawPrice, sym) {
+      const isCrypto = Boolean(NSE_SYMBOLS[sym]?.isCrypto);
+      if (isCrypto) {
+        if (state.cryptoCurrency === 'USD') {
+          const dec = rawPrice < 1 ? 4 : 2;
+          return `$${rawPrice.toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec })}`;
+        }
+        const inrVal = rawPrice * liveUsdToInr;
+        const dec = inrVal < 10 ? 2 : 2;
+        return `₹${inrVal.toLocaleString('en-IN', { minimumFractionDigits: dec, maximumFractionDigits: dec })}`;
       }
-      return d.toLocaleString('en-IN', {
-        timeZone: 'Asia/Kolkata',
-        day: '2-digit',
-        month: 'short',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-      });
+      return `₹${rawPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     }
 
     function formatISTDateBadge(unixSec) {
-      return new Date(unixSec * 1000).toLocaleDateString('en-IN', {
+      const d = new Date(unixSec * 1000);
+      return d.toLocaleDateString('en-IN', {
         timeZone: 'Asia/Kolkata',
         weekday: 'short',
         day: '2-digit',
@@ -1269,7 +1272,8 @@
     }
 
     function formatExactISTTimestamp(unixSec) {
-      return new Date(unixSec * 1000).toLocaleString('en-IN', {
+      const d = new Date(unixSec * 1000);
+      return d.toLocaleString('en-IN', {
         timeZone: 'Asia/Kolkata',
         day: '2-digit',
         month: 'short',
@@ -1278,36 +1282,6 @@
         second: '2-digit',
         hour12: false
       }) + ' IST';
-    }
-
-    function getISTMinutesOfDay(unixSec) {
-      const parts = new Date(unixSec * 1000).toLocaleTimeString('en-GB', {
-        timeZone: 'Asia/Kolkata',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-      }).split(':');
-      return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
-    }
-
-    function formatINR(val, showSign = false) {
-      const abs = Math.abs(val);
-      const formatted = abs.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      const sign = val < 0 ? '-' : (showSign && val > 0 ? '+' : '');
-      return `${sign}₹${formatted}`;
-    }
-
-    function formatAssetPrice(usdtOrInrVal, isCrypto = false) {
-      if (!isCrypto) {
-        return `₹${Number(usdtOrInrVal).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-      }
-      if (state.cryptoCurrency === 'USDT') {
-        const decimals = usdtOrInrVal < 1 ? 4 : 2;
-        return `$${Number(usdtOrInrVal).toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}`;
-      }
-      const inrVal = usdtOrInrVal * liveUsdToInr;
-      const decimals = inrVal < 10 ? 4 : 2;
-      return `₹${Number(inrVal).toLocaleString('en-IN', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}`;
     }
 
     function savePersistentSignals() {
@@ -1325,25 +1299,38 @@
         if (!raw) return;
         const parsed = JSON.parse(raw);
         if (parsed && typeof parsed.active === 'object') {
-          state.activeSignalsTracker = parsed.active;
+          const cleanActive = {};
+          for (const [sym, item] of Object.entries(parsed.active)) {
+            if (item && item.isRealFeed === true && NSE_SYMBOLS[sym] && !String(item.signalDate || '').includes('2027')) {
+              cleanActive[sym] = item;
+            }
+          }
+          state.activeSignalsTracker = cleanActive;
         }
         if (parsed && Array.isArray(parsed.closed)) {
-          state.closedSignalsToday = parsed.closed;
+          state.closedSignalsToday = parsed.closed.filter(c => c && c.isRealFeed === true && !String(c.signalDate || '').includes('2027'));
         }
       } catch (e) {}
     }
 
+    function resetPersistentSignals() {
+      state.activeSignalsTracker = {};
+      state.closedSignalsToday = [];
+      savePersistentSignals();
+      renderActiveSignalsTable();
+      showToast('Tracker Cleared', 'All tracked signals have been reset.');
+    }
+
     function playAlertChime() {
-      const chk = document.getElementById('audioChimeCheck');
-      if (chk && !chk.checked) return;
+      if (!document.getElementById('audioChimeCheck')?.checked) return;
       try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.type = 'sine';
         osc.frequency.setValueAtTime(880, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.18);
-        gain.gain.setValueAtTime(0.12, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.16);
+        gain.gain.setValueAtTime(0.08, ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
         osc.connect(gain);
         gain.connect(ctx.destination);
@@ -1352,114 +1339,81 @@
       } catch (e) {}
     }
 
-    function sendWhatsAppAlert(sig, isAutoBackground = false) {
-      const phone = (document.getElementById('whatsappPhoneInput')?.value || '').replace(/[^0-9]/g, '');
+    function dispatchWhatsAppMessage(text, openBrowser = true) {
+      const rawPhone = (document.getElementById('whatsappPhoneInput')?.value || '').replace(/[^0-9]/g, '');
       const apiKey = (document.getElementById('callmebotKeyInput')?.value || '').trim();
-      const isCrypto = NSE_SYMBOLS[sig.sym]?.isCrypto;
-      const displaySym = sig.sym.replace('USDT', '');
+      if (rawPhone && apiKey) {
+        fetch(`https://api.callmebot.com/whatsapp.php?phone=${rawPhone}&text=${encodeURIComponent(text)}&apikey=${encodeURIComponent(apiKey)}`, { mode: 'no-cors' }).catch(() => {});
+      }
+      if (openBrowser) {
+        const waUrl = rawPhone
+          ? `https://wa.me/${rawPhone}?text=${encodeURIComponent(text)}`
+          : `https://wa.me/?text=${encodeURIComponent(text)}`;
+        window.open(waUrl, '_blank', 'noopener');
+      }
+    }
 
-      const msg = `🟢 *LIVE BUY SIGNAL: ${displaySym}*\n` +
-        `📅 Date: ${sig.signalDate}\n` +
-        `⏰ Time: ${sig.triggeredAtIST}\n` +
-        `💰 Entry: ${formatAssetPrice(sig.entryPrice, isCrypto)}\n` +
-        `🎯 Target (TP): ${formatAssetPrice(sig.tpPrice, isCrypto)}\n` +
-        `🛡️ Trailing SL: ${formatAssetPrice(sig.tslPrice, isCrypto)}\n` +
-        `📊 Rule: ${sig.reason}`;
+    function sendSingleSignalWhatsApp(sym) {
+      const s = state.activeSignalsTracker[sym];
+      if (!s) return;
+      const label = sym.replace('USDT', '');
+      const msg = `🚨 *LIVE BUY SIGNAL: ${label}*\n📅 Date: ${s.signalDate} (${s.triggeredAtIST})\n💰 Entry: ${formatAssetPrice(s.entryPrice, sym)} | Live: ${formatAssetPrice(s.livePrice, sym)}\n🎯 Target TP: ${formatAssetPrice(s.tpPrice, sym)}\n🛡️ Trailing SL: ${formatAssetPrice(s.tslPrice, sym)}\n📊 Rule: ${s.reason}`;
+      dispatchWhatsAppMessage(msg, true);
+    }
 
-      if (isAutoBackground) {
-        if (phone && apiKey) {
-          const webhookUrl = `https://api.callmebot.com/whatsapp.php?phone=${phone}&text=${encodeURIComponent(msg)}&apikey=${encodeURIComponent(apiKey)}`;
-          fetch(webhookUrl, { mode: 'no-cors' }).catch(() => {});
-        }
+    function sendAllActiveSignalsWhatsApp() {
+      const list = Object.values(state.activeSignalsTracker);
+      if (list.length === 0) {
+        showToast('No Active Signals', 'There are currently no active BUY signals to send.', true);
         return;
       }
-
-      const waUrl = phone
-        ? `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`
-        : `https://wa.me/?text=${encodeURIComponent(msg)}`;
-      window.open(waUrl, '_blank');
+      const lines = list.map((s, idx) => `${idx + 1}. *${s.sym.replace('USDT', '')}* (${s.signalDate}) — Entry: ${formatAssetPrice(s.entryPrice, s.sym)} | TP: ${formatAssetPrice(s.tpPrice, s.sym)} | SL: ${formatAssetPrice(s.tslPrice, s.sym)}`);
+      const msg = `📈 *ACTIVE LIVE BUY SIGNALS (${list.length})*\n\n${lines.join('\n')}`;
+      dispatchWhatsAppMessage(msg, true);
     }
 
     // =========================================================================
-    // 8. LIVE BUY SIGNALS SCANNER, PERSISTENT TRACKER & HOURLY AUTO-FETCH
+    // 8. HOURLY LIVE BUY SIGNALS SCANNER & AUTO-REMOVAL ENGINE
     // =========================================================================
-    let hourlySchedulerTimer = null;
-
-    function updateNextHourlyScanLabel() {
-      const lbl = document.getElementById('nextScanCountdown');
-      if (!lbl) return;
-      const now = new Date();
-      const minsLeft = 59 - now.getMinutes();
-      const secsLeft = 59 - now.getSeconds();
-      lbl.textContent = `${String(minsLeft).padStart(2, '0')}m ${String(secsLeft).padStart(2, '0')}s`;
-    }
-
-    function startHourlyLiveScanner() {
-      if (hourlySchedulerTimer) clearInterval(hourlySchedulerTimer);
-      updateNextHourlyScanLabel();
-      let lastScannedHour = new Date().getHours();
-
-      hourlySchedulerTimer = setInterval(() => {
-        updateNextHourlyScanLabel();
-        const now = new Date();
-        if (now.getMinutes() === 0 && now.getSeconds() < 3 && now.getHours() !== lastScannedHour) {
-          lastScannedHour = now.getHours();
-          scanAllLiveBuySignals(true);
-        }
-      }, 1000);
-    }
-
-    function stopLiveBuyScanner() {
-      if (hourlySchedulerTimer) {
-        clearInterval(hourlySchedulerTimer);
-        hourlySchedulerTimer = null;
-      }
-    }
-
-    async function scanAllLiveBuySignals(isScheduledHourly = false) {
-      const tbody = document.getElementById('activeSignalsBody');
-      const feedBadge = document.getElementById('liveFeedCountBadge');
-      if (tbody && Object.keys(state.activeSignalsTracker).length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="py-10 text-center text-slate-400 text-xs">Scanning real live NSE & Crypto feeds (zero dummy prices)...</td></tr>`;
-      }
+    async function scanAllLiveBuySignals(isScheduledAuto = false) {
+      const badge = document.getElementById('liveFeedCountBadge');
+      if (badge) badge.textContent = 'Fetching Live Market Data...';
 
       await fetchLiveUsdInrRate();
 
-      const cap = state.capFilter;
-      const symbolsToScan = Object.entries(NSE_SYMBOLS)
-        .filter(([, info]) => cap === 'ALL' || info.cap === cap)
-        .map(([sym]) => sym);
+      const allSymbols = Object.keys(NSE_SYMBOLS).filter(sym => {
+        if (state.capFilter === 'ALL') return true;
+        return NSE_SYMBOLS[sym]?.cap === state.capFilter;
+      });
 
-      const tpVal = Math.max(0.1, parseFloat(document.getElementById('tpInput')?.value) || 5.5);
-      const tslVal = Math.max(0.05, parseFloat(document.getElementById('tslInput')?.value) || 2.5);
-      let liveSyncedCount = 0;
-      let newSignalsFound = 0;
+      const tpVal = parseFloat(document.getElementById('tpInput')?.value) || 5.5;
+      const tslVal = parseFloat(document.getElementById('tslInput')?.value) || 2.5;
+      let syncedCount = 0;
+      let newlyAddedCount = 0;
       let trackerChanged = false;
 
-      await fetchInBatches(symbolsToScan, async (sym) => {
-        const candles = await fetchRealHistoricalCandles(sym, state.timeframe, '1Y');
-        if (!candles || candles.length < 60) return;
+      await fetchInBatches(allSymbols, 4, async (sym) => {
+        const candles = await fetchRealHistoricalCandles(sym, state.timeframe, '1Y', true);
+        if (!candles || candles.length < 30) return;
+        syncedCount++;
 
-        liveSyncedCount++;
-        const lastBar = candles[candles.length - 1];
-        const livePrice = lastBar.close;
-        state.liveUniverseMap[sym] = { price: livePrice, time: lastBar.time };
+        const livePrice = candles[candles.length - 1].close;
 
-        // 1. Monitor existing tracked signal for Target TP or Trailing SL hit
+        // 1. Update existing active signal & auto-remove if Target TP or Trailing SL hits
         if (state.activeSignalsTracker[sym]) {
           const tracked = state.activeSignalsTracker[sym];
           tracked.livePrice = livePrice;
-
-          if (livePrice > tracked.highestPrice) {
+          if (livePrice > (tracked.highestPrice || tracked.entryPrice)) {
             tracked.highestPrice = livePrice;
-            const newSL = tracked.highestPrice - tracked.tslDist;
-            if (newSL > tracked.tslPrice) tracked.tslPrice = newSL;
+            const newTsl = tracked.highestPrice - tracked.tslDist;
+            if (newTsl > tracked.tslPrice) tracked.tslPrice = newTsl;
           }
 
           if (livePrice >= tracked.tpPrice) {
             const gainPct = (((tracked.tpPrice - tracked.entryPrice) / tracked.entryPrice) * 100).toFixed(2);
             state.closedSignalsToday.unshift({
               sym,
+              isRealFeed: true,
               status: 'TARGET REACHED',
               entryPrice: tracked.entryPrice,
               exitPrice: tracked.tpPrice,
@@ -1476,6 +1430,7 @@
             const diffPct = (((tracked.tslPrice - tracked.entryPrice) / tracked.entryPrice) * 100).toFixed(2);
             state.closedSignalsToday.unshift({
               sym,
+              isRealFeed: true,
               status: 'TRAILING SL HIT',
               entryPrice: tracked.entryPrice,
               exitPrice: tracked.tslPrice,
@@ -1507,6 +1462,7 @@
 
           const signalObj = {
             sym,
+            isRealFeed: true,
             entryPrice,
             livePrice,
             highestPrice: Math.max(entryPrice, livePrice),
@@ -1517,107 +1473,99 @@
             signalDate: formatISTDateBadge(candles[triggeredIdx].time),
             triggeredAtIST: formatExactISTTimestamp(nowSec)
           };
-
           state.activeSignalsTracker[sym] = signalObj;
-          newSignalsFound++;
+          newlyAddedCount++;
           trackerChanged = true;
-          sendWhatsAppAlert(signalObj, true);
+
+          // Auto-send webhook WhatsApp alert if CallMeBot key is configured
+          const label = sym.replace('USDT', '');
+          const autoMsg = `🚨 NEW BUY SIGNAL: ${label} (${signalObj.signalDate}) | Entry: ${formatAssetPrice(entryPrice, sym)} | TP: ${formatAssetPrice(signalObj.tpPrice, sym)} | SL: ${formatAssetPrice(signalObj.tslPrice, sym)}`;
+          dispatchWhatsAppMessage(autoMsg, false);
         }
-      }, 3);
+      });
 
-      if (feedBadge) {
-        feedBadge.textContent = `${liveSyncedCount} Real Live Feeds Synced`;
-      }
-
-      if (trackerChanged) {
-        savePersistentSignals();
-      }
+      if (trackerChanged) savePersistentSignals();
       renderActiveSignalsTable();
 
-      if (newSignalsFound > 0) {
+      if (badge) {
+        badge.textContent = `${syncedCount} Real Live Feeds Synced • ${formatExactISTTimestamp(Math.floor(Date.now() / 1000))}`;
+      }
+
+      if (newlyAddedCount > 0) {
         playAlertChime();
-        showToast('New Live BUY Signal!', `${newSignalsFound} new asset(s) triggered a live entry.`);
-      } else if (isScheduledHourly) {
-        showToast('Hourly Scan Complete', 'No new BUY setups found; existing signals preserved.');
+        showToast(`${newlyAddedCount} New Live Buy Signal${newlyAddedCount > 1 ? 's' : ''}!`, 'Added to Active Live Buy Signals until Target or Stop-Loss hits.');
+      } else if (!isScheduledAuto) {
+        showToast('Hourly Scan Complete', `Scanned ${syncedCount} real live feeds. No new BUY triggers on this bar.`);
       }
     }
 
     function renderActiveSignalsTable() {
       const tbody = document.getElementById('activeSignalsBody');
-      const navBadge = document.getElementById('navSignalsCount');
+      const countBadge = document.getElementById('navSignalsCount');
       const closedStrip = document.getElementById('closedSignalsStrip');
       const closedList = document.getElementById('closedSignalsList');
-      if (!tbody) return;
 
-      const cap = state.capFilter;
-      const entries = Object.values(state.activeSignalsTracker).filter(item => {
-        const info = NSE_SYMBOLS[item.sym];
-        if (!info) return false;
-        return cap === 'ALL' || info.cap === cap;
-      });
-
-      if (navBadge) {
-        navBadge.textContent = Object.keys(state.activeSignalsTracker).length;
-      }
+      const activeList = Object.values(state.activeSignalsTracker);
+      if (countBadge) countBadge.textContent = activeList.length;
 
       if (closedStrip && closedList) {
         if (state.closedSignalsToday.length > 0) {
           closedStrip.classList.remove('hidden');
-          closedList.innerHTML = state.closedSignalsToday.slice(0, 8).map(c => {
+          closedList.innerHTML = state.closedSignalsToday.slice(0, 12).map(c => {
             const isWin = c.status === 'TARGET REACHED';
-            return `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium ${isWin ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'}">
-              <strong>${c.sym.replace('USDT', '')}</strong> • ${c.status} (${c.pct}) @ ${c.closedAtIST}
-            </span>`;
+            return `<span class="px-2.5 py-1 rounded-lg text-[11px] font-semibold ${isWin ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'}">${c.sym.replace('USDT', '')} • ${c.status} (${c.pct}) @ ${c.closedAtIST}</span>`;
           }).join('');
         } else {
           closedStrip.classList.add('hidden');
         }
       }
 
-      if (!entries.length) {
-        tbody.innerHTML = `<tr><td colspan="6" class="py-10 text-center text-slate-400 text-xs">No active live BUY signals right now for this filter. Auto-scanner checks every hour and holds signals until Target or SL hits.</td></tr>`;
+      if (!tbody) return;
+      if (activeList.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="py-10 text-center text-slate-400 text-xs">No active BUY signals triggered yet. The scanner checks real market feeds at the top of every hour and locks any qualifying signal here until Target or SL hits.</td></tr>`;
         return;
       }
 
-      tbody.innerHTML = entries.map(sig => {
-        const info = NSE_SYMBOLS[sig.sym] || { cap: 'NSE', sector: '', isCrypto: false };
-        const displaySym = sig.sym.replace('USDT', '');
-        const pctMove = (((sig.livePrice - sig.entryPrice) / sig.entryPrice) * 100);
-        const moveColor = pctMove >= 0 ? 'text-emerald-600' : 'text-rose-500';
-        const tpPct = (((sig.tpPrice - sig.entryPrice) / sig.entryPrice) * 100).toFixed(2);
-        const slPct = (((sig.tslPrice - sig.entryPrice) / sig.entryPrice) * 100).toFixed(2);
+      tbody.innerHTML = activeList.map(s => {
+        const meta = NSE_SYMBOLS[s.sym] || { cap: 'Asset', sector: '' };
+        const pnlPct = ((s.livePrice - s.entryPrice) / s.entryPrice) * 100;
+        const tpPct = ((s.tpPrice - s.entryPrice) / s.entryPrice) * 100;
+        const slPct = ((s.tslPrice - s.entryPrice) / s.entryPrice) * 100;
+        const capBadgeClass = meta.cap === 'Crypto'
+          ? 'bg-amber-50 text-amber-700 border-amber-200'
+          : 'bg-slate-100 text-slate-700 border-slate-200';
 
         return `
-          <tr class="hover:bg-slate-50/80 transition">
+          <tr class="hover:bg-slate-50/70 transition">
             <td class="px-5 py-3.5">
               <div class="flex items-center gap-2">
-                <span class="font-bold text-slate-900 text-xs">${displaySym}</span>
-                <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold ${info.isCrypto ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'}">${info.cap}</span>
+                <span class="font-bold text-slate-900 text-sm">${s.sym.replace('USDT', '')}</span>
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold border ${capBadgeClass}">${meta.cap}</span>
               </div>
-              <div class="text-[11px] text-slate-500 mt-0.5">📅 ${sig.signalDate}</div>
-              <div class="text-[10px] font-mono text-slate-400">Triggered: ${sig.triggeredAtIST}</div>
+              <div class="text-[11px] text-slate-600 font-medium mt-0.5">📅 ${s.signalDate}</div>
+              <div class="text-[10px] text-slate-400">Triggered: ${s.triggeredAtIST}</div>
             </td>
             <td class="px-4 py-3.5 font-mono">
-              <div class="font-bold text-slate-900 text-xs">${formatAssetPrice(sig.livePrice, info.isCrypto)}</div>
-              <div class="text-[11px] text-slate-400">Entry: ${formatAssetPrice(sig.entryPrice, info.isCrypto)}</div>
-              <div class="text-[11px] font-semibold ${moveColor}">(${pctMove >= 0 ? '+' : ''}${pctMove.toFixed(2)}%)</div>
+              <div class="font-bold text-slate-900 text-sm">${formatAssetPrice(s.livePrice, s.sym)}</div>
+              <div class="text-[11px] text-slate-500">Entry: ${formatAssetPrice(s.entryPrice, s.sym)}</div>
+              <div class="text-[11px] font-semibold ${pnlPct >= 0 ? 'text-emerald-600' : 'text-rose-600'}">(${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%)</div>
             </td>
             <td class="px-4 py-3.5">
-              <div class="text-xs font-semibold text-slate-800">${sig.reason}</div>
-              <div class="text-[11px] text-slate-400 mt-0.5">${info.sector}${info.trust ? ' • ' + info.trust.split('•')[0].trim() : ''}</div>
+              <div class="font-semibold text-slate-800">${s.reason}</div>
+              <div class="text-[11px] text-slate-400 mt-0.5">${meta.sector}</div>
             </td>
             <td class="px-4 py-3.5 font-mono">
-              <div class="font-bold text-emerald-600 text-xs">${formatAssetPrice(sig.tpPrice, info.isCrypto)}</div>
-              <div class="text-[11px] text-emerald-600">+${tpPct}% Target</div>
+              <div class="font-bold text-emerald-700">${formatAssetPrice(s.tpPrice, s.sym)}</div>
+              <div class="text-[11px] text-emerald-600">+${tpPct.toFixed(2)}% Target</div>
             </td>
             <td class="px-4 py-3.5 font-mono">
-              <div class="font-bold text-amber-600 text-xs">${formatAssetPrice(sig.tslPrice, info.isCrypto)}</div>
-              <div class="text-[11px] text-amber-600">${Number(slPct) >= 0 ? '+' : ''}${slPct}% Trailed SL</div>
+              <div class="font-bold text-amber-700">${formatAssetPrice(s.tslPrice, s.sym)}</div>
+              <div class="text-[11px] text-amber-600">${slPct >= 0 ? '+' : ''}${slPct.toFixed(2)}% Trailed SL</div>
             </td>
             <td class="px-5 py-3.5 text-center">
               <div class="inline-flex items-center gap-1.5">
-                <button onclick="sendSingleSignalWhatsApp('${sig.sym}')" class="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-[11px] font-semibold transition">Alert</button>
-                <button onclick="loadSymbolAndBacktest('${sig.sym}')" class="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-[11px] font-semibold transition">Chart</button>
+                <button onclick="sendSingleSignalWhatsApp('${s.sym}')" class="px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-semibold text-[11px] transition">Alert</button>
+                <button onclick="loadSymbolAndBacktest('${s.sym}')" class="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-semibold text-[11px] transition">Chart</button>
               </div>
             </td>
           </tr>
@@ -1625,98 +1573,148 @@
       }).join('');
     }
 
-    function sendSingleSignalWhatsApp(sym) {
-      const sig = state.activeSignalsTracker[sym];
-      if (sig) sendWhatsAppAlert(sig, false);
+    function startHourlyAutoScheduler() {
+      if (state.hourlyScanTimer) clearTimeout(state.hourlyScanTimer);
+      if (state.countdownTimer) clearInterval(state.countdownTimer);
+
+      const scheduleNextHour = () => {
+        const now = new Date();
+        const nextHour = new Date(now);
+        nextHour.setHours(now.getHours() + 1, 0, 2, 0);
+        const msUntilNextHour = Math.max(5000, nextHour.getTime() - now.getTime());
+
+        state.hourlyScanTimer = setTimeout(async () => {
+          await scanAllLiveBuySignals(true);
+          scheduleNextHour();
+        }, msUntilNextHour);
+
+        if (state.countdownTimer) clearInterval(state.countdownTimer);
+        state.countdownTimer = setInterval(() => {
+          const rem = Math.max(0, Math.floor((nextHour.getTime() - Date.now()) / 1000));
+          const mins = String(Math.floor(rem / 60)).padStart(2, '0');
+          const secs = String(rem % 60).padStart(2, '0');
+          const el = document.getElementById('nextScanCountdown');
+          if (el) el.textContent = `${mins}m ${secs}s`;
+        }, 1000);
+      };
+
+      scheduleNextHour();
     }
 
-    function sendAllActiveSignalsWhatsApp() {
-      const entries = Object.values(state.activeSignalsTracker);
-      if (!entries.length) {
-        showToast('No Active Signals', 'There are currently no active signals to send.', true);
-        return;
+    // =========================================================================
+    // 9. CHARTS, TABLES, SCANNER & NAVIGATION HANDLERS
+    // =========================================================================
+    let tvChart = null;
+    let candleSeries = null;
+    let sma50Series = null;
+    let sma200Series = null;
+    let equityChartInstance = null;
+
+    function clearPriceChartWithNotice(sym) {
+      const container = document.getElementById('tvChartContainer');
+      if (!container) return;
+      if (tvChart) {
+        try { tvChart.remove(); } catch (e) {}
+        tvChart = null;
       }
-      const phone = (document.getElementById('whatsappPhoneInput')?.value || '').replace(/[^0-9]/g, '');
-      const lines = entries.map(s => {
-        const isCrypto = NSE_SYMBOLS[s.sym]?.isCrypto;
-        return `• *${s.sym.replace('USDT', '')}* (${s.signalDate}): Entry ${formatAssetPrice(s.entryPrice, isCrypto)} | TP ${formatAssetPrice(s.tpPrice, isCrypto)} | SL ${formatAssetPrice(s.tslPrice, isCrypto)}`;
-      }).join('\n');
-      const text = encodeURIComponent(`🚀 *NSE & Crypto Live Signals (${entries.length})*\n\n${lines}`);
-      const url = phone ? `https://wa.me/${phone}?text=${text}` : `https://wa.me/?text=${text}`;
-      window.open(url, '_blank');
+      container.innerHTML = `<div class="w-full h-full flex flex-col items-center justify-center bg-slate-50 text-center p-6">
+        <div class="text-sm font-bold text-slate-800 mb-1">Live Market Feed Unavailable for ${sym.replace('USDT', '')}</div>
+        <p class="text-xs text-slate-500 max-w-md mb-3">Public NSE proxy relays are temporarily rate-limited. Click Retry below or select any of the 50 Trusted Crypto coins (direct 24/7 Binance API).</p>
+        <button onclick="onSetupChanged(true)" class="px-4 py-1.5 rounded-xl bg-slate-900 text-white text-xs font-semibold">Retry Live Feed</button>
+      </div>`;
     }
 
-    function resetPersistentSignals() {
-      state.activeSignalsTracker = {};
-      state.closedSignalsToday = [];
-      savePersistentSignals();
-      renderActiveSignalsTable();
-      showToast('Tracker Cleared', 'All saved signal entries have been cleared.');
-    }
+    function renderPriceChart(candles, sim) {
+      const container = document.getElementById('tvChartContainer');
+      if (!container || !candles || candles.length === 0) return;
 
-    function loadSymbolAndBacktest(sym) {
-      const searchInp = document.getElementById('symbolSearchInput');
-      if (searchInp) searchInp.value = '';
-      if (state.capFilter !== 'ALL' && NSE_SYMBOLS[sym]?.cap !== state.capFilter) {
-        selectCapFilter('ALL');
+      if (tvChart) {
+        try { tvChart.remove(); } catch (e) {}
+        tvChart = null;
       }
-      populateSymbolSelect('', sym);
-      setMode('backtest');
-    }
+      container.innerHTML = '';
 
-    function switchChartTab(tab) {
-      const pView = document.getElementById('priceChartView');
-      const eView = document.getElementById('equityChartView');
-      const sView = document.getElementById('scannerChartView');
-      const tPrice = document.getElementById('tabPrice');
-      const tEquity = document.getElementById('tabEquity');
-      const tScan = document.getElementById('tabScan');
+      const width = container.clientWidth || container.parentElement?.clientWidth || 820;
+      tvChart = LightweightCharts.createChart(container, {
+        width,
+        height: 360,
+        layout: { background: { color: '#ffffff' }, textColor: '#475569', fontFamily: 'Inter, sans-serif' },
+        grid: { vertLines: { color: '#f1f5f9' }, horzLines: { color: '#f1f5f9' } },
+        rightPriceScale: { borderColor: '#e2e8f0' },
+        timeScale: { borderColor: '#e2e8f0', timeVisible: state.timeframe !== 'Daily' }
+      });
 
-      const activeBtn = 'whitespace-nowrap px-3 py-1 rounded-lg bg-white text-slate-900 shadow-sm transition';
-      const inactiveBtn = 'whitespace-nowrap px-3 py-1 rounded-lg text-slate-500 hover:text-slate-900 transition';
+      candleSeries = tvChart.addCandlestickSeries({
+        upColor: '#10b981',
+        downColor: '#ef4444',
+        borderVisible: false,
+        wickUpColor: '#10b981',
+        wickDownColor: '#ef4444'
+      });
 
-      if (pView) pView.classList.add('hidden');
-      if (eView) eView.classList.add('hidden');
-      if (sView) sView.classList.add('hidden');
-      if (tPrice) tPrice.className = inactiveBtn;
-      if (tEquity) tEquity.className = inactiveBtn;
-      if (tScan) tScan.className = inactiveBtn;
+      const sym = document.getElementById('symbolSelect')?.value || 'ICICIBANK';
+      const isCrypto = Boolean(NSE_SYMBOLS[sym]?.isCrypto && state.cryptoCurrency === 'INR');
+      const mult = isCrypto ? liveUsdToInr : 1;
 
-      if (tab === 'price') {
-        if (pView) pView.classList.remove('hidden');
-        if (tPrice) tPrice.className = activeBtn;
-        if (state.priceChart) state.priceChart.timeScale().fitContent();
-      } else if (tab === 'equity') {
-        if (eView) eView.classList.remove('hidden');
-        if (tEquity) tEquity.className = activeBtn;
-        renderEquityCurve();
-      } else if (tab === 'scanner') {
-        if (sView) sView.classList.remove('hidden');
-        if (tScan) tScan.className = activeBtn;
-        renderTopSwingScanner();
+      candleSeries.setData(candles.map(c => ({
+        time: c.time,
+        open: c.open * mult,
+        high: c.high * mult,
+        low: c.low * mult,
+        close: c.close * mult
+      })));
+
+      if (sim.markers && sim.markers.length > 0) {
+        candleSeries.setMarkers(sim.markers);
+      }
+
+      sma50Series = tvChart.addLineSeries({ color: '#0ea5e9', lineWidth: 1.5, priceLineVisible: false });
+      sma200Series = tvChart.addLineSeries({ color: '#8b5cf6', lineWidth: 1.5, priceLineVisible: false });
+
+      const s50Data = [];
+      const s200Data = [];
+      for (let i = 0; i < candles.length; i++) {
+        if (sim.sma50[i] != null) s50Data.push({ time: candles[i].time, value: sim.sma50[i] * mult });
+        if (sim.sma200[i] != null) s200Data.push({ time: candles[i].time, value: sim.sma200[i] * mult });
+      }
+      sma50Series.setData(s50Data);
+      sma200Series.setData(s200Data);
+      tvChart.timeScale().fitContent();
+
+      if (typeof ResizeObserver !== 'undefined') {
+        const ro = new ResizeObserver(entries => {
+          for (const entry of entries) {
+            if (tvChart && entry.contentRect.width > 0) {
+              tvChart.applyOptions({ width: entry.contentRect.width });
+            }
+          }
+        });
+        ro.observe(container);
       }
     }
 
-    function renderEquityCurve() {
+    function renderEquityCurve(sim) {
       const canvas = document.getElementById('equityCanvas');
-      if (!canvas || typeof Chart === 'undefined' || !state.equityCurve.length) return;
-      if (state.equityChart) state.equityChart.destroy();
+      if (!canvas) return;
+      if (equityChartInstance) {
+        equityChartInstance.destroy();
+        equityChartInstance = null;
+      }
+      const labels = sim.equityCurve.map(pt => formatISTDateBadge(pt.time));
+      const values = sim.equityCurve.map(pt => pt.equity);
 
-      const labels = state.equityCurve.map(pt => formatIST(pt.time, state.timeframe));
-      const data = state.equityCurve.map(pt => pt.equity);
-
-      state.equityChart = new Chart(canvas.getContext('2d'), {
+      equityChartInstance = new Chart(canvas, {
         type: 'line',
         data: {
           labels,
           datasets: [{
             label: 'Portfolio Equity (₹)',
-            data,
-            borderColor: '#10b981',
-            backgroundColor: 'rgba(16, 185, 129, 0.10)',
+            data: values,
+            borderColor: '#059669',
+            backgroundColor: 'rgba(16, 185, 129, 0.12)',
             borderWidth: 2,
-            pointRadius: 0,
             fill: true,
+            pointRadius: 0,
             tension: 0.2
           }]
         },
@@ -1725,8 +1723,8 @@
           maintainAspectRatio: false,
           plugins: { legend: { display: false } },
           scales: {
-            x: { ticks: { maxTicksLimit: 8, font: { size: 10 } }, grid: { display: false } },
-            y: { ticks: { font: { size: 10 } }, grid: { color: '#f1f5f9' } }
+            x: { ticks: { maxTicksLimit: 8, font: { size: 11 } }, grid: { display: false } },
+            y: { ticks: { font: { size: 11 } }, grid: { color: '#f1f5f9' } }
           }
         }
       });
@@ -1736,325 +1734,134 @@
       const tbody = document.getElementById('scannerTableBody');
       if (!tbody) return;
       const highWinOnly = document.getElementById('highWinFilterCheck')?.checked ?? true;
-      const cap = state.capFilter;
-      const symbols = Object.entries(NSE_SYMBOLS)
-        .filter(([, info]) => cap === 'ALL' || info.cap === cap)
-        .map(([sym]) => sym);
+      tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-400 text-xs">Scanning real historical candles across filtered universe...</td></tr>`;
 
-      tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-400 text-xs">Scanning real historical data across ${symbols.length} assets...</td></tr>`;
-      const results = [];
+      const candidates = Object.keys(NSE_SYMBOLS).filter(sym => state.capFilter === 'ALL' || NSE_SYMBOLS[sym]?.cap === state.capFilter);
+      const ranked = [];
 
-      await fetchInBatches(symbols, async (sym) => {
-        const candles = await fetchRealHistoricalCandles(sym, state.timeframe, state.duration);
-        if (!candles || candles.length < 60) return;
-        const sim = executeStrategySimulation(candles, sym);
-        const total = sim.trades.length;
-        const wins = sim.trades.filter(t => t.netPnl > 0).length;
-        const winRate = total > 0 ? (wins / total) * 100 : 0;
-        const netProfit = sim.trades.reduce((a, b) => a + b.netPnl, 0);
-        results.push({ sym, cap: NSE_SYMBOLS[sym].cap, winRate, total, netProfit });
-      }, 4);
+      await fetchInBatches(candidates, 5, async (sym) => {
+        const candles = await fetchRealHistoricalCandles(sym, state.timeframe, state.duration, false);
+        if (!candles || candles.length < 40) return;
+        const sim = executeStrategySimulation(candles);
+        ranked.push({
+          sym,
+          meta: NSE_SYMBOLS[sym],
+          winRate: sim.winRate,
+          trades: sim.trades.length,
+          netProfit: sim.netProfit
+        });
+      });
 
-      const filtered = results
-        .filter(r => !highWinOnly || (r.winRate >= 70 && r.total >= 5))
-        .sort((a, b) => b.winRate - a.winRate || b.netProfit - a.netProfit);
+      const filtered = ranked
+        .filter(r => !highWinOnly || (r.winRate >= 70 && r.trades >= 5))
+        .sort((a, b) => (b.winRate - a.winRate) || (b.netProfit - a.netProfit));
 
-      if (!filtered.length) {
-        tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-400 text-xs">No assets matched the current filter (try unchecking the ≥70% filter or switching to Crypto / 6 Years).</td></tr>`;
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-400 text-xs">No assets matched ≥70% win rate with ≥5 trades in this timeframe. Uncheck the filter above or switch duration to 6 Years.</td></tr>`;
         return;
       }
 
       tbody.innerHTML = filtered.map(r => `
         <tr class="hover:bg-slate-50 transition">
-          <td class="px-5 py-2.5 font-bold text-slate-900">${r.sym.replace('USDT', '')}</td>
-          <td class="px-4 py-2.5 text-slate-500">${r.cap}</td>
-          <td class="px-4 py-2.5 text-right font-mono font-bold ${r.winRate >= 70 ? 'text-emerald-600' : 'text-slate-700'}">${r.winRate.toFixed(1)}%</td>
-          <td class="px-4 py-2.5 text-right font-mono text-slate-600">${r.total}</td>
-          <td class="px-4 py-2.5 text-right font-mono font-bold ${r.netProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${formatINR(r.netProfit, true)}</td>
-          <td class="px-5 py-2.5 text-center">
-            <button onclick="loadSymbolAndBacktest('${r.sym}')" class="px-2.5 py-1 rounded-lg bg-slate-900 text-white text-[11px] font-semibold">Load</button>
+          <td class="px-5 py-3">
+            <div class="font-bold text-slate-900">${r.sym.replace('USDT', '')}</div>
+            <div class="text-[11px] text-slate-400">${r.meta.name}</div>
+          </td>
+          <td class="px-4 py-3 text-slate-600">${r.meta.cap}</td>
+          <td class="px-4 py-3 text-right font-mono font-bold text-emerald-600">${r.winRate.toFixed(1)}%</td>
+          <td class="px-4 py-3 text-right font-mono text-slate-700">${r.trades}</td>
+          <td class="px-4 py-3 text-right font-mono font-bold ${r.netProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${formatINR(r.netProfit)}</td>
+          <td class="px-5 py-3 text-center">
+            <button onclick="loadSymbolAndBacktest('${r.sym}')" class="px-3 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-semibold">Load</button>
           </td>
         </tr>
       `).join('');
     }
 
-    // =========================================================================
-    // 9. BACKTEST CHARTS, SCANNER & LIVE MARKET REPLAY
-    // =========================================================================
-    async function triggerRun() {
-      const reqToken = ++currentFetchToken;
-      try {
-        const sym = document.getElementById('symbolSelect')?.value || 'ICICIBANK';
-        const displaySym = sym.replace('USDT', '');
-        const titleEl = document.getElementById('chartTitle');
-        if (titleEl) {
-          titleEl.textContent = `${displaySym} • ${state.timeframe} (${state.duration}) Live Chart`;
-        }
-
-        if (state.mode === 'signals') {
-          await scanAllLiveBuySignals(false);
-          return;
-        }
-        if (state.mode === 'live') {
-          await startLiveMarketTest();
-          return;
-        }
-
-        const container = document.getElementById('tvChartContainer');
-        if (container) {
-          container.innerHTML = `<div class="h-full flex items-center justify-center text-xs text-slate-400 bg-slate-50/60">Fetching real live market candles for ${displaySym}...</div>`;
-        }
-
-        if (NSE_SYMBOLS[sym]?.isCrypto) {
-          await fetchLiveUsdInrRate();
-        }
-        const candles = await fetchRealHistoricalCandles(sym, state.timeframe, state.duration);
-        if (reqToken !== currentFetchToken) return;
-
-        if (!candles || candles.length < 30) {
-          if (container) {
-            container.innerHTML = `<div class="h-full flex flex-col items-center justify-center text-center p-6 bg-slate-50 text-slate-500">
-              <div class="text-sm font-bold text-slate-800 mb-1">Live NSE Feed Temporarily Rate-Limited for ${displaySym}</div>
-              <p class="text-xs max-w-md mb-3">Public Yahoo CORS relays are currently throttling requests. Click Retry below or select any of the 50 Crypto assets (direct 24/7 Binance API).</p>
-              <button onclick="triggerRun()" class="px-4 py-1.5 rounded-xl bg-slate-900 text-white text-xs font-semibold">Retry Live Fetch</button>
-            </div>`;
-          }
-          showToast('Live Feed Unavailable', `Could not retrieve live market candles for ${displaySym}. Try again shortly.`, true);
-          return;
-        }
-
-        state.candles = candles;
-        const sim = executeStrategySimulation(candles, sym);
-        renderAllResults(candles, sim, sym);
-      } catch (err) {
-        if (reqToken !== currentFetchToken) return;
-        console.error('Backtest simulation error:', err);
-        showToast('Simulation Error', err.message || 'Unable to compute strategy.', true);
-      }
-    }
-
-    async function startLiveMarketTest() {
-      const sym = document.getElementById('symbolSelect')?.value || 'ICICIBANK';
-      const displaySym = sym.replace('USDT', '');
-      if (NSE_SYMBOLS[sym]?.isCrypto) {
-        await fetchLiveUsdInrRate();
-      }
-      const candles = await fetchRealHistoricalCandles(sym, state.timeframe, '1Y');
-      if (!candles || candles.length < 40) {
-        showToast('Live Feed Unavailable', `Could not load real market feed for ${displaySym}.`, true);
-        return;
-      }
-      state.candles = candles;
-      const sim = executeStrategySimulation(candles, sym);
-      renderAllResults(candles, sim, sym);
-      showToast('Live Market Synced', `Loaded real market feed for ${displaySym}.`);
-    }
-
-    function renderAllResults(candles, sim, sym) {
-      state.equityCurve = sim.equityCurve;
-      state.lastTrades = sim.trades;
-      const info = NSE_SYMBOLS[sym] || { isCrypto: false };
-      const initialCap = Math.max(5000, parseFloat(document.getElementById('capitalInput')?.value) || 100000);
-      const totalTrades = sim.trades.length;
-      const wins = sim.trades.filter(t => t.netPnl > 0).length;
-      const losses = totalTrades - wins;
-      const winRate = totalTrades > 0 ? (wins / totalTrades) * 100 : 0;
-      const netProfit = sim.trades.reduce((acc, t) => acc + t.netPnl, 0);
-      const returnPct = (netProfit / initialCap) * 100;
-
-      let peak = initialCap;
-      let maxDD = 0;
-      sim.equityCurve.forEach(pt => {
-        if (pt.equity > peak) peak = pt.equity;
-        const dd = ((peak - pt.equity) / peak) * 100;
-        if (dd > maxDD) maxDD = dd;
-      });
-
-      const elNet = document.getElementById('kpiNetProfit');
-      const elRet = document.getElementById('kpiReturnPct');
-      const elWin = document.getElementById('kpiWinRate');
-      const elWL = document.getElementById('kpiWinLossCount');
-      const elTot = document.getElementById('kpiTotalTrades');
-      const elDD = document.getElementById('kpiMaxDrawdown');
-      const elFin = document.getElementById('kpiFinalCapital');
-
-      if (elNet) {
-        elNet.textContent = formatINR(netProfit, true);
-        elNet.className = `text-2xl font-bold font-mono tracking-tight ${netProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`;
-      }
-      if (elRet) elRet.textContent = `${returnPct >= 0 ? '+' : ''}${returnPct.toFixed(2)}%`;
-      if (elWin) elWin.textContent = `${winRate.toFixed(1)}%`;
-      if (elWL) elWL.textContent = `${wins} Wins / ${losses} Losses`;
-      if (elTot) elTot.textContent = `${totalTrades}`;
-      if (elDD) elDD.textContent = `-${maxDD.toFixed(2)}%`;
-      if (elFin) elFin.textContent = `Final: ${formatINR(initialCap + netProfit)}`;
-
-      renderPriceChart(candles, sim);
-      renderTradeTable(sim.trades, info.isCrypto);
-    }
-
-    function renderPriceChart(candles, sim) {
-      const container = document.getElementById('tvChartContainer');
-      if (!container || typeof LightweightCharts === 'undefined') return;
-      container.innerHTML = '';
-
-      const chartWidth = container.clientWidth || container.parentElement?.clientWidth || 820;
-      const chartHeight = container.clientHeight || 360;
-
-      const chart = LightweightCharts.createChart(container, {
-        width: chartWidth,
-        height: chartHeight,
-        layout: { background: { color: '#ffffff' }, textColor: '#475569', fontFamily: 'JetBrains Mono' },
-        grid: { vertLines: { color: '#f1f5f9' }, horzLines: { color: '#f1f5f9' } },
-        timeScale: { borderColor: '#e2e8f0', timeVisible: state.timeframe !== 'Daily' },
-        rightPriceScale: { borderColor: '#e2e8f0' }
-      });
-
-      const candleSeries = chart.addCandlestickSeries({
-        upColor: '#10b981',
-        downColor: '#f43f5e',
-        borderVisible: false,
-        wickUpColor: '#10b981',
-        wickDownColor: '#f43f5e'
-      });
-      candleSeries.setData(candles);
-      if (sim.markers && sim.markers.length) {
-        candleSeries.setMarkers(sim.markers);
-      }
-
-      const fastSeries = chart.addLineSeries({ color: '#0ea5e9', lineWidth: 1.5, priceLineVisible: false });
-      fastSeries.setData(candles.map((c, i) => sim.fastLine[i] !== null ? { time: c.time, value: sim.fastLine[i] } : null).filter(Boolean));
-
-      const slowSeries = chart.addLineSeries({ color: '#8b5cf6', lineWidth: 1.5, priceLineVisible: false });
-      slowSeries.setData(candles.map((c, i) => sim.slowLine[i] !== null ? { time: c.time, value: sim.slowLine[i] } : null).filter(Boolean));
-
-      chart.timeScale().fitContent();
-      state.priceChart = chart;
-
-      if (window.__chartResizeObserver) {
-        window.__chartResizeObserver.disconnect();
-      }
-      if (typeof ResizeObserver !== 'undefined') {
-        window.__chartResizeObserver = new ResizeObserver(() => {
-          if (container.clientWidth > 0 && state.priceChart) {
-            state.priceChart.resize(container.clientWidth, container.clientHeight || 360);
-            state.priceChart.timeScale().fitContent();
-          }
-        });
-        window.__chartResizeObserver.observe(container);
-      }
-    }
-
-    function renderTradeTable(trades, isCrypto = false) {
+    function renderTradeHistoryTable(trades, sym) {
       const tbody = document.getElementById('tradeHistoryBody');
       if (!tbody) return;
-      if (!trades.length) {
+      if (!trades || trades.length === 0) {
         tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-slate-400 text-xs">No completed trades in this period. Try switching duration to 6 Years or adjusting Take-Profit / Stop-Loss.</td></tr>`;
         return;
       }
-      tbody.innerHTML = [...trades].reverse().map((t, idx) => {
-        const pnlColor = t.netPnl >= 0 ? 'text-emerald-600' : 'text-rose-600';
-        return `
-          <tr class="hover:bg-slate-50 transition">
-            <td class="px-5 py-3 font-mono text-xs text-slate-500">#${trades.length - idx}</td>
-            <td class="px-4 py-3 text-xs text-slate-700">${formatIST(t.entryTime, state.timeframe)}</td>
-            <td class="px-4 py-3 text-xs text-slate-700">${formatIST(t.exitTime, state.timeframe)}</td>
-            <td class="px-4 py-3 font-mono text-xs text-slate-800">${formatAssetPrice(t.entryPrice, isCrypto)}</td>
-            <td class="px-4 py-3 font-mono text-xs text-slate-800">${formatAssetPrice(t.exitPrice, isCrypto)}</td>
-            <td class="px-4 py-3 text-xs"><span class="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-medium">${t.exitReason}</span></td>
-            <td class="px-5 py-3 text-right font-mono font-bold text-xs ${pnlColor}">${formatINR(t.netPnl, true)}</td>
-          </tr>
-        `;
-      }).join('');
+      const fmtTime = (t) => state.timeframe === 'Daily' ? formatISTDateBadge(t) : formatExactISTTimestamp(t);
+      tbody.innerHTML = [...trades].reverse().map(t => `
+        <tr class="hover:bg-slate-50/70 transition">
+          <td class="px-5 py-2.5 font-mono text-slate-400">#${t.num}</td>
+          <td class="px-4 py-2.5 text-slate-700">${fmtTime(t.entryTime)}</td>
+          <td class="px-4 py-2.5 text-slate-700">${fmtTime(t.exitTime)}</td>
+          <td class="px-4 py-2.5 font-mono text-slate-800">${formatAssetPrice(t.entryPrice, sym)}</td>
+          <td class="px-4 py-2.5 font-mono text-slate-800">${formatAssetPrice(t.exitPrice, sym)}</td>
+          <td class="px-4 py-2.5"><span class="px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-700">${t.exitReason}</span></td>
+          <td class="px-5 py-2.5 text-right font-mono font-bold ${t.netPnl >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${formatINR(t.netPnl)}</td>
+        </tr>
+      `).join('');
     }
 
-    function downloadTradesCSV() {
-      if (!state.lastTrades || !state.lastTrades.length) {
-        showToast('No Trades', 'Run a backtest first to export trades.', true);
-        return;
+    function renderAllResults(candles, sim) {
+      const sym = document.getElementById('symbolSelect')?.value || 'ICICIBANK';
+      const npEl = document.getElementById('kpiNetProfit');
+      if (npEl) {
+        npEl.textContent = formatINR(sim.netProfit);
+        npEl.className = `text-2xl font-bold font-mono tracking-tight ${sim.netProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`;
       }
-      const sym = document.getElementById('symbolSelect')?.value || 'ASSET';
-      const header = 'Trade #,Side,Entry Time (IST),Exit Time (IST),Qty,Entry Price,Exit Price,Exit Reason,Net PnL (INR)\n';
-      const rows = state.lastTrades.map((t, i) =>
-        `${i + 1},${t.side},"${formatIST(t.entryTime, state.timeframe)}","${formatIST(t.exitTime, state.timeframe)}",${t.qty},${t.entryPrice},${t.exitPrice},"${t.exitReason}",${t.netPnl.toFixed(2)}`
-      ).join('\n');
-      const blob = new Blob([header + rows], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${sym}_backtest_trades.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
+      const retEl = document.getElementById('kpiReturnPct');
+      if (retEl) retEl.textContent = `${sim.returnPct >= 0 ? '+' : ''}${sim.returnPct.toFixed(2)}%`;
+
+      const wrEl = document.getElementById('kpiWinRate');
+      if (wrEl) wrEl.textContent = `${sim.winRate.toFixed(1)}%`;
+
+      const wlEl = document.getElementById('kpiWinLossCount');
+      if (wlEl) wlEl.textContent = `${sim.wins} Wins / ${sim.losses} Losses`;
+
+      const ttEl = document.getElementById('kpiTotalTrades');
+      if (ttEl) ttEl.textContent = sim.trades.length;
+
+      const ddEl = document.getElementById('kpiMaxDrawdown');
+      if (ddEl) ddEl.textContent = `-${sim.maxDrawdownPct.toFixed(2)}%`;
+
+      const fcEl = document.getElementById('kpiFinalCapital');
+      if (fcEl) fcEl.textContent = `Final: ${formatINR(sim.finalCapital).replace('+', '')}`;
+
+      renderPriceChart(candles, sim);
+      renderEquityCurve(sim);
+      renderTradeHistoryTable(sim.trades, sym);
     }
 
-    // =========================================================================
-    // 10. INITIALIZATION & UI CONTROLS
-    // =========================================================================
-    function setTimeframe(tf) {
-      state.timeframe = tf;
-      document.querySelectorAll('.tf-btn').forEach(b => {
-        b.className = b.dataset.tf === tf
-          ? 'tf-btn py-1.5 rounded-lg text-xs font-semibold bg-white text-slate-900 shadow-sm transition'
-          : 'tf-btn py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-900 transition';
+    function switchChartTab(tab) {
+      const views = { price: 'priceChartView', equity: 'equityChartView', scanner: 'scannerChartView' };
+      const tabs = { price: 'tabPrice', equity: 'tabEquity', scanner: 'tabScan' };
+      Object.entries(views).forEach(([k, id]) => {
+        const el = document.getElementById(id);
+        if (el) el.classList.toggle('hidden', k !== tab);
       });
-      triggerRun();
-    }
-
-    function setDuration(dur) {
-      state.duration = dur;
-      document.querySelectorAll('.dur-btn').forEach(b => {
-        b.className = b.dataset.dur === dur
-          ? 'dur-btn py-1.5 rounded-lg text-xs font-semibold bg-white text-slate-900 shadow-sm transition'
-          : 'dur-btn py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-900 transition';
+      Object.entries(tabs).forEach(([k, id]) => {
+        const btn = document.getElementById(id);
+        if (btn) {
+          btn.className = k === tab
+            ? 'whitespace-nowrap px-3 py-1 rounded-lg bg-white text-slate-900 shadow-sm transition'
+            : 'whitespace-nowrap px-3 py-1 rounded-lg text-slate-500 hover:text-slate-900 transition';
+        }
       });
-      triggerRun();
+      if (tab === 'price' && tvChart) {
+        const c = document.getElementById('tvChartContainer');
+        if (c && c.clientWidth > 0) tvChart.applyOptions({ width: c.clientWidth });
+        tvChart.timeScale().fitContent();
+      } else if (tab === 'scanner') {
+        renderTopSwingScanner();
+      }
     }
 
-    function onStrategyChanged() {
-      const strat = document.getElementById('strategySelect')?.value;
-      const descEl = document.getElementById('strategyDescBox');
-      if (descEl && STRATEGY_DESCRIPTIONS[strat]) {
-        descEl.textContent = STRATEGY_DESCRIPTIONS[strat];
+    async function loadSymbolAndBacktest(sym) {
+      if (state.capFilter !== 'ALL' && NSE_SYMBOLS[sym]?.cap !== state.capFilter) {
+        selectCapFilter('ALL');
       }
-      triggerRun();
-    }
-
-    function setRiskUnit(unit) {
-      state.riskUnit = unit;
-      const btnPct = document.getElementById('unitPctBtn');
-      const btnPts = document.getElementById('unitPtsBtn');
-      if (btnPct && btnPts) {
-        btnPct.className = unit === 'percent'
-          ? 'px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-white text-slate-900 shadow-sm transition'
-          : 'px-2.5 py-0.5 rounded-md text-[11px] font-semibold text-slate-500 hover:text-slate-900 transition';
-        btnPts.className = unit === 'points'
-          ? 'px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-white text-slate-900 shadow-sm transition'
-          : 'px-2.5 py-0.5 rounded-md text-[11px] font-semibold text-slate-500 hover:text-slate-900 transition';
-      }
-      triggerRun();
-    }
-
-    function syncRiskSlider(type, val) {
-      if (type === 'tp') {
-        const inp = document.getElementById('tpInput');
-        if (inp) inp.value = val;
-      } else {
-        const inp = document.getElementById('tslInput');
-        if (inp) inp.value = val;
-      }
-      triggerRun();
-    }
-
-    function toggleCryptoCurrency() {
-      state.cryptoCurrency = state.cryptoCurrency === 'INR' ? 'USDT' : 'INR';
-      const btn = document.getElementById('cryptoCurrencyToggleBtn');
-      if (btn) {
-        btn.textContent = state.cryptoCurrency === 'INR' ? 'Crypto: ₹ INR' : 'Crypto: $ USDT';
-      }
-      renderActiveSignalsTable();
-      if (state.mode !== 'signals') {
-        triggerRun();
-      }
+      const sel = document.getElementById('symbolSelect');
+      if (sel) sel.value = sym;
+      setMode('backtest');
+      switchChartTab('price');
+      await onSetupChanged(false);
     }
 
     function setMode(newMode) {
@@ -2069,10 +1876,10 @@
       const navDot = document.getElementById('liveNavDot');
       const actionLabel = document.getElementById('primaryActionLabel');
 
-      const inactiveCls = 'whitespace-nowrap px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all text-slate-600 hover:text-slate-900 flex items-center gap-1.5';
-      if (btnSig) btnSig.className = inactiveCls;
-      if (btnBt) btnBt.className = inactiveCls;
-      if (btnLv) btnLv.className = inactiveCls;
+      const inactiveClass = 'whitespace-nowrap px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all text-slate-600 hover:text-slate-900 flex items-center gap-1.5';
+      if (btnSig) btnSig.className = inactiveClass;
+      if (btnBt) btnBt.className = inactiveClass;
+      if (btnLv) btnLv.className = inactiveClass;
 
       if (newMode === 'signals') {
         if (btnSig) btnSig.className = 'whitespace-nowrap px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-white text-emerald-700 shadow-sm flex items-center gap-1.5';
@@ -2082,10 +1889,7 @@
         if (signalsNavDot) signalsNavDot.classList.remove('hidden');
         if (navDot) navDot.classList.add('hidden');
         if (actionLabel) actionLabel.textContent = 'Scan Live';
-        startHourlyLiveScanner();
-        scanAllLiveBuySignals(false);
       } else if (newMode === 'backtest') {
-        stopLiveBuyScanner();
         if (btnBt) btnBt.className = 'whitespace-nowrap px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-white text-slate-900 shadow-sm flex items-center gap-1.5';
         if (signalsPanel) signalsPanel.classList.add('hidden');
         if (livePanel) livePanel.classList.add('hidden');
@@ -2093,40 +1897,89 @@
         if (signalsNavDot) signalsNavDot.classList.add('hidden');
         if (navDot) navDot.classList.add('hidden');
         if (actionLabel) actionLabel.textContent = 'Run Test';
-        triggerRun();
+        if (!state.candles || state.candles.length === 0) onSetupChanged(false);
+        else triggerRun();
       } else {
-        stopLiveBuyScanner();
-        if (btnLv) btnLv.className = 'whitespace-nowrap px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-white text-slate-900 shadow-sm flex items-center gap-1.5';
+        if (btnLv) btnLv.className = 'whitespace-nowrap px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-white text-sky-700 shadow-sm flex items-center gap-1.5';
         if (signalsPanel) signalsPanel.classList.add('hidden');
         if (livePanel) livePanel.classList.remove('hidden');
         if (mainWorkspace) mainWorkspace.classList.remove('hidden');
         if (signalsNavDot) signalsNavDot.classList.add('hidden');
         if (navDot) navDot.classList.remove('hidden');
-        if (actionLabel) actionLabel.textContent = 'Start Live';
+        if (actionLabel) actionLabel.textContent = 'Sync Live';
         startLiveMarketTest();
       }
     }
 
+    async function startLiveMarketTest() {
+      await onSetupChanged(true);
+    }
+
+    function triggerRun() {
+      try {
+        const sym = document.getElementById('symbolSelect')?.value || 'ICICIBANK';
+        const chartTitle = document.getElementById('chartTitle');
+        if (chartTitle) chartTitle.textContent = `${sym.replace('USDT', '')} • ${state.timeframe} (${state.duration}) Live Chart`;
+
+        if (state.mode === 'signals') {
+          scanAllLiveBuySignals(false);
+          return;
+        }
+        if (!state.candles || state.candles.length < 30) {
+          onSetupChanged(false);
+          return;
+        }
+        const sim = executeStrategySimulation(state.candles);
+        renderAllResults(state.candles, sim);
+      } catch (err) {
+        console.error('Simulation error:', err);
+        showToast('Simulation Error', err.message || 'Could not compute strategy.', true);
+      }
+    }
+
+    function downloadTradesCSV() {
+      if (!state.candles || state.candles.length < 30) return;
+      const sym = document.getElementById('symbolSelect')?.value || 'ICICIBANK';
+      const sim = executeStrategySimulation(state.candles);
+      if (!sim.trades.length) {
+        showToast('No Trades', 'No completed trades to export.', true);
+        return;
+      }
+      const rows = [['#', 'Symbol', 'Side', 'Entry Price', 'Exit Price', 'Exit Reason', 'Net PnL (INR)']];
+      sim.trades.forEach(t => rows.push([t.num, sym, t.side, t.entryPrice, t.exitPrice, t.exitReason, t.netPnl.toFixed(2)]));
+      const blob = new Blob([rows.map(r => r.join(',')).join('\n')], { type: 'text/csv' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `${sym}_backtest_trades.csv`;
+      a.click();
+    }
+
+    let toastTimer = null;
     function showToast(title, msg, isError = false) {
       const box = document.getElementById('toastBox');
       const tEl = document.getElementById('toastTitle');
       const mEl = document.getElementById('toastMsg');
       if (!box || !tEl || !mEl) return;
+      box.className = `fixed bottom-5 right-5 z-50 max-w-sm px-4 py-3 rounded-2xl shadow-lg border text-xs transition-all ${
+        isError ? 'bg-rose-50 border-rose-200 text-rose-900' : 'bg-slate-900 border-slate-800 text-white'
+      }`;
       tEl.textContent = title;
       mEl.textContent = msg;
-      box.className = `fixed bottom-5 right-5 z-50 max-w-sm px-4 py-3 rounded-2xl shadow-lg border text-xs transition-all ${
-        isError ? 'bg-rose-50 border-rose-200 text-rose-800' : 'bg-slate-900 border-slate-800 text-white'
-      }`;
       box.classList.remove('hidden');
-      clearTimeout(window.__toastTimer);
-      window.__toastTimer = setTimeout(() => box.classList.add('hidden'), 4200);
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => box.classList.add('hidden'), 4500);
     }
 
-    function initApp() {
+    // =========================================================================
+    // 10. INITIALIZATION ON PAGE LOAD
+    // =========================================================================
+    async function initApp() {
+      populateSymbolSelect();
       loadPersistentSignals();
-      populateSymbolSelect('', 'ICICIBANK');
       renderActiveSignalsTable();
       setMode('signals');
+      startHourlyAutoScheduler();
+      await scanAllLiveBuySignals(true);
     }
 
     if (document.readyState === 'loading') {
