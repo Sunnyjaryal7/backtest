@@ -80,12 +80,12 @@
 
       <!-- Mode Switcher -->
       <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/70 shrink-0">
-        <button id="btnModeSignals" onclick="setMode('signals')" class="whitespace-nowrap px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all text-slate-600 hover:text-slate-900 flex items-center gap-1.5">
+        <button id="btnModeSignals" onclick="setMode('signals')" class="whitespace-nowrap px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-white text-emerald-700 shadow-sm flex items-center gap-1.5">
           <span id="signalsNavDot" class="w-2 h-2 rounded-full bg-emerald-500 live-dot shrink-0"></span>
           <span>Live Buy Signals</span>
           <span id="liveSignalBadge" class="px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-mono text-[10px] font-bold leading-none">0</span>
         </button>
-        <button id="btnModeBacktest" onclick="setMode('backtest')" class="whitespace-nowrap px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-white text-slate-900 shadow-sm">
+        <button id="btnModeBacktest" onclick="setMode('backtest')" class="whitespace-nowrap px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all text-slate-600 hover:text-slate-900">
           Backtest
         </button>
         <button id="btnModeLive" onclick="setMode('live')" class="whitespace-nowrap px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all text-slate-600 hover:text-slate-900 flex items-center gap-1.5">
@@ -103,7 +103,7 @@
         <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="currentColor" viewBox="0 0 20 20">
           <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
         </svg>
-        <span id="primaryActionLabel">Run Test</span>
+        <span id="primaryActionLabel">Scan Live</span>
       </button>
     </div>
   </header>
@@ -308,22 +308,24 @@
     <!-- RIGHT RESULTS & CHART WORKSPACE -->
     <section class="flex-1 min-w-0 space-y-5">
 
-      <!-- LIVE BUY SIGNALS SCREENER PANEL (Shown when 'Live Buy Signals' tab is active) -->
-      <div id="liveSignalsPanel" class="hidden bg-white border border-emerald-200 rounded-2xl p-4 sm:p-5 shadow-sm space-y-4">
+      <!-- LIVE BUY SIGNALS SCREENER & TODAY'S ACTIVE SIGNALS TRACKER (Default Screen on Open) -->
+      <div id="liveSignalsPanel" class="bg-white border border-emerald-200 rounded-2xl p-4 sm:p-5 shadow-sm space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div class="flex items-center gap-3">
             <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-700">
               <span class="w-2 h-2 rounded-full bg-emerald-500 live-dot"></span>
-              <span id="liveFeedBadgeText">REAL-TIME NSE SCANNER</span>
+              <span id="liveFeedBadgeText">REAL-TIME NSE &amp; CRYPTO SCANNER</span>
             </span>
             <div>
-              <h2 class="text-sm sm:text-base font-bold text-slate-900">Stocks Ready to BUY Now (Auto-Scanned)</h2>
-              <p id="liveScannerSubtitle" class="text-xs text-slate-500">Fetching live NSE market quotes &amp; auto-applying your strategy...</p>
+              <h2 class="text-sm sm:text-base font-bold text-slate-900">Today's Active Buy Signals (Auto-Tracked)</h2>
+              <p id="liveScannerSubtitle" class="text-xs text-slate-500">Fetching live NSE &amp; Crypto quotes • Auto-removes when Target or SL hits...</p>
             </div>
           </div>
 
           <div class="flex items-center gap-2">
-            <span id="liveMarketStatusTag" class="hidden sm:inline-block px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 text-[11px] font-mono font-semibold">NSE • IST</span>
+            <button onclick="clearClosedSignalsLog()" class="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-700 text-xs font-semibold transition" title="Reset today's signal tracker">
+              Reset Tracker
+            </button>
             <button onclick="fetchRealLiveMarketScan(true)" class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm transition flex items-center gap-1.5">
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -333,26 +335,57 @@
           </div>
         </div>
 
-        <!-- Live Buy Signals Table -->
-        <div class="overflow-x-auto max-h-[540px] overflow-y-auto rounded-xl border border-slate-200/80">
+        <!-- WHATSAPP ALERT CONFIGURATION & INSTANT SHARE BAR -->
+        <div class="bg-emerald-50/70 border border-emerald-200/90 rounded-xl p-3 flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+          <div class="flex flex-wrap items-center gap-2.5">
+            <span class="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-900">
+              <svg class="w-4 h-4 text-emerald-600" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824z"/>
+              </svg>
+              WhatsApp Alerts:
+            </span>
+            <input type="tel" id="waPhoneInput" oninput="saveWhatsAppConfig()" placeholder="+91 9876543210" class="w-36 bg-white border border-emerald-200 rounded-lg px-2.5 py-1 text-xs font-mono text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500" />
+            <input type="text" id="waApiKeyInput" oninput="saveWhatsAppConfig()" placeholder="CallMeBot API Key (Optional Auto-Send)" class="w-48 bg-white border border-emerald-200 rounded-lg px-2.5 py-1 text-xs font-mono text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500" />
+            <label class="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-900 cursor-pointer select-none">
+              <input type="checkbox" id="waAutoAlertCheck" checked onchange="saveWhatsAppConfig()" class="w-3.5 h-3.5 rounded accent-emerald-600" />
+              <span>Sound + Auto-Alert</span>
+            </label>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <button onclick="sendAllActiveSignalsWhatsApp()" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm transition flex items-center gap-1.5">
+              <span>Send Active List to WhatsApp</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Live Active Buy Signals Table -->
+        <div class="overflow-x-auto max-h-[460px] overflow-y-auto rounded-xl border border-slate-200/80">
           <table class="w-full text-left border-collapse text-xs">
             <thead class="bg-slate-50 text-slate-500 font-semibold sticky top-0 z-10 border-b border-slate-200/80">
               <tr>
-                <th class="py-3 px-3.5">Stock / Sector</th>
-                <th class="py-3 px-3.5">Cap</th>
-                <th class="py-3 px-3.5 text-right">Live Price (₹)</th>
-                <th class="py-3 px-3.5">Why Buy Now (Signal)</th>
-                <th class="py-3 px-3.5 text-right">Target TP (₹)</th>
-                <th class="py-3 px-3.5 text-right">Trailing SL (₹)</th>
-                <th class="py-3 px-3.5 text-right">Action</th>
+                <th class="py-3 px-3.5">Stock / Trigger Time (IST)</th>
+                <th class="py-3 px-3.5 text-right">Entry ₹ / Live ₹</th>
+                <th class="py-3 px-3.5">Signal Setup</th>
+                <th class="py-3 px-3.5 text-right">Target TP (₹ / %)</th>
+                <th class="py-3 px-3.5 text-right">Trailing SL (₹ / %)</th>
+                <th class="py-3 px-3.5 text-right">WhatsApp &amp; Chart</th>
               </tr>
             </thead>
             <tbody id="liveBuySignalsBody" class="divide-y divide-slate-100 font-mono text-slate-700">
               <tr>
-                <td colspan="7" class="py-8 text-center text-slate-400 font-sans">Fetching real live NSE stock prices &amp; scanning strategy rules...</td>
+                <td colspan="6" class="py-8 text-center text-slate-400 font-sans">Fetching real live NSE &amp; Crypto prices &amp; logging today's active signals...</td>
               </tr>
             </tbody>
           </table>
+        </div>
+
+        <!-- Auto-Removed Signals Log (Target Reached or SL Hit) -->
+        <div id="closedSignalsBox" class="hidden pt-2 border-t border-slate-100">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-slate-700">Auto-Removed Signals Today (Target Reached or Stop-Loss Hit)</span>
+            <span id="closedSignalsCount" class="text-[11px] font-mono text-slate-500">0 closed</span>
+          </div>
+          <div id="closedSignalsList" class="flex flex-wrap gap-2"></div>
         </div>
       </div>
 
@@ -389,7 +422,7 @@
       </div>
 
       <!-- 4 KPI SUMMARY CARDS -->
-      <div id="backtestMainWorkspace" class="space-y-5">
+      <div id="backtestMainWorkspace" class="hidden space-y-5">
       <div class="grid grid-cols-2 xl:grid-cols-4 gap-4">
         <div class="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-sm">
           <p class="text-xs font-medium text-slate-500">Net Profit</p>
@@ -654,8 +687,8 @@
     const SWING_STRATEGIES = new Set(['cum_rsi2', 'connors_rsi2', 'bb_rsi_snap', 'ema20_pullback']);
 
     const state = {
-      mode: 'backtest',        // 'signals' | 'backtest' | 'live'
-      capFilter: 'ALL',        // 'ALL' | 'Large' | 'Mid' | 'Small'
+      mode: 'signals',         // Default Screen on Open: 'signals' | 'backtest' | 'live'
+      capFilter: 'ALL',        // 'ALL' | 'Large' | 'Mid' | 'Small' | 'Crypto'
       timeframe: 'Daily',      // '5m' | '15m' | '1H' | 'Daily'
       duration: '6Y',          // '1Y' | '3Y' | '6Y' | 'CUSTOM'
       riskUnit: 'percent',     // 'percent' | 'points'
@@ -676,7 +709,9 @@
       liveSpeedMs: 1000,
       liveCandles: [],
       liveScannerTimer: null,
-      liveUniverseMap: {}
+      liveUniverseMap: {},
+      activeSignalsTracker: {}, // Today's logged active signals { sym: { ... } }
+      closedSignalsToday: []    // Signals auto-removed after TP reached or SL hit
     };
 
     // =========================================================================
@@ -709,6 +744,20 @@
         minute: '2-digit',
         hour12: false
       });
+    }
+
+    function formatExactISTTimestamp(unixSec) {
+      const d = new Date(unixSec * 1000);
+      return d.toLocaleString('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      }) + ' IST';
     }
 
     function getISTMinutesOfDay(unixSec) {
@@ -1907,18 +1956,16 @@
       const tfMins = tfMinsMap[state.timeframe] || 1440;
       const scale = Math.sqrt(tfMins / 5);
 
-      const buyMatches = [];
-
+      // 1. Update live prices for all symbols & monitor active signals for Target/SL hits
       Object.entries(NSE_SYMBOLS).forEach(([sym, info]) => {
         if (info.isIndex) return;
-        if (state.capFilter !== 'ALL' && info.cap !== state.capFilter) return;
-
         const entryObj = state.liveUniverseMap[sym];
+        if (!entryObj) return;
         const bars = entryObj.bars;
         const last = bars[bars.length - 1];
 
         if (!entryObj.isRealFeed) {
-          const tickShock = (Math.random() - 0.505) * info.volatility * scale * 1.4;
+          const tickShock = (Math.random() - 0.502) * info.volatility * scale * 1.45;
           const newClose = Math.max(10, Number((last.close * (1 + tickShock)).toFixed(2)));
           const newHigh = Number(Math.max(last.high, newClose).toFixed(2));
           const newLow = Number(Math.min(last.low, newClose).toFixed(2));
@@ -1941,11 +1988,61 @@
 
         const activeLast = bars[bars.length - 1];
         const prevBar = bars[bars.length - 2] || activeLast;
+
+        // Check if this symbol is already logged in Today's Active Signals Tracker
+        const tracked = state.activeSignalsTracker[sym];
+        if (tracked) {
+          tracked.livePrice = activeLast.close;
+          tracked.dayChangePct = ((activeLast.close - prevBar.close) / prevBar.close) * 100;
+
+          // Trail the Stop-Loss upwards if live price makes a new high
+          if (activeLast.close > tracked.highestPrice) {
+            tracked.highestPrice = activeLast.close;
+            const newTrailSL = Number((tracked.highestPrice - tracked.slDistance).toFixed(2));
+            if (newTrailSL > tracked.tslPrice) {
+              tracked.tslPrice = newTrailSL;
+              tracked.trailed = true;
+            }
+          }
+
+          // AUTO-REMOVE IF TARGET REACHED OR STOP-LOSS HIT
+          if (activeLast.close >= tracked.tpPrice) {
+            const gainPct = (((tracked.tpPrice - tracked.entryPrice) / tracked.entryPrice) * 100).toFixed(2);
+            const closedItem = {
+              sym,
+              status: 'TARGET REACHED',
+              exitPrice: tracked.tpPrice,
+              entryPrice: tracked.entryPrice,
+              pct: `+${gainPct}%`,
+              closedAtIST: formatExactISTTimestamp(Math.floor(Date.now() / 1000))
+            };
+            state.closedSignalsToday.unshift(closedItem);
+            delete state.activeSignalsTracker[sym];
+            notifySignalEvent('TARGET HIT • Auto-Removed', `${sym.replace('USDT', '')} reached TP ₹${tracked.tpPrice.toFixed(2)} (+${gainPct}%)`, closedItem);
+            return;
+          } else if (activeLast.close <= tracked.tslPrice) {
+            const diffPct = (((tracked.tslPrice - tracked.entryPrice) / tracked.entryPrice) * 100).toFixed(2);
+            const closedItem = {
+              sym,
+              status: tracked.trailed ? 'TRAILING SL HIT' : 'STOP-LOSS HIT',
+              exitPrice: tracked.tslPrice,
+              entryPrice: tracked.entryPrice,
+              pct: `${Number(diffPct) >= 0 ? '+' : ''}${diffPct}%`,
+              closedAtIST: formatExactISTTimestamp(Math.floor(Date.now() / 1000))
+            };
+            state.closedSignalsToday.unshift(closedItem);
+            delete state.activeSignalsTracker[sym];
+            notifySignalEvent(`${closedItem.status} • Auto-Removed`, `${sym.replace('USDT', '')} hit SL ₹${tracked.tslPrice.toFixed(2)} (${closedItem.pct})`, closedItem);
+            return;
+          }
+        }
+
+        // Scan for new BUY signals to log into Today's Active Signals Tracker
         const { signals } = generateSignals(bars);
         const n = signals.length;
         const activeBuy = signals[n - 1] === 1 || signals[n - 2] === 1;
 
-        if (activeBuy) {
+        if (activeBuy && !state.activeSignalsTracker[sym]) {
           const closes = bars.map(b => b.close);
           const rsi2 = computeRSI(closes, 2);
           const rsi14 = computeRSI(closes, 14);
@@ -1960,51 +2057,74 @@
           else if (strategy === 'supertrend_breakout') triggerNote = `Supertrend Bullish Flip`;
           else if (strategy === 'vwap_bounce') triggerNote = `VWAP Reclaim Breakout`;
 
-          const tpPrice = state.riskUnit === 'percent' ? activeLast.close * (1 + tpVal / 100) : activeLast.close + tpVal;
-          const tslPrice = state.riskUnit === 'percent' ? activeLast.close * (1 - tslVal / 100) : activeLast.close - tslVal;
-          const dayChangePct = ((activeLast.close - prevBar.close) / prevBar.close) * 100;
+          const entryPrice = activeLast.close;
+          const tpDistance = state.riskUnit === 'percent' ? entryPrice * (tpVal / 100) : tpVal;
+          const slDistance = state.riskUnit === 'percent' ? entryPrice * (tslVal / 100) : tslVal;
+          const tpPrice = Number((entryPrice + tpDistance).toFixed(2));
+          const tslPrice = Number((entryPrice - slDistance).toFixed(2));
+          const tpPct = ((tpDistance / entryPrice) * 100).toFixed(2);
+          const slPct = ((slDistance / entryPrice) * 100).toFixed(2);
+          const candleBarTime = signals[n - 1] === 1 ? activeLast.time : prevBar.time;
 
-          buyMatches.push({
+          const newSig = {
             sym,
             info,
-            price: activeLast.close,
-            dayChangePct,
+            entryPrice,
+            livePrice: entryPrice,
+            highestPrice: entryPrice,
+            dayChangePct: ((activeLast.close - prevBar.close) / prevBar.close) * 100,
             triggerNote,
             tpPrice,
             tslPrice,
-            isFresh: signals[n - 1] === 1,
-            isRealFeed: entryObj.isRealFeed
-          });
+            tpDistance: Number(tpDistance.toFixed(2)),
+            slDistance: Number(slDistance.toFixed(2)),
+            tpPct,
+            slPct,
+            trailed: false,
+            candleIST: formatIST(candleBarTime, state.timeframe),
+            triggeredAtIST: formatExactISTTimestamp(Math.floor(Date.now() / 1000)),
+            isRealFeed: entryObj.isRealFeed,
+            strategyLabel
+          };
+
+          state.activeSignalsTracker[sym] = newSig;
+          if (Object.keys(state.activeSignalsTracker).length <= 15) {
+            triggerWhatsAppAutoWebhook(newSig);
+          }
         }
       });
 
-      buyMatches.sort((a, b) => (b.isRealFeed - a.isRealFeed) || (b.isFresh - a.isFresh) || a.sym.localeCompare(b.sym));
+      // Filter Today's Active Signals by selected Cap Tier for display
+      const visibleSignals = Object.values(state.activeSignalsTracker).filter(m =>
+        state.capFilter === 'ALL' || m.info.cap === state.capFilter
+      );
+      visibleSignals.sort((a, b) => (b.isRealFeed - a.isRealFeed) || a.sym.localeCompare(b.sym));
 
-      document.getElementById('liveSignalBadge').textContent = buyMatches.length;
+      document.getElementById('liveSignalBadge').textContent = visibleSignals.length;
       const subEl = document.getElementById('liveScannerSubtitle');
       if (subEl) {
-        subEl.textContent = `${buyMatches.length} stocks ready to BUY on ${strategyLabel} (${state.timeframe}) • Scanned at ${new Date().toLocaleTimeString('en-IN', { hour12: false })} IST`;
+        subEl.textContent = `${visibleSignals.length} active BUY signals logged today (${strategyLabel} • ${state.timeframe}) • Updated ${new Date().toLocaleTimeString('en-IN', { hour12: false })} IST`;
       }
+
+      renderClosedSignalsLog();
 
       const tbody = document.getElementById('liveBuySignalsBody');
       if (!tbody) return;
 
-      if (!buyMatches.length) {
+      if (!visibleSignals.length) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="7" class="py-10 text-center text-slate-500 font-sans">
-              No stocks currently match this strict BUY filter right now. Click <strong>Refresh Live Scan</strong> or switch Cap Filter to <strong>All</strong>.
+            <td colspan="6" class="py-10 text-center text-slate-500 font-sans">
+              No active BUY signals in this filter right now. Click <strong>Refresh Live Scan</strong> or switch Cap Filter to <strong>All</strong>.
             </td>
           </tr>
         `;
         return;
       }
 
-      tbody.innerHTML = buyMatches.map(m => {
+      tbody.innerHTML = visibleSignals.map(m => {
         const chgPos = m.dayChangePct >= 0;
-        const freshTag = m.isFresh
-          ? `<span class="ml-1.5 px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold">BUY NOW</span>`
-          : `<span class="ml-1.5 px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 text-[10px] font-semibold">ACTIVE</span>`;
+        const pnlFromEntry = ((m.livePrice - m.entryPrice) / m.entryPrice) * 100;
         const feedTag = m.isRealFeed
           ? `<span class="ml-1 px-1.5 py-0.5 rounded ${m.info.isCrypto ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-blue-50 text-blue-700 border-blue-200'} border text-[9px] font-bold">${m.info.isCrypto ? 'BINANCE LIVE' : 'NSE LIVE'}</span>`
           : '';
@@ -2014,29 +2134,180 @@
             <td class="py-3 px-3.5 font-sans">
               <div class="flex items-center flex-wrap gap-y-1">
                 <span class="font-bold text-slate-900">${m.sym.replace('USDT', '')}</span>
-                ${freshTag}
+                <span class="ml-1.5 px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold">${m.info.cap}</span>
                 ${feedTag}
               </div>
-              <div class="text-[11px] text-slate-400">${m.info.name} • ${m.info.sector}</div>
+              <div class="text-[11px] text-slate-500 mt-0.5">Candle: <span class="font-mono font-semibold text-slate-700">${m.candleIST}</span></div>
+              <div class="text-[10px] text-slate-400">Logged: <span class="font-mono">${m.triggeredAtIST}</span></div>
             </td>
-            <td class="py-3 px-3.5 font-sans text-slate-600">${m.info.cap}</td>
             <td class="py-3 px-3.5 text-right">
-              <div class="font-bold text-slate-900">₹${m.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-              <div class="text-[11px] ${chgPos ? 'text-emerald-600' : 'text-rose-600'}">${chgPos ? '+' : ''}${m.dayChangePct.toFixed(2)}%</div>
+              <div class="font-bold text-slate-900">Live: ₹${m.livePrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+              <div class="text-[11px] text-slate-500">Entry: ₹${m.entryPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+              <div class="text-[10px] font-semibold ${pnlFromEntry >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${pnlFromEntry >= 0 ? '+' : ''}${pnlFromEntry.toFixed(2)}% from trigger</div>
             </td>
             <td class="py-3 px-3.5 font-sans">
-              <span class="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 font-medium">${m.triggerNote}</span>
+              <span class="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 font-medium inline-block">${m.triggerNote}</span>
             </td>
-            <td class="py-3 px-3.5 text-right font-semibold text-emerald-700">₹${m.tpPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-            <td class="py-3 px-3.5 text-right font-semibold text-amber-700">₹${m.tslPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+            <td class="py-3 px-3.5 text-right">
+              <div class="font-bold text-emerald-700">₹${m.tpPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+              <div class="text-[11px] text-emerald-600">+₹${m.tpDistance.toLocaleString('en-IN')} (+${m.tpPct}%)</div>
+            </td>
+            <td class="py-3 px-3.5 text-right">
+              <div class="font-bold text-amber-700">₹${m.tslPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+              <div class="text-[11px] text-amber-600">${m.trailed ? 'Trailed SL' : `-₹${m.slDistance.toLocaleString('en-IN')} (-${m.slPct}%)`}</div>
+            </td>
             <td class="py-3 px-3.5 text-right font-sans">
-              <button onclick="inspectLiveSignalStock('${m.sym}')" class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition">
-                Backtest / Chart
-              </button>
+              <div class="inline-flex items-center gap-1.5">
+                <button onclick="sendSingleSignalWhatsApp('${m.sym}')" title="Send BUY alert with Target & SL to WhatsApp" class="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-semibold transition flex items-center gap-1">
+                  <span>WhatsApp</span>
+                </button>
+                <button onclick="inspectLiveSignalStock('${m.sym}')" class="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-semibold transition">
+                  Chart
+                </button>
+              </div>
             </td>
           </tr>
         `;
       }).join('');
+    }
+
+    function renderClosedSignalsLog() {
+      const box = document.getElementById('closedSignalsBox');
+      const list = document.getElementById('closedSignalsList');
+      const countEl = document.getElementById('closedSignalsCount');
+      if (!box || !list) return;
+
+      if (!state.closedSignalsToday.length) {
+        box.classList.add('hidden');
+        return;
+      }
+
+      box.classList.remove('hidden');
+      countEl.textContent = `${state.closedSignalsToday.length} auto-removed`;
+      list.innerHTML = state.closedSignalsToday.slice(0, 12).map(c => {
+        const isTP = c.status === 'TARGET REACHED';
+        return `
+          <div class="px-2.5 py-1.5 rounded-lg border text-[11px] font-mono flex items-center gap-2 ${isTP ? 'bg-emerald-50/80 border-emerald-200 text-emerald-900' : 'bg-rose-50/80 border-rose-200 text-rose-900'}">
+            <span class="font-bold">${c.sym.replace('USDT', '')}</span>
+            <span class="font-sans font-semibold text-[10px] px-1.5 py-0.5 rounded ${isTP ? 'bg-emerald-200/70 text-emerald-900' : 'bg-rose-200/70 text-rose-900'}">${c.status}</span>
+            <span>₹${c.exitPrice.toFixed(2)} (${c.pct})</span>
+            <span class="text-slate-400 text-[10px]">${c.closedAtIST.split(',')[1] || c.closedAtIST}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function clearClosedSignalsLog() {
+      state.activeSignalsTracker = {};
+      state.closedSignalsToday = [];
+      scanAllLiveBuySignals(true);
+      showToast('Tracker Reset', 'Cleared today’s signal log & rescanned live prices.');
+    }
+
+    // =========================================================================
+    // WHATSAPP ALERT & SOUND NOTIFICATION HELPERS
+    // =========================================================================
+    function loadWhatsAppConfig() {
+      try {
+        const savedPhone = localStorage.getItem('nse_wa_phone') || '';
+        const savedKey = localStorage.getItem('nse_wa_apikey') || '';
+        const savedAuto = localStorage.getItem('nse_wa_auto');
+        document.getElementById('waPhoneInput').value = savedPhone;
+        document.getElementById('waApiKeyInput').value = savedKey;
+        if (savedAuto !== null) document.getElementById('waAutoAlertCheck').checked = savedAuto === 'true';
+      } catch (e) {}
+    }
+
+    function saveWhatsAppConfig() {
+      try {
+        localStorage.setItem('nse_wa_phone', document.getElementById('waPhoneInput').value.trim());
+        localStorage.setItem('nse_wa_apikey', document.getElementById('waApiKeyInput').value.trim());
+        localStorage.setItem('nse_wa_auto', document.getElementById('waAutoAlertCheck').checked);
+      } catch (e) {}
+    }
+
+    function playAlertBeep(isPositive = true) {
+      if (!document.getElementById('waAutoAlertCheck').checked) return;
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = isPositive ? 880 : 440;
+        gain.gain.setValueAtTime(0.08, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.25);
+      } catch (e) {}
+    }
+
+    function formatSignalWhatsAppText(m) {
+      const ticker = m.sym.replace('USDT', '');
+      return [
+        `🚨 *NSE/CRYPTO BUY SIGNAL*`,
+        `• *Asset:* ${ticker} (${m.info.name})`,
+        `• *Entry Price:* ₹${m.entryPrice.toFixed(2)}`,
+        `• *Target (TP):* ₹${m.tpPrice.toFixed(2)} (+₹${m.tpDistance} / +${m.tpPct}%)`,
+        `• *Trailing SL:* ₹${m.tslPrice.toFixed(2)} (-₹${m.slDistance} / -${m.slPct}%)`,
+        `• *Setup:* ${m.triggerNote}`,
+        `• *Triggered:* ${m.triggeredAtIST}`
+      ].join('\n');
+    }
+
+    function triggerWhatsAppAutoWebhook(m) {
+      const phone = (document.getElementById('waPhoneInput').value || '').replace(/[^\d]/g, '');
+      const apiKey = (document.getElementById('waApiKeyInput').value || '').trim();
+      const autoOn = document.getElementById('waAutoAlertCheck').checked;
+      if (!autoOn || !phone || !apiKey) return;
+
+      const text = encodeURIComponent(formatSignalWhatsAppText(m));
+      const webhookUrl = `https://api.callmebot.com/whatsapp.php?phone=${phone}&text=${text}&apikey=${encodeURIComponent(apiKey)}`;
+      fetch(webhookUrl, { mode: 'no-cors' }).catch(() => {});
+    }
+
+    function notifySignalEvent(title, msg, closedItem) {
+      const isTP = closedItem.status === 'TARGET REACHED';
+      playAlertBeep(isTP);
+      showToast(title, msg, !isTP);
+
+      const phone = (document.getElementById('waPhoneInput').value || '').replace(/[^\d]/g, '');
+      const apiKey = (document.getElementById('waApiKeyInput').value || '').trim();
+      const autoOn = document.getElementById('waAutoAlertCheck').checked;
+      if (autoOn && phone && apiKey) {
+        const text = encodeURIComponent(`🔔 *${closedItem.status}*\n• *Asset:* ${closedItem.sym.replace('USDT', '')}\n• *Exit Price:* ₹${closedItem.exitPrice.toFixed(2)} (${closedItem.pct})\n• *Time:* ${closedItem.closedAtIST}`);
+        fetch(`https://api.callmebot.com/whatsapp.php?phone=${phone}&text=${text}&apikey=${encodeURIComponent(apiKey)}`, { mode: 'no-cors' }).catch(() => {});
+      }
+    }
+
+    function sendSingleSignalWhatsApp(sym) {
+      const m = state.activeSignalsTracker[sym];
+      if (!m) return;
+      const phone = (document.getElementById('waPhoneInput').value || '').replace(/[^\d]/g, '');
+      const message = encodeURIComponent(formatSignalWhatsAppText(m));
+      const url = phone ? `https://wa.me/${phone}?text=${message}` : `https://wa.me/?text=${message}`;
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+
+    function sendAllActiveSignalsWhatsApp() {
+      const list = Object.values(state.activeSignalsTracker);
+      if (!list.length) {
+        showToast('No Active Signals', 'Wait for a live BUY signal before sending to WhatsApp.', true);
+        return;
+      }
+      const phone = (document.getElementById('waPhoneInput').value || '').replace(/[^\d]/g, '');
+      const summaryLines = [
+        `📊 *TODAY'S ACTIVE BUY SIGNALS (${list.length})*`,
+        `Time: ${formatExactISTTimestamp(Math.floor(Date.now() / 1000))}`,
+        `--------------------------------`
+      ];
+      list.slice(0, 10).forEach((m, idx) => {
+        summaryLines.push(`${idx + 1}. *${m.sym.replace('USDT', '')}* @ ₹${m.entryPrice.toFixed(2)} | TP: ₹${m.tpPrice.toFixed(2)} (+${m.tpPct}%) | SL: ₹${m.tslPrice.toFixed(2)} (-${m.slPct}%)`);
+      });
+      const message = encodeURIComponent(summaryLines.join('\n'));
+      const url = phone ? `https://wa.me/${phone}?text=${message}` : `https://wa.me/?text=${message}`;
+      window.open(url, '_blank', 'noopener,noreferrer');
     }
 
     function switchToCryptoMarket() {
@@ -2370,12 +2641,12 @@
     // INITIALIZE APPLICATION ON WINDOW LOAD
     // =========================================================================
     window.onload = function () {
+      loadWhatsAppConfig();
       populateSymbolSelect('', 'RELIANCE');
       selectTimeframe('Daily');
       onStrategyChanged();
       initPriceChart();
-      triggerRun();
-      startLiveBuyScanner();
+      setMode('signals'); // Open directly on Live Buy Signals screen
     };
   </script>
 </body>
