@@ -759,46 +759,59 @@
       };
       const interval = intervalMap[tf] || '1d';
       const range = rangeMap[tf] || '2y';
-      const targetUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSym)}?interval=${interval}&range=${range}`;
 
-      const proxies = [
-        `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`,
-        `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`
+      const yahooUrls = [
+        `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSym)}?interval=${interval}&range=${range}&events=history`,
+        `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSym)}?interval=${interval}&range=${range}&events=history`
       ];
 
-      for (const proxyUrl of proxies) {
-        try {
-          const controller = new AbortController();
-          const timer = setTimeout(() => controller.abort(), 6500);
-          const res = await fetch(proxyUrl, { signal: controller.signal });
-          clearTimeout(timer);
-          if (!res.ok) continue;
+      const relayBuilders = [
+        (u) => ({ url: `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`, wrapped: true }),
+        (u) => ({ url: `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`, wrapped: false }),
+        (u) => ({ url: `https://corsproxy.io/?${encodeURIComponent(u)}`, wrapped: false }),
+        (u) => ({ url: `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`, wrapped: false })
+      ];
 
-          const json = await res.json();
-          const result = json?.chart?.result?.[0];
-          if (!result || !result.timestamp || !result.indicators?.quote?.[0]) continue;
+      for (const yUrl of yahooUrls) {
+        for (const build of relayBuilders) {
+          const { url: proxyUrl, wrapped } = build(yUrl);
+          try {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 7000);
+            const res = await fetch(proxyUrl, { signal: controller.signal });
+            clearTimeout(timer);
+            if (!res.ok) continue;
 
-          const ts = result.timestamp;
-          const q = result.indicators.quote[0];
-          const candles = [];
-          for (let i = 0; i < ts.length; i++) {
-            const o = q.open?.[i];
-            const h = q.high?.[i];
-            const l = q.low?.[i];
-            const c = q.close?.[i];
-            if (o != null && h != null && l != null && c != null && c > 0) {
-              candles.push({
-                time: ts[i],
-                open: Number(o.toFixed(2)),
-                high: Number(h.toFixed(2)),
-                low: Number(l.toFixed(2)),
-                close: Number(c.toFixed(2)),
-                volume: q.volume?.[i] || 0
-              });
+            let json = await res.json();
+            if (wrapped && json && typeof json.contents === 'string') {
+              json = JSON.parse(json.contents);
             }
-          }
-          if (candles.length >= 30) return candles;
-        } catch (e) {}
+
+            const result = json?.chart?.result?.[0];
+            if (!result || !result.timestamp || !result.indicators?.quote?.[0]) continue;
+
+            const ts = result.timestamp;
+            const q = result.indicators.quote[0];
+            const candles = [];
+            for (let i = 0; i < ts.length; i++) {
+              const o = q.open?.[i];
+              const h = q.high?.[i];
+              const l = q.low?.[i];
+              const c = q.close?.[i];
+              if (o != null && h != null && l != null && c != null && c > 0) {
+                candles.push({
+                  time: ts[i],
+                  open: Number(o.toFixed(2)),
+                  high: Number(h.toFixed(2)),
+                  low: Number(l.toFixed(2)),
+                  close: Number(c.toFixed(2)),
+                  volume: q.volume?.[i] || 0
+                });
+              }
+            }
+            if (candles.length >= 30) return candles;
+          } catch (e) {}
+        }
       }
       return null;
     }
@@ -826,7 +839,7 @@
       return candles;
     }
 
-    async function fetchInBatches(symbols, workerFn, batchSize = 10) {
+    async function fetchInBatches(symbols, workerFn, batchSize = 3) {
       for (let i = 0; i < symbols.length; i += batchSize) {
         const chunk = symbols.slice(i, i + batchSize);
         await Promise.allSettled(chunk.map(sym => workerFn(sym)));
@@ -1483,7 +1496,7 @@
           trackerChanged = true;
           sendWhatsAppAlert(signalObj, true);
         }
-      }, 10);
+      }, 3);
 
       if (feedBadge) {
         feedBadge.textContent = `${liveSyncedCount} Real Live Feeds Synced`;
@@ -1641,6 +1654,14 @@
         }
         const candles = await fetchRealHistoricalCandles(sym, state.timeframe, state.duration);
         if (!candles || candles.length < 30) {
+          const container = document.getElementById('tvChartContainer');
+          if (container) {
+            container.innerHTML = `<div class="h-full flex flex-col items-center justify-center text-center p-6 bg-slate-50 text-slate-500">
+              <div class="text-sm font-bold text-slate-800 mb-1">Live NSE Feed Temporarily Rate-Limited for ${displaySym}</div>
+              <p class="text-xs max-w-md mb-3">Public Yahoo CORS relays are currently throttling requests. Click Retry below or select any of the 50 Crypto assets (direct 24/7 Binance API).</p>
+              <button onclick="triggerRun()" class="px-4 py-1.5 rounded-xl bg-slate-900 text-white text-xs font-semibold">Retry Live Fetch</button>
+            </div>`;
+          }
           showToast('Live Feed Unavailable', `Could not retrieve live market candles for ${displaySym}. Try again shortly.`, true);
           return;
         }
@@ -1803,7 +1824,7 @@
         const winRate = (wins / total) * 100;
         const netProfit = sim.trades.reduce((acc, t) => acc + t.netPnl, 0);
         results.push({ sym, info: NSE_SYMBOLS[sym], winRate, total, netProfit });
-      }, 10);
+      }, 3);
 
       let filtered = results;
       if (highWinOnly) {
